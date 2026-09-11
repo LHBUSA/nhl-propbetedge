@@ -5,8 +5,12 @@ import './styles/shell.css';
 import './styles/board.css';
 import './styles/cast.css';
 import './styles/pages.css';
+import './styles/pages-desk.css';
+import './styles/pages-research.css';
+import './styles/pages-lab.css';
 
-import { nhl } from './lib/api.js';
+import { dataLayer, nhl } from './lib/api.js';
+import { legacyBoard } from './lib/legacy.js';
 import { startFreshTicker } from './lib/freshness.js';
 import { daysUntil, dateLabel, todayET } from './lib/format.js';
 import { createRouter } from './lib/router.js';
@@ -22,14 +26,17 @@ const ctx = {
   latestBoard: null,
   async board(date = todayET(), { signal, maxAgeMs = 20000 } = {}) {
     const hit = boardCache.get(date);
-    if (hit && Date.now() - hit.at < maxAgeMs) return hit.value;
-    const value = await nhl('/nhl/board', { date }, { signal });
-    boardCache.set(date, { at: Date.now(), value });
-    if (date === todayET()) {
-      ctx.latestBoard = value;
-      updateSeasonChip(value.data);
+    if (hit?.value && Date.now() - hit.at < maxAgeMs) return hit.value;
+    // Concurrent callers (palette warm-up + page) share one request.
+    if (hit?.pending) return hit.pending;
+    const pending = loadBoard(date, signal);
+    boardCache.set(date, { ...hit, pending });
+    try {
+      return await pending;
+    } finally {
+      const cur = boardCache.get(date);
+      if (cur?.pending === pending) delete cur.pending;
     }
-    return value;
   },
   slateGames() {
     const b = ctx.latestBoard?.data;
@@ -37,6 +44,25 @@ const ctx = {
     return b.games?.length ? b.games : (b.next_puck_drop?.games_at_start || []);
   }
 };
+
+async function loadBoard(date, signal) {
+  let value;
+  try {
+    if ((await dataLayer()) === 'legacy') throw Object.assign(new Error('legacy'), { kind: 'legacy' });
+    value = await nhl('/nhl/board', { date }, { signal });
+  } catch (error) {
+    // Environment without the v2 data layer: limited mode from the legacy
+    // public schedule (labelled as such), never an invented slate.
+    if (!['not_deployed', 'legacy'].includes(error?.kind)) throw error;
+    value = await legacyBoard(date, { signal });
+  }
+  boardCache.set(date, { at: Date.now(), value });
+  if (date === todayET()) {
+    ctx.latestBoard = value;
+    updateSeasonChip(value.data);
+  }
+  return value;
+}
 
 function updateSeasonChip(board) {
   const live = (board.counts?.LIVE || 0);

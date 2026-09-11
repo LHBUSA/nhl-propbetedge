@@ -96,7 +96,11 @@ function changesMarkup(board, newsState) {
     ? `<span class="micro">Newsroom: ${esc(newsState.error)}</span>`
     : newsState?.meta ? freshStamp(newsState.meta, { source: 'Newsroom' }) : '';
   if (!items.length) {
-    return `<div class="changes__empty"><b>No material changes recorded today.</b> <span class="dim">Injury, goalie and line updates appear here as their sources report them.</span> ${newsLine}</div>`;
+    if (newsState?.error) {
+      return `<div class="changes__empty"><b>Material updates unavailable here.</b> <span class="dim">The newsroom feed is not connected in this environment, so changes cannot be listed — which is not the same as nothing changing.</span> ${newsLine}</div>`;
+    }
+    if (!newsState) return '<div class="pbe-skeleton" style="height:44px"></div>';
+    return `<div class="changes__empty"><b>No material changes in the last 24 hours.</b> <span class="dim">Injury, goalie, line and transaction reports appear here as sources publish them.</span> ${newsLine}</div>`;
   }
   return `<ol class="changes__list">${items.slice(0, 6).map(it => `<li class="change change--${it.tone}">
       <span class="pbe-badge pbe-badge--${it.tone === 'news' ? 'sched' : it.tone}">${esc(it.tag)}</span>
@@ -144,10 +148,11 @@ function boardSection(state) {
       <div class="chips" role="group" aria-label="Filter games">${FILTERS.map(([k, l]) => `<button class="chip" data-filter="${k}" aria-pressed="${filter === k}">${l}<span class="count">${counts[k]}</span></button>`).join('')}</div>
       ${board ? freshStamp(meta, { failed }) : ''}
     </div>
+    ${board?.compat ? `<div class="pbe-note page-note"><b>Limited mode.</b> This environment's PropSports API does not serve the NHL intelligence routes yet, so the board shows the official schedule from the legacy route only — no live clock, shots, goalies or newsroom here. Nothing is filled in.</div>` : ''}
     <div class="coverage" aria-label="Data coverage">
-      <span><i class="ok"></i>Schedule &amp; scores · NHL</span>
-      <span><i class="ok"></i>Play-by-play &amp; shot coordinates · NHL</span>
-      <span><i class="part"></i>Starting goalies · confirmed at puck drop</span>
+      <span><i class="ok"></i>Schedule${board?.compat ? '' : ' &amp; scores'} · NHL</span>
+      <span><i class="${board?.compat ? 'off' : 'ok'}"></i>Play-by-play &amp; shot coordinates${board?.compat ? ' · not in this environment' : ' · NHL'}</span>
+      <span><i class="${board?.compat ? 'off' : 'part'}"></i>Starting goalies · ${board?.compat ? 'not in this environment' : 'confirmed at puck drop'}</span>
       <span><i class="off"></i>Odds &amp; props · not yet integrated</span>
       <span><i class="off"></i>Injuries &amp; lines · see source matrix</span>
     </div>

@@ -31,7 +31,10 @@ async function request(url, { signal, timeout = 10000 } = {}) {
     let data = null;
     try { data = JSON.parse(text); } catch { /* non-JSON handled below */ }
     if (!response.ok) {
-      const kind = response.status === 404 ? 'not_deployed' : response.status >= 500 ? 'unavailable' : 'error';
+      // The legacy production worker answers unknown NHL routes with 404 or a
+      // paid-plan 403 ("Demo key is MLB-only") and no provenance envelope.
+      const legacyGate = response.status === 403 && data && !data.schema && /MLB-only|plan|API key/i.test(String(data.error || ''));
+      const kind = response.status === 404 || legacyGate ? 'not_deployed' : response.status >= 500 ? 'unavailable' : 'error';
       throw new ApiError(data?.error || `HTTP ${response.status}`, { status: response.status, kind, payload: data });
     }
     if (!data || typeof data !== 'object') throw new ApiError('Non-JSON response', { status: response.status, kind: 'unavailable' });
@@ -63,9 +66,26 @@ function withMeta(data) {
   };
 }
 
-// NHL data route. Throws ApiError { kind: 'legacy' } when the backend this
-// environment points at still serves the pre-v2 contract (no provenance).
+// Which contract this environment's API serves: 'v2' | 'legacy' | 'unknown'.
+// Resolved once from the server-side probe; 'unknown' lets requests through.
+let envPromise = null;
+export function dataLayer() {
+  if (!envPromise) {
+    envPromise = fetch('/api/env', { headers: { Accept: 'application/json' } })
+      .then(r => (r.ok ? r.json() : null))
+      .then(j => j?.data_layer || 'unknown')
+      .catch(() => 'unknown');
+  }
+  return envPromise;
+}
+
+// NHL data route. Throws ApiError { kind: 'not_deployed' } when this
+// environment's backend lacks the v2 routes (without making the request), and
+// { kind: 'legacy' } if a response arrives without the provenance envelope.
 export async function nhl(path, params = {}, options = {}) {
+  if (!options.skipEnvCheck && (await dataLayer()) === 'legacy') {
+    throw new ApiError('NHL intelligence v2 routes are not deployed in this environment.', { kind: 'not_deployed' });
+  }
   const query = qs(params);
   const url = `/api/nhl?path=${encodeURIComponent(path)}${query ? `&${query}` : ''}`;
   const data = await request(url, options);
