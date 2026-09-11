@@ -55,11 +55,15 @@ Status words: **PROVEN** = verified by a command that was actually run (evidence
 | Backend fixes from page QA | goalie rest now uses the game's own season (2025020500: MTL 2 days, NYR 3); unknown ids → 404 not 503 (`cbd69a6`) |
 | Lighthouse (production bundle, local) | Home desktop perf 97 / a11y 100 / BP 100; Home mobile 81–87 / 100 / 100 (CLS 0.558 → 0.021); Cast desktop 99/100, mobile 88/100; Standings mobile 98/100; Shot Lab mobile 94/97→fixed. SEO 92 everywhere (hash routing). Mobile home LCP ~3.9 s on simulated slow 4G (H1 rendered by JS) — known. |
 
+| Desk pages | Goalie Center, Injury desk, Newsroom, Lines, Props (`6d834e2`): Lighthouse a11y 100, axe 0, CLS ≤ 0.003 |
+| Lines integration | real derived last-game deployment on Lines (MTL 2026-05-29: F1–F4, D1–D3, PP1–2, PK1–2, limited-sample flags) (`b2e1a96`) |
+| Best Line | Props renders every priced game from the stored snapshot: best price + book, EV vs ≥2-book no-vig consensus (market comparison, not model edge), puck line, total, moves since open (`5743fca`) |
+| Backend QA fixes | as-of goalie workload (last 5 before the game date, game's season); "sign" no longer mis-files stories as Transactions (`7edb1a5`) |
+
 ## IN PROGRESS
 
-- Desk pages: Goalies, Injuries, News, Lines, Props (lane finishing); then integrate derived deployment into Lines and the market snapshot into Props / Best Line.
-- Live prop tracker (market line vs live stat + TOI pace) — needs posted player props (provider has none 18 days out).
-- Final QA matrix 1440 / 1024 / 390 / 360 across every route; `docs/NHL_UI_VERIFICATION.md`.
+- Live prop tracker (market line vs live stat + TOI pace) — needs posted player props (provider had none 18 days out).
+- (done) Final QA matrix: 72/72 PASS — see `docs/NHL_UI_VERIFICATION.md`.
 
 ## BLOCKED
 
