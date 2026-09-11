@@ -78,17 +78,17 @@ function median(values) {
 
 function pickerMarkup(games, currentId) {
   if (!games.length) return '';
-  return `<div class="lab-picker" role="list" aria-label="Games on this slate">
+  return `<nav class="lab-picker" aria-label="Games on this slate">
     ${games.map(g => {
       const st = stateOf(g);
       const scored = ['LIVE', 'INTERMISSION', 'FINAL'].includes(st.key);
       const active = String(g.id) === String(currentId);
-      return `<a role="listitem" class="lab-pick${active ? ' is-active' : ''}" href="#/shots/${esc(g.id)}" data-state="${esc(st.key)}"${active ? ' aria-current="page"' : ''}>
+      return `<a class="lab-pick${active ? ' is-active' : ''}" href="#/shots/${esc(g.id)}" data-state="${esc(st.key)}"${active ? ' aria-current="page"' : ''}>
         <span class="lab-pick__teams mono">${esc(g.teams.away.abbrev)} <span class="faint">@</span> ${esc(g.teams.home.abbrev)}</span>
         <span class="lab-pick__state">${scored ? `${esc(g.teams.away.score ?? '')}–${esc(g.teams.home.score ?? '')} · ` : ''}${esc(st.text)}</span>
       </a>`;
     }).join('')}
-  </div>`;
+  </nav>`;
 }
 
 // ---------------------------------------------------------------- header
@@ -412,7 +412,7 @@ function definitions() {
         <div><dt>Blocked attempts</dt><dd>Location is the block location reported by the source, not where the shot was released. The shooting team comes from the game roster.</dd></div>
         <div><dt>Missing data</dt><dd>An attempt without coordinates stays in every total and in the table. It is never placed on the rink.</dd></div>
       </dl>
-      <p class="micro">Source: NHL play-by-play. Full method on the <a class="gold" href="#/methodology">Methodology</a> page.</p>
+      <p class="micro">Source: NHL play-by-play. Full method on the <a class="gold link-u" href="#/methodology">Methodology</a> page.</p>
     </footer>`;
 }
 
