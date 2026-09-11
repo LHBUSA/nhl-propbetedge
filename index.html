@@ -2,16 +2,36 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#07101c" />
-    <meta name="description" content="PropBetEdge NHL — live hockey intelligence, goalie context, shot quality, lines, and prop research." />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#14110d" />
+    <meta name="color-scheme" content="dark" />
+    <meta name="description" content="PropBetEdge NHL — who is starting, who is out, what moved, and where the pressure is coming from. Live PBE Cast, shot maps, goalies, lines and props with sourced, time-stamped data." />
+    <meta property="og:title" content="PropBetEdge NHL — Hockey Intelligence" />
+    <meta property="og:description" content="Live PBE Cast, real shot maps, goalie status, news and props — every value sourced and time-stamped." />
+    <meta property="og:image" content="/assets/nhl/hero-ice-1440.webp" />
     <title>PropBetEdge NHL — Hockey Intelligence</title>
+    <script>
+      // Preload the hero only when the Ice Board is the landing route.
+      (function () {
+        var h = location.hash;
+        if (h && h !== '#' && h !== '#/' && h.indexOf('#/?') !== 0) return;
+        var mobile = window.matchMedia('(max-width: 600px)').matches;
+        var l = document.createElement('link');
+        l.rel = 'preload'; l.as = 'image'; l.type = 'image/avif'; l.fetchPriority = 'high';
+        l.setAttribute('imagesrcset', mobile
+          ? '/assets/nhl/hero-ice-m-600.avif 600w, /assets/nhl/hero-ice-m-900.avif 900w'
+          : '/assets/nhl/hero-ice-960.avif 960w, /assets/nhl/hero-ice-1440.avif 1440w, /assets/nhl/hero-ice-1920.avif 1920w, /assets/nhl/hero-ice-2560.avif 2560w');
+        l.setAttribute('imagesizes', '100vw');
+        document.head.appendChild(l);
+      })();
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700;800&family=Playfair+Display:wght@800;900&display=swap" rel="stylesheet">
   </head>
   <body>
     <div id="app"></div>
+    <noscript><p style="padding:24px;color:#f5f1eb;background:#14110d;font-family:sans-serif">PropBetEdge NHL needs JavaScript for live data.</p></noscript>
     <script type="module" src="/src/main.js"></script>
   </body>
 </html>

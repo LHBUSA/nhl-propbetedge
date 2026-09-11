@@ -2,7 +2,7 @@ name: NHL Frontend CI
 
 on:
   push:
-    branches: [main, nhl-product-v1]
+    branches: [main, nhl-product-v1, nhl-ufc2-production]
   pull_request:
     branches: [main]
 
@@ -19,4 +19,6 @@ jobs:
         with:
           node-version: 20
       - run: npm install
+      - name: Proxy allowlist + truth-rule checks
+        run: node tests/frontend-checks.mjs
       - run: npm run build

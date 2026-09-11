@@ -1,0 +1,423 @@
+import { $, esc, on } from '../lib/dom.js';
+import { describeError, nhl } from '../lib/api.js';
+import { freshStamp } from '../lib/freshness.js';
+import { countdownParts, dateLabel, dayET, gameTypeLabel, num, pct, periodLabel, share, svPct, timeET, titleCase, todayET } from '../lib/format.js';
+import { createPoller } from '../lib/poll.js';
+import { teamAccent } from '../lib/teams.js';
+import { stateBadge, stateOf, teamMark } from '../components/game.js';
+import { LAYERS, renderRink, rinkLegend, shotLabel } from '../components/rink.js';
+
+const FEED_FILTERS = [
+  ['all', 'All'], ['goal', 'Goals'], ['shots', 'Shots'], ['penalty', 'Penalties'],
+  ['faceoff', 'Faceoffs'], ['hit', 'Hits'], ['other', 'Other']
+];
+
+function feedMatch(play, f) {
+  if (f === 'all') return true;
+  if (f === 'goal') return play.kind === 'goal';
+  if (f === 'shots') return Boolean(play.shot);
+  if (f === 'penalty') return play.kind === 'penalty' || play.kind === 'delayed-penalty';
+  if (f === 'faceoff') return play.kind === 'faceoff';
+  if (f === 'hit') return play.kind === 'hit';
+  return !play.shot && !['goal', 'penalty', 'delayed-penalty', 'faceoff', 'hit'].includes(play.kind);
+}
+
+const who = (play, role) => play.players.find(p => p.role === role);
+const nm = p => (p?.name ? esc(p.name) : '<span class="faint">unlisted</span>');
+
+function playText(play) {
+  const s = play.shot;
+  const dist = s?.distance_ft !== null && s?.distance_ft !== undefined ? `, ${s.distance_ft} ft` : '';
+  const type = s?.shot_type ? esc(s.shot_type) : '';
+  switch (play.type) {
+    case 'goal': {
+      const a1 = who(play, 'assist1'); const a2 = who(play, 'assist2');
+      const assists = [a1, a2].filter(Boolean).map(nm).join(', ');
+      return `<b>GOAL</b> — ${nm(who(play, 'scorer'))}${type || dist ? ` <span class="dim">(${type}${dist})</span>` : ''}${assists ? ` · <span class="dim">A:</span> ${assists}` : ' · <span class="dim">unassisted</span>'}${s?.empty_net_against ? ' · <span class="dim">empty net</span>' : ''}`;
+    }
+    case 'shot-on-goal': return `Shot on goal — ${nm(who(play, 'shooter'))}${type || dist ? ` <span class="dim">(${type}${dist})</span>` : ''}${who(play, 'goalie') ? ` · saved by ${nm(who(play, 'goalie'))}` : ''}`;
+    case 'missed-shot': return `Missed shot — ${nm(who(play, 'shooter'))}${s?.miss_reason ? ` <span class="dim">(${esc(titleCase(s.miss_reason))})</span>` : ''}`;
+    case 'blocked-shot': return `Shot by ${nm(who(play, 'shooter'))} blocked by ${nm(who(play, 'blocker'))}`;
+    case 'penalty': {
+      const p = play.penalty || {};
+      return `<b>Penalty</b> — ${nm(who(play, 'committed_by') || who(play, 'served_by'))}: ${esc(titleCase(p.desc_key || 'penalty'))}${p.duration_min ? ` <span class="dim">(${p.duration_min} min)</span>` : ''}${who(play, 'drawn_by') ? ` · drawn by ${nm(who(play, 'drawn_by'))}` : ''}`;
+    }
+    case 'delayed-penalty': return 'Delayed penalty signalled';
+    case 'faceoff': return `Faceoff won by ${nm(who(play, 'faceoff_winner'))} <span class="dim">vs ${who(play, 'faceoff_loser')?.name ? esc(who(play, 'faceoff_loser').name) : 'unlisted'}${play.zone ? ` · ${esc(play.zone)} zone` : ''}</span>`;
+    case 'hit': return `${nm(who(play, 'hitter'))} hit ${nm(who(play, 'hittee'))}`;
+    case 'giveaway': return `Giveaway — ${nm(who(play, 'player'))}`;
+    case 'takeaway': return `Takeaway — ${nm(who(play, 'player'))}`;
+    case 'stoppage': return `Stoppage <span class="dim">${esc(titleCase(play.reason || ''))}</span>`;
+    case 'period-start': return `<b>Start of ${esc(periodLabel(play.period, play.period_type))}</b>`;
+    case 'period-end': return `<b>End of ${esc(periodLabel(play.period, play.period_type))}</b>`;
+    case 'game-end': return '<b>Game over</b>';
+    case 'shootout-complete': return '<b>Shootout complete</b>';
+    case 'failed-shot-attempt': return `Shootout attempt — ${nm(who(play, 'shooter'))} <span class="dim">no goal</span>`;
+    default: return esc(titleCase(play.type || 'event'));
+  }
+}
+
+function manpowerChip(cast) {
+  const m = cast.manpower;
+  const g = cast.game;
+  if (!m) return '';
+  const a = g.teams.away.abbrev; const h = g.teams.home.abbrev;
+  const parts = [`${m.away_skaters}v${m.home_skaters}`];
+  const adjA = m.away_skaters - (m.away_goalie_in_net ? 0 : 1);
+  const adjH = m.home_skaters - (m.home_goalie_in_net ? 0 : 1);
+  if (adjA > adjH) parts.push(`${a} power play`);
+  if (adjH > adjA) parts.push(`${h} power play`);
+  if (!m.away_goalie_in_net) parts.push(`${a} net empty`);
+  if (!m.home_goalie_in_net) parts.push(`${h} net empty`);
+  return `<span class="manpower" title="${esc(m.method)}">${esc(parts.join(' · '))}</span>`;
+}
+
+function header(cast, meta, failed) {
+  const g = cast.game;
+  const st = stateOf(g);
+  const a = g.teams.away; const h = g.teams.home;
+  const scored = ['LIVE', 'INTERMISSION', 'FINAL'].includes(st.key);
+  const clock = st.key === 'LIVE' || st.key === 'INTERMISSION'
+    ? `${periodLabel(g.status.period, g.status.period_type)} · ${g.status.clock || '—'}${st.key === 'INTERMISSION' ? ' · INT' : ''}`
+    : st.key === 'FINAL' ? dayET(g.start_time_utc, true) : `${dayET(g.start_time_utc)} · ${timeET(g.start_time_utc)}`;
+  const gin = cast.goalies_in_net || {};
+  const goalie = side => gin[side]?.name ? `${esc(gin[side].name)}${gin[side].in_net_now === false ? ' <span class="pbe-badge pbe-badge--alert">PULLED</span>' : ''}` : '<span class="faint">no attempt faced yet</span>';
+  const team = (t, side) => `<div class="cast-team cast-team--${side}">
+      ${teamMark(t, 52)}
+      <div class="cast-team__id"><b>${esc(t.abbrev || '')}</b><span>${esc(t.name || '')}</span></div>
+      ${scored ? `<div class="cast-team__score mono">${t.score ?? '—'}</div>` : ''}
+      <div class="cast-team__sog mono">${scored ? `${t.sog ?? '—'} <small>SOG</small>` : ''}</div>
+    </div>`;
+  return `<div class="cast-head" style="--away:${teamAccent(a.abbrev)};--home:${teamAccent(h.abbrev)}">
+      ${team(a, 'away')}
+      <div class="cast-mid">
+        ${stateBadge(g)}
+        <div class="cast-clock mono">${esc(clock)}</div>
+        ${manpowerChip(cast)}
+        ${freshStamp(meta, { failed })}
+      </div>
+      ${team(h, 'home')}
+    </div>
+    <div class="cast-sub">
+      <span><span class="micro">${esc(a.abbrev || 'Away')} in net</span> ${goalie('away')}</span>
+      <span><span class="micro">${esc(h.abbrev || 'Home')} in net</span> ${goalie('home')}</span>
+      <span class="micro">${esc(gameTypeLabel(g.game_type))} · ${esc(g.venue || '')} · Game ${esc(g.id)}</span>
+    </div>`;
+}
+
+function pressureChart(plays, game) {
+  const attempts = plays.filter(p => p.shot && !p.shot.shootout && Number.isFinite(p.elapsed_s) && p.side);
+  if (!attempts.length) return '<p class="dim">Pressure appears after the first recorded shot attempt.</p>';
+  const end = Math.max(3600, ...plays.map(p => p.elapsed_s || 0));
+  const W = 600; const H = 120; const pad = 4;
+  const win = 300; const step = 30;
+  const series = { away: [], home: [] };
+  let max = 1;
+  for (let t = win; t <= end + 1; t += step) {
+    for (const side of ['away', 'home']) {
+      const v = attempts.filter(p => p.side === side && p.elapsed_s > t - win && p.elapsed_s <= t).length;
+      series[side].push([t, v]);
+      if (v > max) max = v;
+    }
+  }
+  const x = t => pad + (t / end) * (W - 2 * pad);
+  const y = v => H - pad - (v / max) * (H - 2 * pad - 10);
+  const path = pts => pts.map(([t, v], i) => `${i ? 'L' : 'M'}${x(t).toFixed(1)},${y(v).toFixed(1)}`).join(' ');
+  const periods = [1200, 2400, 3600, 3900].filter(t => t < end).map(t => `<line x1="${x(t)}" x2="${x(t)}" y1="0" y2="${H}" class="pc-period"/>`).join('');
+  const goals = plays.filter(p => p.type === 'goal' && Number.isFinite(p.elapsed_s) && p.side)
+    .map(p => `<line x1="${x(p.elapsed_s)}" x2="${x(p.elapsed_s)}" y1="${H - 14}" y2="${H}" class="pc-goal pc-goal--${p.side}"><title>${esc(shotLabel(p, game.teams))}</title></line>`).join('');
+  return `<svg class="pressure" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="Rolling five-minute shot attempts by team">
+      ${periods}
+      <path d="${path(series.away)}" class="pc-line pc-line--away"/>
+      <path d="${path(series.home)}" class="pc-line pc-line--home"/>
+      ${goals}
+    </svg>
+    <div class="pressure__legend micro"><span class="sw sw--away"></span>${esc(game.teams.away.abbrev)} <span class="sw sw--home"></span>${esc(game.teams.home.abbrev)} · peak ${max} attempts / 5 min · ticks = goals</div>`;
+}
+
+function cmpRow(label, a, b, fmt = v => v ?? '—') {
+  const s = share(a, b);
+  return `<div class="cmp-row"><span class="label"><span>${esc(label)}</span>${s !== null ? `<span class="faint">${pct(s, 0)} / ${pct(1 - s, 0)}</span>` : ''}</span>
+    <span class="cmp-val">${esc(fmt(a))}</span>
+    <span class="cmp-bar">${s !== null ? `<i class="a" style="width:${(s * 100).toFixed(1)}%"></i><i class="h" style="width:${((1 - s) * 100).toFixed(1)}%"></i>` : ''}</span>
+    <span class="cmp-val">${esc(fmt(b))}</span></div>`;
+}
+
+function statsPanel(cast) {
+  const t = cast.totals?.teams || {};
+  const ev = cast.totals?.five_on_five || {};
+  const g = cast.game;
+  const a = t.away || {}; const h = t.home || {};
+  const off = new Map((cast.official_team_stats || []).map(s => [s.category, s]));
+  const offRow = (cat, label, fmt) => {
+    const s = off.get(cat);
+    return s ? `<tr><td>${esc(label)}</td><td class="num">${esc(fmt ? fmt(s.away) : s.away)}</td><td class="num">${esc(fmt ? fmt(s.home) : s.home)}</td></tr>` : '';
+  };
+  const periods = cast.totals?.by_period || [];
+  const goalies = cast.boxscore?.goalies || [];
+  const skaters = (cast.boxscore?.skaters || []).filter(p => (p.sog ?? 0) > 0 || (p.points ?? 0) > 0)
+    .sort((x, y) => (y.sog ?? 0) - (x.sog ?? 0) || (y.points ?? 0) - (x.points ?? 0)).slice(0, 8);
+  return `
+    <section class="pbe-panel cast-card">
+      <div class="panel-head"><h3>Shot share</h3><span class="micro">${esc(g.teams.away.abbrev)} · ${esc(g.teams.home.abbrev)}</span></div>
+      <div class="cmp" style="--away:var(--pbe-paper-2);--home:var(--pbe-gold)">
+        ${cmpRow('Shot attempts (Corsi)', a.corsi, h.corsi)}
+        ${cmpRow('Unblocked (Fenwick)', a.fenwick, h.fenwick)}
+        ${cmpRow('Shots on goal', g.teams.away.sog ?? a.sog, g.teams.home.sog ?? h.sog)}
+        ${cmpRow('5v5 attempts', ev.away?.corsi, ev.home?.corsi)}
+      </div>
+      <div class="danger-row">
+        <span class="pbe-badge pbe-badge--heuristic">Geometric heuristic · not xG</span>
+        <span class="mono">High ${a.geo_high ?? '—'} · ${h.geo_high ?? '—'}</span>
+        <span class="mono">Med ${a.geo_medium ?? '—'} · ${h.geo_medium ?? '—'}</span>
+      </div>
+      ${(a.coords_missing || h.coords_missing) ? `<p class="micro">Coordinates missing: ${(a.coords_missing || 0) + (h.coords_missing || 0)} attempts (counted, not plotted)</p>` : ''}
+    </section>
+    ${periods.length ? `<section class="pbe-panel cast-card"><div class="panel-head"><h3>By period</h3><span class="micro">Attempts / SOG / goals</span></div>
+      <div class="table-wrap"><table class="pbe-table"><thead><tr><th>Per</th><th class="num">${esc(g.teams.away.abbrev)} CF</th><th class="num">SOG</th><th class="num">G</th><th class="num">${esc(g.teams.home.abbrev)} CF</th><th class="num">SOG</th><th class="num">G</th></tr></thead>
+      <tbody>${periods.map(p => `<tr><td>${esc(periodLabel(p.period, p.period_type))}</td><td class="num">${p.away.corsi}</td><td class="num">${p.away.sog}</td><td class="num">${p.away.goals}</td><td class="num">${p.home.corsi}</td><td class="num">${p.home.sog}</td><td class="num">${p.home.goals}</td></tr>`).join('')}</tbody></table></div></section>` : ''}
+    ${off.size ? `<section class="pbe-panel cast-card"><div class="panel-head"><h3>Official team stats</h3><span class="micro">NHL</span></div>
+      <div class="table-wrap"><table class="pbe-table"><thead><tr><th>Stat</th><th class="num">${esc(g.teams.away.abbrev)}</th><th class="num">${esc(g.teams.home.abbrev)}</th></tr></thead><tbody>
+        ${offRow('faceoffWinningPctg', 'Faceoff %', v => pct(v, 1))}
+        ${offRow('powerPlay', 'Power play')}
+        ${offRow('pim', 'PIM')}
+        ${offRow('hits', 'Hits')}
+        ${offRow('blockedShots', 'Blocked shots')}
+        ${offRow('giveaways', 'Giveaways')}
+        ${offRow('takeaways', 'Takeaways')}
+      </tbody></table></div></section>` : ''}
+    <section class="pbe-panel cast-card"><div class="panel-head"><h3>Goalies</h3><span class="micro">Box score</span></div>
+      ${goalies.length ? `<div class="table-wrap"><table class="pbe-table"><thead><tr><th>Goalie</th><th class="num">SA</th><th class="num">SV</th><th class="num">SV%</th><th class="num">TOI</th></tr></thead><tbody>
+        ${goalies.filter(x => x.toi && x.toi !== '00:00').map(x => `<tr><td><b>${esc(x.name)}</b> <span class="faint">${esc(g.teams[x.side].abbrev)}</span>${x.starter ? ' <span class="pbe-badge pbe-badge--confirmed">Started</span>' : ''}</td><td class="num">${num(x.shots_against)}</td><td class="num">${num(x.saves)}</td><td class="num">${svPct(x.save_pct)}</td><td class="num">${esc(x.toi || '—')}</td></tr>`).join('')}
+      </tbody></table></div>` : '<p class="dim">Goalie lines appear once the game starts.</p>'}
+      <p class="micro gsax-note">GSAx: unavailable until a validated xG model is released.</p>
+    </section>
+    <section class="pbe-panel cast-card"><div class="panel-head"><h3>Prop tracker</h3><span class="pbe-badge pbe-badge--unavailable">No PBE picks</span></div>
+      <p class="dim small">No PBE prediction was locked for this game and no market snapshot is stored yet, so there is no line to track against. Live stat lines below are official box-score values.</p>
+      ${skaters.length ? `<div class="table-wrap"><table class="pbe-table"><thead><tr><th>Skater</th><th class="num">SOG</th><th class="num">G</th><th class="num">A</th><th class="num">P</th><th class="num">TOI</th></tr></thead><tbody>
+        ${skaters.map(x => `<tr><td><a href="#/player/${esc(x.id)}">${esc(x.name)}</a> <span class="faint">${esc(g.teams[x.side].abbrev)}</span></td><td class="num">${num(x.sog)}</td><td class="num">${num(x.goals)}</td><td class="num">${num(x.assists)}</td><td class="num">${num(x.points)}</td><td class="num">${esc(x.toi || '—')}</td></tr>`).join('')}
+      </tbody></table></div>` : ''}
+    </section>`;
+}
+
+function feedList(cast, filter, selected) {
+  const plays = [...cast.plays].filter(p => feedMatch(p, filter)).reverse();
+  if (!plays.length) {
+    return `<p class="dim feed-empty">${cast.plays.length ? 'No events of this type yet.' : 'The play-by-play stream starts at puck drop.'}</p>`;
+  }
+  const g = cast.game;
+  let lastPeriod = null;
+  const out = [];
+  plays.forEach((p, i) => {
+    if (p.period !== lastPeriod) {
+      out.push(`<li class="feed-period micro">${esc(periodLabel(p.period, p.period_type) || 'Pregame')}</li>`);
+      lastPeriod = p.period;
+    }
+    const team = p.side ? g.teams[p.side] : null;
+    const scoreAfter = p.score_after ? `<span class="feed-score mono">${p.score_after.away}–${p.score_after.home}</span>` : '';
+    out.push(`<li class="feed-item feed-item--${esc(p.kind)}${i === 0 && filter === 'all' ? ' is-latest' : ''}${selected === p.sort_order ? ' is-selected' : ''}" ${p.shot?.has_coordinates ? `data-select="${p.sort_order}" tabindex="0" role="button" aria-label="Show on rink"` : ''}>
+      <span class="feed-time mono">${esc(p.time_in_period || '')}</span>
+      <span class="feed-team" style="--c:${team ? teamAccent(team.abbrev) : 'transparent'}">${team ? esc(team.abbrev) : ''}</span>
+      <span class="feed-text">${playText(p)}${p.strength && p.strength.state !== 'EV' && p.kind !== 'faceoff' ? ` <span class="feed-str">${esc(p.strength.label)} ${esc(p.strength.state)}</span>` : ''}</span>
+      ${scoreAfter}
+    </li>`);
+  });
+  return `<ol class="feed-list">${out.join('')}</ol>`;
+}
+
+function pregamePanel(cast) {
+  const g = cast.game;
+  const c = countdownParts(g.start_time_utc);
+  return `<div class="pbe-panel cast-pregame">
+    <span class="eyebrow">Pregame</span>
+    <h3>${esc(g.teams.away.name || g.teams.away.abbrev)} at ${esc(g.teams.home.name || g.teams.home.abbrev)}</h3>
+    <p class="dim">${esc(dayET(g.start_time_utc, true))} · ${esc(timeET(g.start_time_utc))} · ${esc(g.venue || '')}</p>
+    ${c && !c.done ? `<p class="mono cast-pregame__cd">Puck drop in ${c.days ? `${c.days}d ` : ''}${c.hours}h ${c.mins}m</p>` : ''}
+    <ul class="cast-pregame__list">
+      <li><span class="pbe-badge pbe-badge--unknown">Starters unknown</span> Confirmed from the NHL box score at puck drop. We do not project starters.</li>
+      <li><span class="pbe-badge pbe-badge--unavailable">Odds</span> Market snapshots are not integrated yet.</li>
+      <li><span class="pbe-badge pbe-badge--sched">Feed</span> PBE Cast switches to 5-second refresh when the game goes live.</li>
+    </ul>
+    <div class="row"><a class="pbe-btn" href="#/matchup/${esc(g.id)}">Matchup</a><a class="pbe-btn" href="#/goalies/${esc(g.id)}">Goalie Center</a></div>
+  </div>`;
+}
+
+function pickerMarkup(games, currentId, label) {
+  if (!games.length) return '';
+  return `<div class="cast-picker" role="list" aria-label="${esc(label)}">
+    ${games.map(g => {
+      const st = stateOf(g);
+      return `<a role="listitem" class="pick${String(g.id) === String(currentId) ? ' is-active' : ''}" href="#/cast/${esc(g.id)}" data-state="${st.key}">
+        <span class="pick__teams mono">${esc(g.teams.away.abbrev)} <span class="faint">@</span> ${esc(g.teams.home.abbrev)}</span>
+        <span class="pick__state">${['LIVE', 'INTERMISSION', 'FINAL'].includes(st.key) ? `${g.teams.away.score ?? ''}–${g.teams.home.score ?? ''} · ` : ''}${esc(st.text)}</span>
+      </a>`;
+    }).join('')}
+  </div>`;
+}
+
+export function mount(root, params, ctx) {
+  const state = {
+    gameId: params.gameId || null,
+    cast: null, meta: null, failed: false, error: null,
+    layer: 'all', team: 'both', period: 'all', normalize: true,
+    feed: 'all', selected: null,
+    tab: 'feed',
+    replayDate: params.date || null,
+    pickGames: [], pickLabel: ''
+  };
+
+  root.innerHTML = `<section class="wrap section cast" data-fresh-scope>
+    <div class="section-head"><div><span class="eyebrow">PBE Cast</span><h2>Live hockey intelligence broadcast</h2></div>
+      <p>Every event from the official play-by-play, every shot at its recorded location. Missing data stays missing.</p></div>
+    <div id="cast-picker"></div>
+    <div id="cast-body"></div>
+  </section>`;
+  const body = $('#cast-body', root);
+  const picker = $('#cast-picker', root);
+
+  const renderPicker = () => {
+    picker.innerHTML = `${pickerMarkup(state.pickGames, state.gameId, state.pickLabel)}
+      <div class="cast-replay"><label class="micro" for="replay-date">Replay a date</label>
+        <input id="replay-date" class="datenav__input" type="date" value="${esc(state.replayDate || '')}" max="${todayET()}">
+        ${state.pickLabel ? `<span class="micro">${esc(state.pickLabel)}</span>` : ''}</div>`;
+  };
+
+  async function loadPicker() {
+    try {
+      let date = state.replayDate || todayET();
+      let res = await ctx.board(date);
+      let games = res.data.games || [];
+      let label = date === todayET() ? 'Today' : dateLabel(date, { long: true });
+      if (!games.length && !state.replayDate) {
+        const next = res.data.next_puck_drop;
+        if (next) {
+          res = await ctx.board(next.date);
+          games = res.data.games || [];
+          label = `Next slate · ${dateLabel(next.date)}`;
+        }
+      }
+      state.pickGames = games;
+      state.pickLabel = label;
+      if (!state.gameId && games.length) {
+        const live = games.find(g => ['LIVE', 'INTERMISSION'].includes(stateOf(g).key));
+        location.replace(`#/cast/${(live || games[0]).id}`);
+        return;
+      }
+    } catch (error) {
+      state.pickLabel = describeError(error).title;
+    }
+    renderPicker();
+  }
+
+  function renderBody() {
+    if (!state.gameId) {
+      body.innerHTML = '<div class="pbe-empty"><h3>Pick a game.</h3><p>Choose a game above, or pick any past date to replay it event by event.</p></div>';
+      return;
+    }
+    if (!state.cast) {
+      body.innerHTML = state.error
+        ? `<div class="pbe-error"><strong>${esc(describeError(state.error).title)}</strong>${esc(describeError(state.error).body)}</div>`
+        : '<div class="pbe-skeleton" style="height:140px;margin-bottom:16px"></div><div class="cast-grid"><div class="pbe-skeleton" style="height:420px"></div><div class="pbe-skeleton" style="height:420px"></div><div class="pbe-skeleton" style="height:420px"></div></div>';
+      return;
+    }
+    const cast = state.cast;
+    const g = cast.game;
+    const st = stateOf(g);
+    const pre = st.key === 'SCHEDULED' || st.key === 'PREGAME';
+    const periods = [...new Set(cast.plays.filter(p => p.shot).map(p => p.period))].filter(Boolean);
+    const rink = renderRink(cast.plays, { layer: state.layer, team: state.team, period: state.period, normalize: state.normalize, teams: g.teams, highlight: state.selected });
+    const omittedTotal = rink.omitted.coordinates + rink.omitted.direction;
+    const feedScroll = $('.feed-scroll', body)?.scrollTop || 0;
+    body.innerHTML = `
+      ${header(cast, state.meta, state.failed)}
+      ${cast.partial?.boxscore || cast.partial?.right_rail ? `<div class="pbe-note" style="margin-top:12px"><b>Partial data.</b> ${cast.partial.boxscore ? 'Box score unavailable. ' : ''}${cast.partial.right_rail ? 'Official team stats unavailable. ' : ''}Play-by-play is current.</div>` : ''}
+      <div class="cast-tabs" role="tablist" aria-label="PBE Cast sections">
+        ${[['feed', 'Play-by-play'], ['rink', 'Shot map'], ['stats', 'Intelligence']].map(([k, l]) => `<button role="tab" class="chip" aria-selected="${state.tab === k}" aria-pressed="${state.tab === k}" data-tab="${k}">${l}</button>`).join('')}
+      </div>
+      <div class="cast-grid" data-tab="${state.tab}">
+        <div class="cast-col cast-col--rink">
+          ${pre ? pregamePanel(cast) : ''}
+          <section class="pbe-panel cast-card">
+            <div class="panel-head"><h3>Shot map</h3><span class="micro">${rink.plotted} plotted${omittedTotal ? ` · ${omittedTotal} not plotted` : ''}</span></div>
+            <div class="rink-controls">
+              <div class="chips" role="group" aria-label="Shot layer">${LAYERS.map(([k, l]) => `<button class="chip" data-layer="${k}" aria-pressed="${state.layer === k}">${l}</button>`).join('')}</div>
+              <div class="chips" role="group" aria-label="Team">${[['both', 'Both'], ['away', g.teams.away.abbrev], ['home', g.teams.home.abbrev]].map(([k, l]) => `<button class="chip" data-team="${k}" aria-pressed="${state.team === k}">${esc(l)}</button>`).join('')}
+                <select class="chip chip-select" data-period aria-label="Period"><option value="all">All periods</option>${periods.map(p => `<option value="${p}" ${String(state.period) === String(p) ? 'selected' : ''}>${esc(periodLabel(p, p > 3 ? 'OT' : 'REG'))}</option>`).join('')}</select>
+                <button class="chip" data-normalize aria-pressed="${state.normalize}" title="Rotate each team's attempts so away attacks left and home attacks right">Normalize ends</button>
+              </div>
+            </div>
+            <div class="rink-ends micro" aria-hidden="true">${state.normalize ? `<span>← ${esc(g.teams.away.abbrev)} attack</span><span>${esc(g.teams.home.abbrev)} attack →</span>` : '<span>As recorded by source</span>'}</div>
+            <div class="rink-wrap">${rink.svg}</div>
+            ${rinkLegend()}
+            ${omittedTotal ? `<p class="micro rink-omit">Not plotted: ${rink.omitted.coordinates ? `${rink.omitted.coordinates} without source coordinates` : ''}${rink.omitted.coordinates && rink.omitted.direction ? ' · ' : ''}${rink.omitted.direction ? `${rink.omitted.direction} with unknown attack direction (switch off “Normalize ends” to show as recorded)` : ''}. They remain in the feed and totals.</p>` : ''}
+          </section>
+          <section class="pbe-panel cast-card">
+            <div class="panel-head"><h3>5-minute pressure</h3><span class="pbe-badge pbe-badge--heuristic">Descriptive · not a model</span></div>
+            ${pressureChart(cast.plays, g)}
+          </section>
+        </div>
+        <div class="cast-col cast-col--feed">
+          <section class="pbe-panel cast-card cast-feed">
+            <div class="panel-head"><h3>Play-by-play</h3><span class="micro">${cast.plays.length} events</span></div>
+            <div class="chips feed-filters" role="group" aria-label="Filter events">${FEED_FILTERS.map(([k, l]) => `<button class="chip" data-feed="${k}" aria-pressed="${state.feed === k}">${l}</button>`).join('')}</div>
+            <div class="feed-scroll">${feedList(cast, state.feed, state.selected)}</div>
+          </section>
+        </div>
+        <div class="cast-col cast-col--stats">${statsPanel(cast)}</div>
+      </div>`;
+    const scroller = $('.feed-scroll', body);
+    if (scroller) scroller.scrollTop = feedScroll;
+  }
+
+  const poller = state.gameId ? createPoller(async signal => {
+    const res = await nhl(`/nhl/game/${state.gameId}/cast`, {}, { signal, timeout: 12000 });
+    state.cast = res.data; state.meta = res.meta; state.failed = false; state.error = null;
+    renderBody();
+    const key = stateOf(res.data.game).key;
+    if (key === 'LIVE' || key === 'INTERMISSION') return 5000;
+    if (key === 'FINAL' || key === 'POSTPONED' || key === 'CANCELLED') return null;
+    const until = Date.parse(res.data.game.start_time_utc) - Date.now();
+    return until < 20 * 60 * 1000 ? 20000 : 60000;
+  }, {
+    onError(error) {
+      state.error = error;
+      state.failed = Boolean(state.cast);
+      renderBody();
+      return error.kind === 'not_deployed' || error.kind === 'legacy' ? null : 5000;
+    }
+  }) : null;
+
+  renderPicker();
+  renderBody();
+  loadPicker();
+  poller?.start();
+
+  const disposers = [
+    on(root, 'click', '[data-layer]', (_, b) => { state.layer = b.dataset.layer; renderBody(); }),
+    on(root, 'click', '[data-team]', (_, b) => { state.team = b.dataset.team; renderBody(); }),
+    on(root, 'change', '[data-period]', (_, s) => { state.period = s.value; renderBody(); }),
+    on(root, 'click', '[data-normalize]', () => { state.normalize = !state.normalize; renderBody(); }),
+    on(root, 'click', '[data-feed]', (_, b) => { state.feed = b.dataset.feed; renderBody(); }),
+    on(root, 'click', '[data-tab]', (_, b) => { if (b.tagName === 'BUTTON') { state.tab = b.dataset.tab; renderBody(); } }),
+    on(root, 'click', '[data-select]', (_, li) => {
+      const id = Number(li.dataset.select);
+      state.selected = state.selected === id ? null : id;
+      if (state.selected !== null && state.team !== 'both') state.team = 'both';
+      renderBody();
+      if (window.matchMedia('(max-width: 768px)').matches && state.selected !== null) { state.tab = 'rink'; renderBody(); }
+    }),
+    on(root, 'keydown', '[data-select]', (event, li) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); li.click(); } }),
+    on(root, 'change', '#replay-date', (_, input) => {
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(input.value)) return;
+      state.replayDate = input.value;
+      state.pickGames = [];
+      renderPicker();
+      loadPicker();
+    })
+  ];
+
+  return () => {
+    poller?.stop();
+    disposers.forEach(d => d());
+  };
+}

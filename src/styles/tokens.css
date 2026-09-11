@@ -1,0 +1,77 @@
+/* PropBetEdge design tokens — ported verbatim from nfl-propbetedge-new/pbe-tokens.css
+   (Part A, the canonical set). The NHL layer below only ADDS an ice atmosphere
+   and never redefines a parent token. */
+:root {
+  --pbe-ink:            #14110d;
+  --pbe-ink-2:          #1d1914;
+  --pbe-ink-3:          #2a241c;
+  --pbe-ink-4:          #0d0b08;
+  --pbe-line:           rgba(255,245,220,.10);
+  --pbe-line-strong:    rgba(255,245,220,.18);
+  --pbe-line-faint:     rgba(255,245,220,.055);
+  --pbe-paper:          #f5f1eb;
+  --pbe-paper-2:        #e8e1d4;
+  --pbe-dim:            #b8b3a8;   /* floor for meaningful text */
+  --pbe-faint:          #8a867d;
+  --pbe-subtle:         #524e47;   /* DECORATIVE ONLY, never text */
+  --pbe-faint-text:     #8e8a80;
+  --pbe-crimson-text:   #ef5a66;
+  --pbe-gold:           #d4af37;
+  --pbe-gold-bright:    #e9c75a;
+  --pbe-gold-soft:      rgba(212,175,55,.18);
+  --pbe-crimson:        #c1273d;
+  --pbe-crimson-bright: #e63946;
+  --pbe-live:           #e63946;
+  --pbe-model:          #7aa9ff;
+  --pbe-pro:            #d4af37;
+  --pbe-unavailable:    #7e7a72;
+  --pbe-pos:            #4ea373;
+  --pbe-neg:            #c1273d;
+  --pbe-pos-soft:       rgba(78,163,115,.14);
+  --pbe-neg-soft:       rgba(193,39,61,.14);
+  --pbe-model-soft:     rgba(122,169,255,.13);
+  --pbe-font-display: "Playfair Display", "Times New Roman", Georgia, serif;
+  --pbe-font-ui:      "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --pbe-font-data:    "JetBrains Mono", "SF Mono", Menlo, Consolas, monospace;
+  --fs-display:  clamp(26px, 3vw, 40px);
+  --fs-h1: 28px; --fs-h2: 20px; --fs-h3: 16px; --fs-body: 14px; --fs-sm: 13px;
+  --fs-label: 11px; --fs-micro: 10px;   /* ABSOLUTE FLOOR */
+  --fs-data-xl: 28px; --fs-data-lg: 20px; --fs-data: 15px; --fs-data-sm: 13px;
+  --ls-label: .14em; --ls-micro: .16em; --ls-tight: -.015em;
+  --r-xs: 3px; --r-sm: 6px; --r-md: 10px; --r-lg: 14px; --r-pill: 999px;
+  --s-1: 4px; --s-2: 8px; --s-3: 12px; --s-4: 16px;
+  --s-5: 24px; --s-6: 32px; --s-7: 48px; --s-8: 64px;
+  --sh-1:    0 1px 3px rgba(0,0,0,.35);
+  --sh-2:    0 4px 16px rgba(0,0,0,.40);
+  --sh-3:    0 16px 50px rgba(0,0,0,.55);
+  --sh-gold: 0 4px 16px rgba(212,175,55,.25);
+  --t-fast: .15s;
+  --t-mid:  .18s;
+
+  /* ---- NHL atmosphere (additive). Ice is an environmental wash only:
+     never a UI fill, never text, never a semantic colour. */
+  --nhl-ice-wash:   rgba(150,200,235,.075);
+  --nhl-ice-line:   rgba(170,215,245,.16);
+  --nhl-ice-glint:  rgba(205,232,250,.55);
+  --nhl-rink-ice:   #e9eef1;
+  --nhl-rink-line:  #c1273d;   /* red line uses the parent crimson */
+  --nhl-rink-blue:  #3a6ea5;   /* rink blue line — drawing only, not "model blue" */
+  --nhl-rink-board: #2a241c;
+  --nhl-gutter: 16px;
+  --nhl-max: 1440px;
+  --nhl-topbar-h: 60px;
+  --nhl-bottomnav-h: 60px;
+}
+
+@media (min-width: 391px) { :root { --nhl-gutter: 20px; } }
+@media (min-width: 769px) { :root { --nhl-gutter: 24px; } }
+@media (min-width: 1440px) { :root { --nhl-gutter: 32px; } }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: .001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .001ms !important;
+    scroll-behavior: auto !important;
+  }
+}
