@@ -1,6 +1,8 @@
 import { esc, safeUrl } from '../lib/dom.js';
 import { ageText } from '../lib/format.js';
 import { TEAM_BY_ABBREV, logoUrl } from '../lib/teams.js';
+import { playerIdentity } from '../components/player.js';
+import '../styles/contextual-intel.css';
 
 // Primary editorial layer for NHL.PropBetEdge.ai.
 //
@@ -63,6 +65,9 @@ function normalize(article) {
   const teams = Array.isArray(article?.take?.teams)
     ? article.take.teams.map(v => String(v || '').trim().toUpperCase()).filter(Boolean)
     : [];
+  const players = Array.isArray(article?.take?.players)
+    ? article.take.players.map(v => String(v || '').trim()).filter(Boolean)
+    : [];
   return {
     id: String(article.id || article.slug || article.title),
     slug: String(article.slug || '').trim(),
@@ -70,6 +75,7 @@ function normalize(article) {
     published_at: new Date(publishedAt).toISOString(),
     impact: Number(article?.take?.impact_score) || null,
     teams,
+    players,
     url: articleUrl(article),
     source: String(article.source || '').trim(),
     source_label: sourceLabel(article.source),
@@ -247,10 +253,109 @@ function enhanceBoard() {
   else changes.parentNode.insertBefore(node, changes);
 }
 
+function keyText(value) {
+  return String(value || '')
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim();
+}
+
+function currentResearchContext() {
+  const path = (location.hash.replace(/^#/, '').split('?')[0] || '/');
+  const teamMatch = /^\/team\/([A-Z]{2,4})$/i.exec(path);
+  if (teamMatch) {
+    const team = teamMatch[1].toUpperCase();
+    return { kind: 'team', team, label: TEAM_BY_ABBREV.get(team)?.full || team, anchor: document.querySelector('.rs-thead') };
+  }
+
+  const playerMatch = /^\/player\/(\d{6,10})$/.exec(path);
+  if (!playerMatch) return null;
+  const anchor = document.querySelector('.rs-phead');
+  if (!anchor) return null;
+  const name = String(anchor.querySelector('h1')?.textContent || '').trim();
+  if (!name) return null;
+  const teamHref = anchor.querySelector('.rs-phead__team a[href^="#/team/"]')?.getAttribute('href') || '';
+  const team = (/^#\/team\/([A-Z]{2,4})$/i.exec(teamHref)?.[1] || '').toUpperCase() || null;
+  return { kind: 'player', id: playerMatch[1], name, team, label: name, anchor };
+}
+
+function researchMatches(ctx) {
+  if (!ctx) return { items: [], direct: false };
+  if (ctx.kind === 'team') {
+    return { items: state.items.filter(article => article.teams.includes(ctx.team)).slice(0, 4), direct: true };
+  }
+
+  const name = keyText(ctx.name);
+  const direct = state.items.filter(article => {
+    const title = keyText(article.title);
+    const tagged = article.players.some(player => keyText(player) === name);
+    return tagged || (name && title.includes(name));
+  });
+  if (direct.length) return { items: direct.slice(0, 4), direct: true };
+  if (ctx.team) return { items: state.items.filter(article => article.teams.includes(ctx.team)).slice(0, 3), direct: false };
+  return { items: [], direct: false };
+}
+
+function contextStory(article) {
+  return `<article class="pbec-story">
+    <div class="pbec-story__meta"><span>PBE NHL</span>${impact(article)}<time datetime="${esc(article.published_at)}">${esc(relative(article.published_at))}</time></div>
+    <a class="pbec-story__title" href="${esc(article.url)}" target="_blank" rel="noopener">${esc(article.title)}</a>
+    <div class="pbec-story__foot"><span>PropBetEdge NHL Desk</span><a href="${esc(article.source_url)}" target="_blank" rel="noopener">Source: ${esc(article.source_label)} ↗</a></div>
+  </article>`;
+}
+
+function contextPanel(ctx, items, direct) {
+  const player = ctx.kind === 'player';
+  const team = ctx.team && TEAM_BY_ABBREV.has(ctx.team) ? TEAM_BY_ABBREV.get(ctx.team) : null;
+  const heading = player
+    ? (direct ? `Analysis touching ${ctx.name}` : `Team context around ${ctx.name}`)
+    : `What our desk is analyzing about ${ctx.label}`;
+  const eyebrow = player
+    ? (direct ? 'PBE NHL · Player context' : `PBE NHL · ${ctx.team || 'Team'} context`)
+    : `PBE NHL · ${ctx.team}`;
+  const identity = player
+    ? playerIdentity({ id: ctx.id, name: ctx.name, team: ctx.team, size: 'lg' })
+    : team ? `<span class="pbec-team-mark"><img src="${esc(logoUrl({ abbrev: team.abbrev }))}" alt="" width="56" height="56" loading="lazy" decoding="async"></span>` : '';
+  return `<section class="pbec" data-pbe-context data-context-kind="${esc(ctx.kind)}">
+    <div class="pbec-head">
+      <div class="pbec-head__identity">${identity}</div>
+      <div><span class="eyebrow">${esc(eyebrow)}</span><h2>${esc(heading)}</h2><p>PBE analysis is research context, not a status source. Injuries, goalies, lines and game state remain source-wire driven.</p></div>
+      <a class="pbec-head__all" href="#/news?cat=PBE">Open PBE NHL Desk →</a>
+    </div>
+    <div class="pbec-grid">${items.map(contextStory).join('')}</div>
+  </section>`;
+}
+
+function enhanceResearchContext() {
+  const existing = document.querySelector('[data-pbe-context]');
+  const ctx = currentResearchContext();
+  if (!ctx || !ctx.anchor || !state.items.length) {
+    existing?.remove();
+    return;
+  }
+  const match = researchMatches(ctx);
+  if (!match.items.length) {
+    existing?.remove();
+    return;
+  }
+  const signature = `${ctx.kind}:${ctx.id || ctx.team}:${match.direct ? 'direct' : 'team'}:${match.items.map(a => a.id).join(',')}`;
+  if (existing?.dataset.pbeSig === signature) return;
+  const holder = document.createElement('div');
+  holder.innerHTML = contextPanel(ctx, match.items, match.direct);
+  const node = holder.firstElementChild;
+  if (!node) return;
+  node.dataset.pbeSig = signature;
+  if (existing) existing.replaceWith(node);
+  else ctx.anchor.insertAdjacentElement('afterend', node);
+}
+
 function apply() {
   queued = false;
   enhanceNews();
   enhanceBoard();
+  enhanceResearchContext();
 }
 
 function queue() {
