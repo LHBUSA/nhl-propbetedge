@@ -9,7 +9,7 @@ import './styles/pages-desk.css';
 import './styles/pages-research.css';
 import './styles/pages-lab.css';
 
-import { dataLayer, nhl } from './lib/api.js';
+import { ApiError, dataLayer, nhl } from './lib/api.js';
 import { legacyBoard } from './lib/legacy.js';
 import { startFreshTicker } from './lib/freshness.js';
 import { daysUntil, dateLabel, todayET } from './lib/format.js';
@@ -29,12 +29,15 @@ const ctx = {
   async board(date = todayET(), { signal, maxAgeMs = 20000 } = {}) {
     const hit = boardCache.get(date);
     if (hit?.value && Date.now() - hit.at < maxAgeMs) return hit.value;
-    // Concurrent callers (palette warm-up + page) share one request.
-    if (hit?.pending) return hit.pending;
-    const pending = loadBoard(date, signal);
+    // Concurrent callers (palette warm-up + page) share one request. The
+    // shared request is not bound to any caller's signal: one page leaving
+    // must not cancel what another page is waiting on. A caller whose own
+    // signal aborts simply stops waiting.
+    if (hit?.pending) return abortable(hit.pending, signal);
+    const pending = loadBoard(date);
     boardCache.set(date, { ...hit, pending });
     try {
-      return await pending;
+      return await abortable(pending, signal);
     } finally {
       const cur = boardCache.get(date);
       if (cur?.pending === pending) delete cur.pending;
@@ -46,6 +49,17 @@ const ctx = {
     return b.games?.length ? b.games : (b.next_puck_drop?.games_at_start || []);
   }
 };
+
+function abortable(promise, signal) {
+  if (!signal) return promise;
+  if (signal.aborted) return Promise.reject(new ApiError('aborted', { kind: 'aborted' }));
+  return new Promise((resolve, reject) => {
+    const onAbort = () => reject(new ApiError('aborted', { kind: 'aborted' }));
+    signal.addEventListener('abort', onAbort, { once: true });
+    promise.then(v => { signal.removeEventListener('abort', onAbort); resolve(v); },
+      e => { signal.removeEventListener('abort', onAbort); reject(e); });
+  });
+}
 
 async function loadBoard(date, signal) {
   let value;

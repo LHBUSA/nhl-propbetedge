@@ -1,7 +1,7 @@
 // Lines. Projected lines / PP units are BLOCKED by licensing (source matrix
-// §3). A derived "last-game deployment" view from NHL shift charts is in build
-// on the backend. Until then this page shows the official NHL roster, grouped
-// by position — never arranged into lines or units.
+// §3). What is shown: DERIVED last-game deployment from official shift charts
+// (labelled as such, never as projected lines) and the official roster grouped
+// by position.
 import { $, esc, on } from '../lib/dom.js';
 import { describeError, nhl } from '../lib/api.js';
 import { freshStamp } from '../lib/freshness.js';
@@ -35,7 +35,7 @@ function statusStrip() {
   const row = (tone, label, state, text) => `<li class="dk-status__row dk-status__row--${tone}"><i aria-hidden="true"></i><b>${esc(label)}</b><span class="pbe-badge pbe-badge--${tone === 'ok' ? 'confirmed' : tone === 'build' ? 'sched' : 'unavailable'}">${esc(state)}</span><span class="dk-status__text">${esc(text)}</span></li>`;
   return `<ul class="dk-status" aria-label="Line data coverage">
     ${row('ok', 'Official roster', 'Live', 'NHL roster by position, sweater number and handedness.')}
-    ${row('build', 'Last-game deployment', 'In build', 'Derived from NHL shift charts — forward trios and D pairs by shared ice time. Backend in progress.')}
+    ${row('ok', 'Last-game deployment', 'Derived', 'From NHL shift charts — lines, pairs, PP and PK units by shared ice time in the last completed game.')}
     ${row('off', 'Projected lines & PP units', 'Blocked', 'Only restricted sources publish them; licensing required.')}
   </ul>`;
 }
@@ -129,11 +129,43 @@ function changesPanel() {
   </section>`;
 }
 
-function deploymentPanel(abbrev) {
+const mmss = s => (Number.isFinite(s) ? `${Math.floor(s / 60)}:${String(Math.round(s % 60)).padStart(2, '0')}` : '—');
+const GAME_TYPE = { 1: 'preseason', 2: 'regular season', 3: 'playoffs' };
+
+function unitRows(units, label) {
+  if (!units?.length) return `<p class="micro">No ${esc(label.toLowerCase())} with shared ice time in this game.</p>`;
+  return `<ol class="dk-units">${units.map(u => `<li class="dk-unit${u.limited_sample ? ' is-limited' : ''}">
+    <span class="dk-unit__tag mono">${esc(u.unit)}</span>
+    <span class="dk-unit__players">${u.players.map(p => `<a href="#/player/${esc(p.id)}">${esc(p.name || '')}</a> <span class="faint mono">${esc(p.position || '')}</span>`).join('<span class="dk-sep" aria-hidden="true"> · </span>')}</span>
+    <span class="dk-unit__time mono" title="Seconds all members were on the ice together at this strength">${mmss(u.shared_s)} together${u.limited_sample ? ' · <span class="dk-limited">limited sample</span>' : ''}</span>
+  </li>`).join('')}</ol>`;
+}
+
+// DERIVED · LAST-GAME DEPLOYMENT from official shift charts. Never labelled
+// as projected or confirmed lines.
+function deploymentPanel(abbrev, entry) {
+  const head = `<div class="panel-head"><h3>Last-game deployment</h3><span class="pbe-badge pbe-badge--heuristic">Derived · not a projection</span></div>`;
+  if (!entry) return `<section class="pbe-panel dk-deploy">${head}<div class="pbe-skeleton" style="height:320px"></div></section>`;
+  if (!entry.data) {
+    const e = describeError(entry.error);
+    return `<section class="pbe-panel dk-deploy">${head}<p class="dim">${esc(e.title)}. ${esc(e.body)}</p></section>`;
+  }
+  const d = entry.data;
+  if (!d.available) return `<section class="pbe-panel dk-deploy">${head}<p class="dim">${esc(d.reason || 'No completed game to derive from.')}</p></section>`;
+  const t = d.teams?.[d.side];
+  const opp = d.game?.teams?.[d.side === 'home' ? 'away' : 'home']?.abbrev;
+  const lg = d.last_game || {};
   return `<section class="pbe-panel dk-deploy">
-    <div class="panel-head"><h3>Last-game deployment</h3><span class="pbe-badge pbe-badge--sched">In build</span></div>
-    <p class="dim">${esc(abbrev)}'s forward trios and defense pairs from its most recent game, clustered by shared even-strength ice time in the NHL shift charts.</p>
-    <p class="micro dk-deploy__label">Will be labelled “Derived from NHL shift data, game ID · date — historical deployment, not a projection.”</p>
+    ${head}
+    <p class="micro dk-deploy__label">${esc(abbrev)} ${d.side === 'home' ? 'vs' : '@'} ${esc(opp || '')} · ${esc(lg.date ? dateLabel(lg.date, { long: true }) : '')} · ${esc(seasonLabel(lg.season))} ${esc(GAME_TYPE[lg.game_type] || '')} · game <a class="link-u" href="#/cast/${esc(lg.id)}">${esc(lg.id)}</a></p>
+    <p class="dim small">Who actually shared the ice in that game, from the official NHL shift charts and play-by-play strength (${esc(d.method)}). It shows deployment, not tonight's lineup.</p>
+    <div class="dk-deploy__grid">
+      <div><h4 class="eyebrow">Forward lines · 5v5</h4>${unitRows(t?.forward_lines, 'Forward lines')}</div>
+      <div><h4 class="eyebrow">Defense pairs · 5v5</h4>${unitRows(t?.defense_pairs, 'Defense pairs')}</div>
+      <div><h4 class="eyebrow">Power play</h4>${unitRows(t?.power_play_units, 'Power-play units')}</div>
+      <div><h4 class="eyebrow">Penalty kill</h4>${unitRows(t?.penalty_kill_units, 'Penalty-kill units')}</div>
+    </div>
+    <div class="dk-deploy__foot">${freshStamp(entry.meta, { source: 'NHL shift charts' })}</div>
   </section>`;
 }
 
@@ -143,6 +175,7 @@ export function mount(root, params, ctx) {
   const state = {
     team: TEAM_BY_ABBREV.has(pick) ? pick : '',
     rosters: new Map(),
+    deployments: new Map(),
     slate: null, // { label, games }
   };
   const ctl = new AbortController();
@@ -155,11 +188,10 @@ export function mount(root, params, ctx) {
     ${statusStrip()}
     <div id="dk-l-teambar"></div>
     <div class="dk-l-grid">
-      <div class="dk-l-main" id="dk-l-roster"></div>
+      <div class="dk-l-main"><div id="dk-l-deploy"></div><div id="dk-l-roster"></div></div>
       <aside class="dk-l-side">
         <div id="dk-l-summary"></div>
         ${changesPanel()}
-        <div id="dk-l-deploy"></div>
       </aside>
     </div>
   </section>`;
@@ -188,10 +220,24 @@ export function mount(root, params, ctx) {
     const entry = state.rosters.get(state.team);
     els.roster.innerHTML = rosterMarkup(entry, state.team);
     els.summary.innerHTML = summaryMarkup(entry);
-    els.deploy.innerHTML = deploymentPanel(state.team);
+    els.deploy.innerHTML = deploymentPanel(state.team, state.deployments.get(state.team));
   };
 
+  async function loadDeployment(team) {
+    if (state.deployments.get(team)?.data) return;
+    state.deployments.delete(team);
+    try {
+      const res = await nhl(`/nhl/team/${team}/deployment`, {}, { signal: ctl.signal });
+      state.deployments.set(team, { data: res.data, meta: res.meta });
+    } catch (error) {
+      if (error.kind === 'aborted') return;
+      state.deployments.set(team, { data: null, error });
+    }
+    if (team === state.team) renderRoster();
+  }
+
   async function loadRoster(team) {
+    loadDeployment(team);
     if (state.rosters.has(team) && state.rosters.get(team)?.data) { renderRoster(); return; }
     state.rosters.delete(team);
     renderRoster();
