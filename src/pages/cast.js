@@ -239,7 +239,7 @@ function feedList(cast, filter, selected) {
   return `<ol class="feed-list">${out.join('')}</ol>`;
 }
 
-function pregamePanel(cast) {
+function pregamePanel(cast, market = null) {
   const g = cast.game;
   const c = countdownParts(g.start_time_utc);
   return `<div class="pbe-panel cast-pregame">
@@ -249,7 +249,9 @@ function pregamePanel(cast) {
     ${c && !c.done ? `<p class="mono cast-pregame__cd">Puck drop in ${c.days ? `${c.days}d ` : ''}${c.hours}h ${c.mins}m</p>` : ''}
     <ul class="cast-pregame__list">
       <li><span class="pbe-badge pbe-badge--unknown">Starters unknown</span> Confirmed from the NHL box score at puck drop. We do not project starters.</li>
-      <li><span class="pbe-badge pbe-badge--unavailable">Odds</span> Market snapshots are not integrated yet.</li>
+      ${market
+        ? `<li><span class="pbe-badge pbe-badge--sched">Odds</span> Scheduled market snapshot below (08:00 / 13:00 / 18:00 ET). Not a live feed.</li>`
+        : `<li><span class="pbe-badge pbe-badge--unavailable">Odds</span> No market snapshot for this game yet. Nothing is estimated.</li>`}
       <li><span class="pbe-badge pbe-badge--sched">Feed</span> PBE Cast switches to 5-second refresh when the game goes live.</li>
     </ul>
     <div class="row"><a class="pbe-btn" href="#/matchup/${esc(g.id)}">Matchup</a><a class="pbe-btn" href="#/goalies/${esc(g.id)}">Goalie Center</a></div>
@@ -359,7 +361,7 @@ export function mount(root, params, ctx) {
       </div>
       <div class="cast-grid" data-tab="${state.tab}">
         <div class="cast-col cast-col--rink">
-          ${pre ? pregamePanel(cast) : ''}
+          ${pre ? pregamePanel(cast, state.market) : ''}
           ${state.market && !['FINAL'].includes(st.key) ? `<section class="pbe-panel cast-card"><div class="panel-head"><h3>Market</h3><span class="pbe-badge pbe-badge--sched">Snapshot · not live</span></div>${marketPanel(state.market.event, state.market.meta)}</section>` : ''}
           <section class="pbe-panel cast-card">
             <div class="panel-head"><h3>Shot map</h3><span class="micro">${rink.plotted} plotted${omittedTotal ? ` · ${omittedTotal} not plotted` : ''}</span></div>
