@@ -14,6 +14,7 @@ export function teamMark(team = {}, size = 36) {
 export function stateOf(game) {
   const s = game?.status || {};
   const sem = s.semantics || 'UNAVAILABLE';
+  if (sem === 'REPLAY') return { key: 'REPLAY', cls: 'sched', text: `REPLAY · ${periodLabel(s.period, s.period_type)}${s.clock ? ` ${s.clock}` : ''}` };
   if (sem === 'LIVE' && s.in_intermission) return { key: 'INTERMISSION', cls: 'inter', text: `${periodLabel(s.period, s.period_type)} INT` };
   if (sem === 'LIVE') {
     const per = periodLabel(s.period, s.period_type);
@@ -29,9 +30,13 @@ export function stateOf(game) {
   return { key: 'UNAVAILABLE', cls: 'unavailable', text: 'STATE UNAVAILABLE' };
 }
 
-export function stateBadge(game) {
+// short: state word only, for surfaces that already show the clock.
+export function stateBadge(game, { short = false } = {}) {
   const st = stateOf(game);
-  return `<span class="pbe-badge pbe-badge--${st.cls}" data-live-badge="${st.key === 'LIVE' ? '1' : ''}">${esc(st.text)}</span>`;
+  const text = short && ['LIVE', 'REPLAY', 'INTERMISSION'].includes(st.key)
+    ? (st.key === 'INTERMISSION' ? 'INTERMISSION' : st.key)
+    : st.text;
+  return `<span class="pbe-badge pbe-badge--${st.cls}" data-live-badge="${st.key === 'LIVE' ? '1' : ''}">${esc(text)}</span>`;
 }
 
 const scoreShown = game => ['LIVE', 'FINAL'].includes(game?.status?.semantics);

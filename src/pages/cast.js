@@ -6,6 +6,7 @@ import { createPoller } from '../lib/poll.js';
 import { teamAccent } from '../lib/teams.js';
 import { stateBadge, stateOf, teamMark } from '../components/game.js';
 import { LAYERS, renderRink, rinkLegend, shotLabel } from '../components/rink.js';
+import { SPEEDS, replayBar, seek, sliceCast } from '../components/replay.js';
 
 const FEED_FILTERS = [
   ['all', 'All'], ['goal', 'Goals'], ['shots', 'Shots'], ['penalty', 'Penalties'],
@@ -76,8 +77,8 @@ function header(cast, meta, failed) {
   const g = cast.game;
   const st = stateOf(g);
   const a = g.teams.away; const h = g.teams.home;
-  const scored = ['LIVE', 'INTERMISSION', 'FINAL'].includes(st.key);
-  const clock = st.key === 'LIVE' || st.key === 'INTERMISSION'
+  const scored = ['LIVE', 'INTERMISSION', 'FINAL', 'REPLAY'].includes(st.key);
+  const clock = st.key === 'LIVE' || st.key === 'INTERMISSION' || st.key === 'REPLAY'
     ? `${periodLabel(g.status.period, g.status.period_type)} · ${g.status.clock || '—'}${st.key === 'INTERMISSION' ? ' · INT' : ''}`
     : st.key === 'FINAL' ? dayET(g.start_time_utc, true) : `${dayET(g.start_time_utc)} · ${timeET(g.start_time_utc)}`;
   const gin = cast.goalies_in_net || {};
@@ -91,10 +92,10 @@ function header(cast, meta, failed) {
   return `<div class="cast-head" style="--away:${teamAccent(a.abbrev)};--home:${teamAccent(h.abbrev)}">
       ${team(a, 'away')}
       <div class="cast-mid">
-        ${stateBadge(g)}
+        ${stateBadge(g, { short: true })}
         <div class="cast-clock mono">${esc(clock)}</div>
         ${manpowerChip(cast)}
-        ${freshStamp(meta, { failed })}
+        ${cast.replay ? `<span class="micro">Event ${cast.replay.cursor + 1} of ${cast.replay.total} · derived from play-by-play</span>` : freshStamp(meta, { failed })}
       </div>
       ${team(h, 'home')}
     </div>
@@ -176,7 +177,7 @@ function statsPanel(cast) {
     ${periods.length ? `<section class="pbe-panel cast-card"><div class="panel-head"><h3>By period</h3><span class="micro">Attempts / SOG / goals</span></div>
       <div class="table-wrap"><table class="pbe-table"><thead><tr><th>Per</th><th class="num">${esc(g.teams.away.abbrev)} CF</th><th class="num">SOG</th><th class="num">G</th><th class="num">${esc(g.teams.home.abbrev)} CF</th><th class="num">SOG</th><th class="num">G</th></tr></thead>
       <tbody>${periods.map(p => `<tr><td>${esc(periodLabel(p.period, p.period_type))}</td><td class="num">${p.away.corsi}</td><td class="num">${p.away.sog}</td><td class="num">${p.away.goals}</td><td class="num">${p.home.corsi}</td><td class="num">${p.home.sog}</td><td class="num">${p.home.goals}</td></tr>`).join('')}</tbody></table></div></section>` : ''}
-    ${off.size ? `<section class="pbe-panel cast-card"><div class="panel-head"><h3>Official team stats</h3><span class="micro">NHL</span></div>
+    ${off.size ? `<section class="pbe-panel cast-card"><div class="panel-head"><h3>Official team stats</h3><span class="micro">${cast.replay ? 'Full-game values' : 'NHL'}</span></div>
       <div class="table-wrap"><table class="pbe-table"><thead><tr><th>Stat</th><th class="num">${esc(g.teams.away.abbrev)}</th><th class="num">${esc(g.teams.home.abbrev)}</th></tr></thead><tbody>
         ${offRow('faceoffWinningPctg', 'Faceoff %', v => pct(v, 1))}
         ${offRow('powerPlay', 'Power play')}
@@ -186,7 +187,7 @@ function statsPanel(cast) {
         ${offRow('giveaways', 'Giveaways')}
         ${offRow('takeaways', 'Takeaways')}
       </tbody></table></div></section>` : ''}
-    <section class="pbe-panel cast-card"><div class="panel-head"><h3>Goalies</h3><span class="micro">Box score</span></div>
+    <section class="pbe-panel cast-card"><div class="panel-head"><h3>Goalies</h3><span class="micro">${cast.replay ? 'Full-game box score' : 'Box score'}</span></div>
       ${goalies.length ? `<div class="table-wrap"><table class="pbe-table"><thead><tr><th>Goalie</th><th class="num">SA</th><th class="num">SV</th><th class="num">SV%</th><th class="num">TOI</th></tr></thead><tbody>
         ${goalies.filter(x => x.toi && x.toi !== '00:00').map(x => `<tr><td><b>${esc(x.name)}</b> <span class="faint">${esc(g.teams[x.side].abbrev)}</span>${x.starter ? ' <span class="pbe-badge pbe-badge--confirmed">Started</span>' : ''}</td><td class="num">${num(x.shots_against)}</td><td class="num">${num(x.saves)}</td><td class="num">${svPct(x.save_pct)}</td><td class="num">${esc(x.toi || '—')}</td></tr>`).join('')}
       </tbody></table></div>` : '<p class="dim">Goalie lines appear once the game starts.</p>'}
@@ -263,8 +264,11 @@ export function mount(root, params, ctx) {
     feed: 'all', selected: null,
     tab: 'feed',
     replayDate: params.date || null,
-    pickGames: [], pickLabel: ''
+    pickGames: [], pickLabel: '',
+    // Replay: cursor is an index into cast.plays (null = full/live view).
+    cursor: null, playing: false, speed: 'normal', startSort: /^\d+$/.test(params.t || '') ? Number(params.t) : null
   };
+  let playTimer = null;
 
   root.innerHTML = `<section class="wrap section cast" data-fresh-scope>
     <div class="section-head"><div><span class="eyebrow">PBE Cast</span><h2>Live hockey intelligence broadcast</h2></div>
@@ -320,16 +324,21 @@ export function mount(root, params, ctx) {
         : '<div class="pbe-skeleton" style="height:140px;margin-bottom:16px"></div><div class="cast-grid"><div class="pbe-skeleton" style="height:420px"></div><div class="pbe-skeleton" style="height:420px"></div><div class="pbe-skeleton" style="height:420px"></div></div>';
       return;
     }
-    const cast = state.cast;
+    const full = state.cast;
+    if (state.cursor !== null) state.cursor = Math.min(state.cursor, full.plays.length - 1);
+    const cast = state.cursor === null || state.cursor < 0 ? full : sliceCast(full, state.cursor);
     const g = cast.game;
-    const st = stateOf(g);
+    const st = stateOf(full.game);
     const pre = st.key === 'SCHEDULED' || st.key === 'PREGAME';
-    const periods = [...new Set(cast.plays.filter(p => p.shot).map(p => p.period))].filter(Boolean);
-    const rink = renderRink(cast.plays, { layer: state.layer, team: state.team, period: state.period, normalize: state.normalize, teams: g.teams, highlight: state.selected });
+    const periods = [...new Set(full.plays.filter(p => p.shot).map(p => p.period))].filter(Boolean);
+    // In replay, ring the most recent attempt at the cursor unless the user picked one.
+    const lastShot = cast.replay ? [...cast.plays].reverse().find(p => p.shot?.has_coordinates) : null;
+    const rink = renderRink(cast.plays, { layer: state.layer, team: state.team, period: state.period, normalize: state.normalize, teams: g.teams, highlight: state.selected ?? lastShot?.sort_order ?? null });
     const omittedTotal = rink.omitted.coordinates + rink.omitted.direction;
     const feedScroll = $('.feed-scroll', body)?.scrollTop || 0;
     body.innerHTML = `
       ${header(cast, state.meta, state.failed)}
+      ${!pre && full.plays.length ? replayBar(state, full) : ''}
       ${cast.partial?.boxscore || cast.partial?.right_rail ? `<div class="pbe-note" style="margin-top:12px"><b>Partial data.</b> ${cast.partial.boxscore ? 'Box score unavailable. ' : ''}${cast.partial.right_rail ? 'Official team stats unavailable. ' : ''}Play-by-play is current.</div>` : ''}
       <div class="cast-tabs" role="tablist" aria-label="PBE Cast sections">
         ${[['feed', 'Play-by-play'], ['rink', 'Shot map'], ['stats', 'Intelligence']].map(([k, l]) => `<button role="tab" class="chip" aria-selected="${state.tab === k}" aria-pressed="${state.tab === k}" data-tab="${k}">${l}</button>`).join('')}
@@ -369,9 +378,54 @@ export function mount(root, params, ctx) {
     if (scroller) scroller.scrollTop = feedScroll;
   }
 
+  // ---- replay engine
+  const speedMs = () => SPEEDS.find(s => s[0] === state.speed)?.[2] ?? 450;
+  const stopPlay = () => { if (playTimer) clearTimeout(playTimer); playTimer = null; state.playing = false; };
+  const writeDeepLink = () => {
+    const at = state.cursor === null ? null : state.cast?.plays[state.cursor];
+    history.replaceState(null, '', `#/cast/${state.gameId}${at ? `?t=${at.sort_order}` : ''}`);
+  };
+  const goTo = index => {
+    if (!state.cast) return;
+    const n = state.cast.plays.length;
+    state.cursor = index === null || index >= n - 1 ? (index === null ? null : n - 1) : Math.max(0, index);
+    state.selected = null;
+    renderBody();
+  };
+  const tick = () => {
+    const n = state.cast?.plays.length || 0;
+    if (!state.playing || !n) return;
+    const next = (state.cursor ?? -1) + 1;
+    if (next >= n) { stopPlay(); state.cursor = n - 1; renderBody(); writeDeepLink(); return; }
+    state.cursor = next;
+    state.selected = null;
+    renderBody();
+    playTimer = setTimeout(tick, speedMs());
+  };
+  const togglePlay = () => {
+    if (!state.cast) return;
+    if (state.playing) { stopPlay(); renderBody(); writeDeepLink(); return; }
+    const n = state.cast.plays.length;
+    if (state.cursor === null || state.cursor >= n - 1) state.cursor = -1;
+    state.playing = true;
+    tick();
+  };
+  const step = dir => {
+    stopPlay();
+    const n = state.cast?.plays.length || 0;
+    const cur = state.cursor ?? n - 1;
+    goTo(Math.min(n - 1, Math.max(0, cur + dir)));
+    writeDeepLink();
+  };
+
   const poller = state.gameId ? createPoller(async signal => {
     const res = await nhl(`/nhl/game/${state.gameId}/cast`, {}, { signal, timeout: 12000 });
     state.cast = res.data; state.meta = res.meta; state.failed = false; state.error = null;
+    if (state.startSort !== null) {
+      const idx = res.data.plays.findIndex(p => p.sort_order === state.startSort);
+      if (idx >= 0) state.cursor = idx;
+      state.startSort = null;
+    }
     renderBody();
     const key = stateOf(res.data.game).key;
     if (key === 'LIVE' || key === 'INTERMISSION') return 5000;
@@ -407,6 +461,29 @@ export function mount(root, params, ctx) {
       if (window.matchMedia('(max-width: 768px)').matches && state.selected !== null) { state.tab = 'rink'; renderBody(); }
     }),
     on(root, 'keydown', '[data-select]', (event, li) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); li.click(); } }),
+    on(root, 'click', '[data-rp]', (_, b) => {
+      const n = state.cast?.plays.length || 0;
+      const act = b.dataset.rp;
+      if (act === 'play') return togglePlay();
+      if (act === 'back') return step(-1);
+      if (act === 'fwd') return step(1);
+      stopPlay();
+      if (act === 'start') goTo(0);
+      if (act === 'end') goTo(null);
+      writeDeepLink();
+      return n;
+    }),
+    on(root, 'click', '[data-rp-speed]', (_, b) => { state.speed = b.dataset.rpSpeed; renderBody(); }),
+    on(root, 'click', '[data-rp-goto]', (_, b) => { stopPlay(); goTo(Number(b.dataset.rpGoto)); writeDeepLink(); }),
+    on(root, 'click', '[data-rp-seek]', (_, b) => {
+      if (!state.cast) return;
+      stopPlay();
+      const n = state.cast.plays.length;
+      const idx = seek(state.cast.plays, state.cursor ?? n - 1, b.dataset.rpSeek, Number(b.dataset.dir));
+      if (idx !== null) { goTo(idx); writeDeepLink(); }
+    }),
+    on(root, 'input', '#rp-range', (_, r) => { stopPlay(); goTo(Number(r.value)); }),
+    on(root, 'change', '#rp-range', () => writeDeepLink()),
     on(root, 'change', '#replay-date', (_, input) => {
       if (!/^\d{4}-\d{2}-\d{2}$/.test(input.value)) return;
       state.replayDate = input.value;
@@ -416,8 +493,19 @@ export function mount(root, params, ctx) {
     })
   ];
 
+  const onKey = event => {
+    if (!state.cast || /input|select|textarea/i.test(event.target?.tagName || '') && event.target.id !== 'rp-range') return;
+    if (document.querySelector('#palette:not([hidden])')) return;
+    if (event.key === ' ' && !event.target.closest?.('button, a, [role="button"]')) { event.preventDefault(); togglePlay(); }
+    else if (event.key === 'ArrowLeft' && event.target.id !== 'rp-range') { event.preventDefault(); step(-1); }
+    else if (event.key === 'ArrowRight' && event.target.id !== 'rp-range') { event.preventDefault(); step(1); }
+  };
+  document.addEventListener('keydown', onKey);
+
   return () => {
+    stopPlay();
     poller?.stop();
+    document.removeEventListener('keydown', onKey);
     disposers.forEach(d => d());
   };
 }

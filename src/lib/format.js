@@ -107,4 +107,11 @@ export function periodLabel(period, periodType) {
   return p ? ['', '1st', '2nd', '3rd'][p] || `P${p}` : '';
 }
 
-export const titleCase = s => String(s || '').replace(/[-_]/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+// Mirrors backend parseSituation: away goalie, away skaters, home skaters, home goalie.
+export function parseSituationClient(code) {
+  const v = String(code ?? '');
+  if (!/^\d{4}$/.test(v)) return null;
+  return { code: v, away_goalie_in_net: v[0] === '1', away_skaters: Number(v[1]), home_skaters: Number(v[2]), home_goalie_in_net: v[3] === '1' };
+}
+
+export const titleCase =s => String(s || '').replace(/[-_]/g, ' ').replace(/\b\w/g, c => c.toUpperCase());

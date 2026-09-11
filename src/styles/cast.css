@@ -163,3 +163,42 @@
 .cast-pregame__cd { color: var(--pbe-gold-bright); margin: 8px 0; }
 .cast-pregame__list { list-style: none; margin: var(--s-3) 0; padding: 0; display: grid; gap: 10px; font-size: var(--fs-sm); color: var(--pbe-dim); }
 .cast-pregame__list li { display: flex; gap: 10px; align-items: baseline; }
+
+/* ---------- replay */
+.replay {
+  margin-top: var(--s-3); padding: var(--s-3) var(--s-4);
+  background: var(--pbe-ink-2); border: 1px solid var(--pbe-line); border-radius: var(--r-md);
+  display: grid; gap: 10px;
+}
+.replay__row { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.replay__btns { display: flex; gap: 4px; }
+.rp-btn {
+  width: 40px; height: 36px; display: grid; place-items: center;
+  border: 1px solid var(--pbe-line-strong); border-radius: var(--r-sm); background: var(--pbe-ink-4);
+  color: var(--pbe-paper-2); font-size: 13px; line-height: 1;
+}
+.rp-btn:hover { border-color: var(--pbe-gold); color: var(--pbe-gold-bright); }
+.rp-btn--play { width: 48px; background: var(--pbe-gold); border-color: var(--pbe-gold); color: var(--pbe-ink); }
+.rp-btn--play:hover { background: var(--pbe-gold-bright); color: var(--pbe-ink); }
+.replay__pos { margin-left: auto; font-size: var(--fs-data-sm); color: var(--pbe-dim); }
+.replay__track { position: relative; height: 28px; }
+.replay__range {
+  position: absolute; inset: 8px 0 auto; width: 100%; height: 12px; margin: 0; appearance: none; background: transparent; cursor: pointer; z-index: 2;
+}
+.replay__range::-webkit-slider-runnable-track { height: 4px; border-radius: 2px; background: linear-gradient(90deg, var(--pbe-gold) var(--pct), var(--pbe-ink-4) var(--pct)); }
+.replay__range::-moz-range-track { height: 4px; border-radius: 2px; background: var(--pbe-ink-4); }
+.replay__range::-moz-range-progress { height: 4px; background: var(--pbe-gold); }
+.replay__range::-webkit-slider-thumb { appearance: none; width: 16px; height: 16px; margin-top: -6px; border-radius: 50%; background: var(--pbe-paper); border: 2px solid var(--pbe-gold); }
+.replay__range::-moz-range-thumb { width: 14px; height: 14px; border-radius: 50%; background: var(--pbe-paper); border: 2px solid var(--pbe-gold); }
+.replay__marks { position: absolute; inset: 0; pointer-events: none; }
+.rp-mark { position: absolute; top: 0; width: 10px; height: 10px; margin-left: -5px; padding: 0; border: 0; border-radius: 50%; pointer-events: auto; cursor: pointer; z-index: 3; }
+.rp-mark--goal { background: var(--pbe-crimson-bright); }
+.rp-mark--penalty { top: 20px; width: 8px; height: 8px; margin-left: -4px; border-radius: 1px; background: var(--pbe-gold-bright); }
+.rp-mark--period { top: 4px; width: 2px; height: 20px; margin-left: -1px; border-radius: 0; background: var(--pbe-line-strong); }
+.replay__keys { margin-left: auto; }
+@media (max-width: 768px) {
+  .replay__keys { display: none; }
+  .rp-btn { width: 44px; height: 44px; }
+  .rp-btn--play { width: 52px; }
+  .replay__pos { margin-left: 0; width: 100%; }
+}
