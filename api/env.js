@@ -21,5 +21,10 @@ export default async function handler(req, res) {
     cache = { at: Date.now(), layer };
   }
   res.setHeader('Cache-Control', 'public, max-age=0, s-maxage=60');
-  res.status(200).json({ ok: true, data_layer: cache.layer, checked_at: new Date(cache.at).toISOString() });
+  res.status(200).json({
+    ok: true,
+    data_layer: cache.layer,
+    odds: process.env.NHL_ODDS_BASE_URL && process.env.NHL_ODDS_READ_TOKEN ? 'configured' : 'not_configured',
+    checked_at: new Date(cache.at).toISOString()
+  });
 }

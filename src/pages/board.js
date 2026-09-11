@@ -1,5 +1,5 @@
 import { $, esc, on } from '../lib/dom.js';
-import { describeError, news } from '../lib/api.js';
+import { describeError, news, odds } from '../lib/api.js';
 import { freshStamp } from '../lib/freshness.js';
 import { addDays, countdownParts, dateLabel, dayET, daysUntil, gameTypeLabel, timeET, todayET, ageText } from '../lib/format.js';
 import { createPoller } from '../lib/poll.js';
@@ -130,7 +130,7 @@ function boardSection(state) {
   } else if (!visible.length) {
     body = `<div class="pbe-empty"><h3>Nothing ${filter.toLowerCase()} right now.</h3><p>${counts.ALL} game${counts.ALL === 1 ? '' : 's'} on this date. <button class="pbe-btn pbe-btn--sm" data-filter="ALL">Show all</button></p></div>`;
   } else {
-    body = `<div class="board-grid">${visible.map(g => gameCard(g)).join('')}</div>`;
+    body = `<div class="board-grid">${visible.map(g => gameCard(g, { market: state.market?.byGame.get(String(g.id)) || null, marketMeta: state.market?.meta })).join('')}</div>`;
   }
   return `<div class="section-head">
       <div><span class="eyebrow">Ice Board${isToday ? ' · Today' : ''}</span><h2>${esc(dateLabel(date, { long: true }))}</h2></div>
@@ -153,7 +153,7 @@ function boardSection(state) {
       <span><i class="ok"></i>Schedule${board?.compat ? '' : ' &amp; scores'} · NHL</span>
       <span><i class="${board?.compat ? 'off' : 'ok'}"></i>Play-by-play &amp; shot coordinates${board?.compat ? ' · not in this environment' : ' · NHL'}</span>
       <span><i class="${board?.compat ? 'off' : 'part'}"></i>Starting goalies · ${board?.compat ? 'not in this environment' : 'confirmed at puck drop'}</span>
-      <span><i class="off"></i>Odds &amp; props · not yet integrated</span>
+      ${state.market?.meta ? `<span><i class="ok"></i>Odds · scheduled snapshot · ${esc(state.market.count)} games</span><span><i class="${state.market.props ? 'ok' : 'off'}"></i>Player props · ${state.market.props ? 'posted' : 'not posted yet'}</span>` : '<span><i class="off"></i>Odds &amp; props · not in this environment</span>'}
       <span><i class="off"></i>Injuries &amp; lines · see source matrix</span>
     </div>
     ${body}`;
@@ -230,6 +230,19 @@ export function mount(root, params, ctx) {
   });
   poller.start();
 
+  // Market snapshot (optional service; 3 scheduled ingests a day). Absent =
+  // no market rows, never placeholder prices.
+  const oddsCtl = new AbortController();
+  const loadOdds = () => odds({}, { signal: oddsCtl.signal, timeout: 8000 })
+    .then(res => {
+      const byGame = new Map((res.data.events || []).filter(e => e.game_id).map(e => [String(e.game_id), e]));
+      state.market = { byGame, meta: res.meta, count: byGame.size, props: (res.data.events || []).some(e => e.props?.length) };
+      renderBoard();
+    })
+    .catch(() => { state.market = null; });
+  loadOdds();
+  const oddsTimer = setInterval(loadOdds, 10 * 60 * 1000);
+
   // Newsroom (optional source). Failure is shown, never filled.
   const newsCtl = new AbortController();
   news({ limit: 40 }, { signal: newsCtl.signal, timeout: 9000 })
@@ -270,6 +283,8 @@ export function mount(root, params, ctx) {
   return () => {
     poller.stop();
     newsCtl.abort();
+    oddsCtl.abort();
+    clearInterval(oddsTimer);
     clearInterval(countdownTimer);
     disposers.forEach(d => d());
   };

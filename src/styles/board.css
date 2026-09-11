@@ -175,3 +175,13 @@
 [data-fresh-scope][data-fresh-state="STALE"] .pbe-badge--live::before,
 [data-fresh-scope][data-fresh-state="ERROR"] .pbe-badge--live::before { animation: none; opacity: .5; }
 [data-fresh-scope][data-fresh-state="STALE"] .pbe-badge--live::after { content: " · STALE FEED"; }
+
+/* ---------- market rows on game cards (snapshot, never "live") */
+.gmarket { display: grid; gap: 6px; padding: 10px; border: 1px solid var(--pbe-line); border-radius: var(--r-sm); background: var(--pbe-ink-4); }
+.gmarket__row { display: grid; grid-template-columns: 4.2em 1fr 1fr; gap: 8px; align-items: baseline; font-size: 12px; color: var(--pbe-paper-2); }
+.gmarket__row b { font-size: var(--fs-data-sm); color: var(--pbe-paper); }
+.gmarket__row i { font-style: normal; font-size: 11px; color: var(--pbe-faint); }
+.gmarket__k { font: 700 var(--fs-micro)/1.2 var(--pbe-font-data); letter-spacing: var(--ls-micro); color: var(--pbe-gold); text-transform: uppercase; }
+.gmarket__meta { color: var(--pbe-faint); }
+.market-table td.is-best { color: var(--pbe-gold-bright); font-weight: 700; }
+.market-note { margin-top: 10px; line-height: 1.6; }

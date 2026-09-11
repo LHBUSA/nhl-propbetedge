@@ -69,14 +69,29 @@ function withMeta(data) {
 // Which contract this environment's API serves: 'v2' | 'legacy' | 'unknown'.
 // Resolved once from the server-side probe; 'unknown' lets requests through.
 let envPromise = null;
-export function dataLayer() {
+function envInfo() {
   if (!envPromise) {
     envPromise = fetch('/api/env', { headers: { Accept: 'application/json' } })
       .then(r => (r.ok ? r.json() : null))
-      .then(j => j?.data_layer || 'unknown')
-      .catch(() => 'unknown');
+      .catch(() => null);
   }
   return envPromise;
+}
+export async function dataLayer() {
+  return (await envInfo())?.data_layer || 'unknown';
+}
+export async function oddsConfigured() {
+  return (await envInfo())?.odds === 'configured';
+}
+
+// Scheduled market snapshot (nhl-odds Worker via /api/odds). Throws
+// not_deployed when this environment has no odds service configured.
+export async function odds(params = {}, options = {}) {
+  if (!(await oddsConfigured())) throw new ApiError('Market snapshots are not configured in this environment.', { kind: 'not_deployed' });
+  const q = qs(params);
+  const data = await request(`/api/odds${q ? `?${q}` : ''}`, options);
+  if (data.ok === false) throw new ApiError(data.reason || 'No market snapshot', { kind: 'unavailable', payload: data });
+  return withMeta(data);
 }
 
 // NHL data route. Throws ApiError { kind: 'not_deployed' } when this

@@ -2,6 +2,7 @@ import { esc, safeUrl } from '../lib/dom.js';
 import { gameTypeLabel, periodLabel, timeET, dayET } from '../lib/format.js';
 import { logoUrl, teamAccent } from '../lib/teams.js';
 import { watchButton } from './alerts-ui.js';
+import { cardMarket } from './market.js';
 
 export function teamMark(team = {}, size = 36) {
   const src = safeUrl(logoUrl(team));
@@ -51,7 +52,7 @@ function teamLine(team, game, winner) {
   </div>`;
 }
 
-export function gameCard(game, { compact = false } = {}) {
+export function gameCard(game, { compact = false, market = null, marketMeta = null } = {}) {
   const a = game.teams?.away || {};
   const h = game.teams?.home || {};
   const st = stateOf(game);
@@ -72,6 +73,7 @@ export function gameCard(game, { compact = false } = {}) {
       ${teamLine(a, game, awayWin)}
       ${teamLine(h, game, homeWin)}
     </div>
+    ${market && st.key !== 'FINAL' ? cardMarket(market, marketMeta) : ''}
     ${compact ? '' : `<dl class="gcard__meta">
       <div><dt>Venue</dt><dd>${esc(game.venue || 'Not listed')}</dd></div>
       <div><dt>TV</dt><dd>${esc(tvText || 'Not listed')}</dd></div>

@@ -1,5 +1,6 @@
 import { $, esc, on } from '../lib/dom.js';
-import { describeError, nhl } from '../lib/api.js';
+import { describeError, nhl, odds } from '../lib/api.js';
+import { marketPanel } from '../components/market.js';
 import { freshStamp } from '../lib/freshness.js';
 import { countdownParts, dateLabel, dayET, gameTypeLabel, num, pct, periodLabel, share, svPct, timeET, titleCase, todayET } from '../lib/format.js';
 import { createPoller } from '../lib/poll.js';
@@ -348,6 +349,7 @@ export function mount(root, params, ctx) {
       <div class="cast-grid" data-tab="${state.tab}">
         <div class="cast-col cast-col--rink">
           ${pre ? pregamePanel(cast) : ''}
+          ${state.market && !['FINAL'].includes(st.key) ? `<section class="pbe-panel cast-card"><div class="panel-head"><h3>Market</h3><span class="pbe-badge pbe-badge--sched">Snapshot · not live</span></div>${marketPanel(state.market.event, state.market.meta)}</section>` : ''}
           <section class="pbe-panel cast-card">
             <div class="panel-head"><h3>Shot map</h3><span class="micro">${rink.plotted} plotted${omittedTotal ? ` · ${omittedTotal} not plotted` : ''}</span></div>
             <div class="rink-controls">
@@ -450,6 +452,17 @@ export function mount(root, params, ctx) {
   loadPicker();
   poller?.start();
 
+  // Market snapshot for this game, if the odds service exists here.
+  const oddsCtl = new AbortController();
+  if (state.gameId) {
+    odds({ game: state.gameId }, { signal: oddsCtl.signal, timeout: 8000 })
+      .then(res => {
+        const event = (res.data.events || [])[0];
+        if (event) { state.market = { event, meta: res.meta }; renderBody(); }
+      })
+      .catch(() => {});
+  }
+
   const disposers = [
     on(root, 'click', '[data-layer]', (_, b) => { state.layer = b.dataset.layer; renderBody(); }),
     on(root, 'click', '[data-team]', (_, b) => { state.team = b.dataset.team; renderBody(); }),
@@ -508,6 +521,7 @@ export function mount(root, params, ctx) {
 
   return () => {
     stopPlay();
+    oddsCtl.abort();
     poller?.stop();
     document.removeEventListener('keydown', onKey);
     disposers.forEach(d => d());
