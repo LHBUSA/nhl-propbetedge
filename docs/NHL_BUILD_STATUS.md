@@ -19,7 +19,7 @@ Status words: **PROVEN** = verified by a command that was actually run (evidence
 | A6 | `/schedule/today` fell back to the whole week when the date had no games (would show other days as "today"). | High | **Fixed** + regression |
 | A7 | Goalie leaders asked the source for `savePct`; source only accepts `savePctg` (HTTP 400). The old Goalies tab was always broken. | Medium | **Fixed** (alias) |
 | A8 | `/standings/now` returns the **2025-26 final** table (dated 2026-04-17) until the new season; old UI presented it as current. | Medium | **Fixed** — `semantics: PRIOR_SEASON_FINAL` |
-| A9 | NHL Supabase schema lives on project `rlfyavnhbngwbldebrid` (the SQL comment says PROPBETEDGE/`tkmlnhmylqnttmnsnief` — wrong). All 10 NHL tables had **0 rows**; the archive cron never ran. | High | History backfill running locally (see Models) |
+| A9 | NHL Supabase schema lives on project `rlfyavnhbngwbldebrid` (the SQL comment says PROPBETEDGE/`tkmlnhmylqnttmnsnief` — wrong). All 10 NHL tables had **0 rows**; the archive cron never ran. | High | **Done** — 5,592 games archived, `nhl_games` populated; odds + line snapshot history started |
 | A10 | Old frontend: single 19 KB file, "Model Readiness" marketing, Space Grotesk, no provenance, no mobile nav. | — | Replaced with the production shell below |
 | A11 | Raw provider objects (`raw_details`, highlight URLs) leaked in public payloads. | Low | **Fixed** |
 | A12 | "47 games that day" on the first home render — schedule games carry no `gameDate`; my day filter matched the whole week. Caught in QA screenshots. | High (fake number) | **Fixed** `4015fa6` + regression |
@@ -54,7 +54,6 @@ Status words: **PROVEN** = verified by a command that was actually run (evidence
 | Line snapshots archive | daily Cloudflare archive appends derived deployment rows to `nhl_line_snapshots`, idempotent per game (`03bedd0`) |
 | Backend fixes from page QA | goalie rest now uses the game's own season (2025020500: MTL 2 days, NYR 3); unknown ids → 404 not 503 (`cbd69a6`) |
 | Lighthouse (production bundle, local) | Home desktop perf 97 / a11y 100 / BP 100; Home mobile 81–87 / 100 / 100 (CLS 0.558 → 0.021); Cast desktop 99/100, mobile 88/100; Standings mobile 98/100; Shot Lab mobile 94/97→fixed. SEO 92 everywhere (hash routing). Mobile home LCP ~3.9 s on simulated slow 4G (H1 rendered by JS) — known. |
-
 | Desk pages | Goalie Center, Injury desk, Newsroom, Lines, Props (`6d834e2`): Lighthouse a11y 100, axe 0, CLS ≤ 0.003 |
 | Lines integration | real derived last-game deployment on Lines (MTL 2026-05-29: F1–F4, D1–D3, PP1–2, PK1–2, limited-sample flags) (`b2e1a96`) |
 | Best Line | Props renders every priced game from the stored snapshot: best price + book, EV vs ≥2-book no-vig consensus (market comparison, not model edge), puck line, total, moves since open (`5743fca`) |
