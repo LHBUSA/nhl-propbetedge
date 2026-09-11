@@ -12,6 +12,7 @@ import './styles/pages-lab.css';
 import './styles/backdrops.css';
 import './styles/mode.css';
 import './styles/identity.css';
+import './lib/pro.js';
 
 import { ApiError, dataLayer, nhl } from './lib/api.js';
 import { legacyBoard } from './lib/legacy.js';
