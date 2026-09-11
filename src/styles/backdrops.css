@@ -34,5 +34,23 @@
   .backdrop-wrap { height: clamp(320px, 58vh, 520px); }
   .backdrop { opacity: .58; }
 }
+/* Photos arrive pre-graded (dark, cool, desaturated), so they take a lighter
+   scrim than the generated art: the image reads through the header band and
+   is fully dissolved into ink before the first data panel. */
+.backdrop--photo { opacity: .94; }
+.backdrop-wrap[data-kind="photo"]::after {
+  background:
+    radial-gradient(50% 60% at 78% 18%, var(--nhl-ice-wash), transparent 70%),
+    linear-gradient(90deg, rgba(20,17,13,.70) 0%, rgba(20,17,13,.18) 55%, rgba(20,17,13,.40) 100%),
+    linear-gradient(180deg, rgba(20,17,13,.10) 0%, rgba(20,17,13,.14) 30%, rgba(20,17,13,.80) 70%, var(--pbe-ink) 100%);
+}
+@media (max-width: 700px) {
+  .backdrop--photo { opacity: .82; }
+  .backdrop-wrap[data-kind="photo"]::after {
+    background:
+      linear-gradient(180deg, rgba(20,17,13,.30) 0%, rgba(20,17,13,.40) 35%, rgba(20,17,13,.86) 70%, var(--pbe-ink) 100%);
+  }
+}
+@media (prefers-reduced-motion: reduce) { .backdrop { animation: none !important; } }
 /* Section heads sitting on a backdrop get a touch more lift. */
 .backdrop-wrap:not([hidden]) ~ #main .section-head h2 { text-shadow: 0 2px 18px rgba(0,0,0,.55); }

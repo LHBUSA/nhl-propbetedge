@@ -1,6 +1,6 @@
 # Image sources: NHL.PropBetEdge.ai
 
-Every raster image shipped under `public/assets/nhl/` has to be listed here, with its source and license checked on the source page itself. If an image isn't in this file, it doesn't ship.
+Every raster image shipped under `public/assets/` has to be listed here (or in a file under `docs/image-sources/` that this file links), with its source and license checked on the source page itself. If an image isn't in this file, it doesn't ship.
 
 Retrieved: 2026-09-11. Untouched originals are kept outside the repo, in the sourcing scratchpad. They are not committed.
 
@@ -26,9 +26,9 @@ Retrieved: 2026-09-11. Untouched originals are kept outside the repo, in the sou
 
 ## 3. Attribution / UI credit
 
-- **Required UI credit: none.** The Pexels License doesn't require attribution. We're using no CC BY or CC BY-SA images right now, so no credit string has to be shown.
-- Optional credit, e.g. in the footer or an "Image credits" page: `Photography: Tony Schnagl / Pexels`.
-- If a CC BY or CC BY-SA image is added later, the UI **must** show `"<Title>" by <Author>, <License short name> (<license URL>)`, and say "modified" if we cropped or graded it. That credit also has to be recorded in a new table in this file.
+- **Pexels photography (hero, editorial, page backdrops): no credit required.** We credit it anyway in the footer and on Methodology → Image credits (`#/methodology?section=credits`).
+- **Player portraits (CC BY / CC BY-SA): credit required and shown.** The player hero shows a visible line (`Author, License, via Wikimedia Commons (cropped)`); every smaller avatar carries the same string as its `title`, and Methodology → Image credits lists every published portrait with author, a license link and the Commons source page. It is generated from the manifest, so it cannot fall out of sync with what ships.
+- Any new CC BY / BY-SA image must be added to a manifest that feeds that credits list, and must say it was modified if cropped or graded.
 
 ## 4. Rules
 
@@ -42,7 +42,34 @@ Retrieved: 2026-09-11. Untouched originals are kept outside the repo, in the sou
 5. **No hotlinking.** Download the original, record it here, and serve our own derivatives from `public/assets/nhl/`.
 6. Keep the untouched original out of the repo. Store it with the sourcing notes and record its URL here so it can be downloaded again.
 
-## 5. Candidates considered and rejected (2026-09-11)
+## 5. Page backdrops: `public/assets/nhl/backdrops/`
+
+Full table (page and file URLs, authors, crop boxes, grade, focal points, 18 rejected candidates): **[`docs/image-sources/backdrops.md`](image-sources/backdrops.md)**.
+
+| Surface | Pexels ID · author | Subject |
+|---|---|---|
+| PBE Cast | 6468933 · Tony Schnagl | goalie in the crease under a floodlight |
+| Props | 6539263 · Pavel Danilyuk | dark scratched ice |
+| Goalies | 6468959 · Tony Schnagl | blocker, catcher and pads, no head |
+| Lines | 6468947 · Tony Schnagl | a line of players cut at the waist |
+| Injuries | 6015664 · Tima Miroshnichenko | empty dim rink |
+| News | 8972136 · Ron Lach | taped stick blades on a locker-room floor |
+| Matchups | 6468938 · Tony Schnagl | faceoff, crossed sticks (the editorial photo) |
+| Players | 6468935 · Tony Schnagl | skater and ice spray (the hero photo, graded darker) |
+| Standings | 6468744 · Tony Schnagl | defocused stands, light through haze |
+
+Shot Lab, Methodology and Track Record use owned generated SVG art (overhead rink, faceoff geometry, terminal grid) — no photo. All nine are Pexels License, no marks, no identifiable faces (two faces of about 20–25 px remain in shadow in `cast` and the `standings` landscape crop). The Ice Board hero (§1) is the only preloaded image; backdrops load only for the current route, AVIF with WebP fallback, sized by viewport × DPR.
+
+## 6. Player portraits: `public/assets/players/`
+
+Full contract, method, per-player table and rejection reasons: **[`docs/image-sources/players.md`](image-sources/players.md)**. Pipeline: `scripts/player-portraits/`.
+
+- **Source contract:** Wikimedia Commons only, reached through Wikidata P3522 (NHL player id) → P18; CC0 / PD / CC BY / CC BY-SA verified in Commons `extmetadata`; ≤ 10 years old; visual review ledger in `scripts/player-portraits/review.json`.
+- **NHL.com headshots (`assets.nhle.com/mugs`): PENDING OWNER DECISION — not used, never requested.**
+- **Published: 45** of 153 targets (Sorokin excluded after review — state press-service ceremony photo). Everyone else falls back to initials + team mark, then a neutral PBE mark. No lookalikes, no AI images, no guesses.
+- **Owner decisions still open:** (1) 10 published files carry Commons personality-rights tags (Nedeljkovic, Tuch, Keller, Gauthier, LaCombe, Daccord, Hutson, Draisaitl, Celebrini, Thompson) — the copyright license is clean, but a real athlete's likeness next to betting content is a publicity-rights question; (2) many stars have no usable open photo (e.g. McDavid, MacKinnon, Kucherov) and show initials; a licensed headshot feed would be the fix.
+
+## 7. Candidates considered and rejected (2026-09-11)
 
 | Candidate | License | Why rejected |
 |---|---|---|

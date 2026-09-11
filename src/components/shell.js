@@ -79,7 +79,7 @@ export function renderShell(app) {
         <div class="footer__cols">
           <div><span class="micro">Data</span><p>Game, play-by-play and player data: NHL (api-web.nhle.com) via PropSports API. Every volatile panel shows its source and age.</p></div>
           <div><span class="micro">Rules</span><p><a href="#/methodology">Methodology &amp; data truth rules</a><br><a href="#/track-record">Track record</a><br><a href="https://hub.propbetedge.ai/" rel="noopener">All PropBetEdge sports ↗</a></p></div>
-          <div><span class="micro">Imagery</span><p>Hero photography: Tony Schnagl / Pexels (Pexels License).</p></div>
+          <div><span class="micro">Imagery</span><p>Photography via Pexels; player portraits via Wikimedia Commons, each credited. <a href="#/methodology?section=credits">Image credits</a></p></div>
         </div>
       </div>
     </footer>

@@ -6,8 +6,19 @@
 
 const DIR = '/assets/nhl/backdrops/';
 
-// key -> focal points (desktop / mobile). Populated from the licensed set.
-export const PHOTO_BACKDROPS = {};
+// key -> focal points (desktop / mobile) and an optional opacity override.
+// All nine are Pexels License photos (docs/image-sources/backdrops.md).
+export const PHOTO_BACKDROPS = {
+  cast:      { pos: '52% 46%', mpos: '50% 32%' },  // goalie in the crease under a floodlight
+  props:     { pos: '50% 40%', mpos: '45% 45%' },  // dark scratched ice — terminal surface
+  goalies:   { pos: '47% 65%', mpos: '50% 45%' },  // blocker, catcher, pads
+  lines:     { pos: '50% 60%', mpos: '50% 60%' },  // a line on the bench side, cut at the waist
+  injuries:  { pos: '50% 52%', mpos: '50% 50%', opacity: .5 },  // empty rink, kept restrained
+  news:      { pos: '65% 70%', mpos: '60% 58%' },  // taped blades, locker-room floor
+  matchups:  { pos: '58% 25%', mpos: '60% 45%' },  // faceoff, crossed sticks
+  players:   { pos: '50% 55%', mpos: '55% 45%' },  // skater, ice spray
+  standings: { pos: '50% 40%', mpos: '50% 45%' }   // stands, light through haze
+};
 
 // Owned generated art (no network): overhead rink geometry, data terminal.
 const GENERATED = { shotlab: 'rink', methodology: 'rink-lines', track: 'terminal' };
@@ -39,11 +50,13 @@ export function applyBackdrop(wrap, routeId) {
   el.className = 'backdrop';
   el.style.backgroundImage = '';
   el.style.removeProperty('--bd-pos');
+  el.style.removeProperty('opacity');
   const generated = key && GENERATED[key];
   const photo = key && PHOTO_BACKDROPS[key];
-  if (!generated && !photo) { wrap.hidden = true; delete wrap.dataset.key; return; }
+  if (!generated && !photo) { wrap.hidden = true; delete wrap.dataset.key; delete wrap.dataset.kind; return; }
   wrap.hidden = false;
   wrap.dataset.key = key;
+  wrap.dataset.kind = generated ? 'generated' : 'photo';
   if (generated) {
     el.classList.add(`backdrop--${generated}`);
     return;
@@ -51,6 +64,7 @@ export function applyBackdrop(wrap, routeId) {
   const { avif, webp, mobile } = backdropUrl(key);
   el.classList.add('backdrop--photo');
   el.style.setProperty('--bd-pos', (mobile ? photo.mpos : photo.pos) || '50% 40%');
+  if (photo.opacity) el.style.opacity = String(photo.opacity);
   el.style.backgroundImage = imageSetOK()
     ? `image-set(url("${avif}") type("image/avif") 1x, url("${webp}") type("image/webp") 1x)`
     : `url("${webp}")`;

@@ -17,6 +17,14 @@ export function playerPhoto(id) {
   return entry || null;
 }
 
+// Every published portrait with its attribution, for the credits list that
+// compact avatars (title-only credit) rely on.
+export function portraitCredits() {
+  return Object.entries(PHOTOS)
+    .map(([id, e]) => ({ id, ...e }))
+    .sort((a, b) => a.name.localeCompare(b.name));
+}
+
 export function photoCredit(entry) {
   if (!entry) return '';
   return entry.credit || `Photo: ${entry.author} · ${entry.license} · Wikimedia Commons`;

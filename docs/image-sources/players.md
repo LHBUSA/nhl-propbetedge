@@ -42,7 +42,9 @@ A player gets a portrait only when the file is confidently that player: the Wiki
 | … with a P18 image | 148 |
 | Licence accepted (and photo ≤ 10 years old) | 104 |
 | Crop accepted by the automatic face gate | 57 |
-| Visually accepted → published | **46** (34 skaters, 12 goalies) |
+| Visually accepted | 46 (34 skaters, 12 goalies) |
+| Excluded after acceptance (brand review) | 1 — Ilya Sorokin: the only licensed photo is a Russian presidential press-service ceremony image; not placed next to betting content |
+| **Published** | **45** (34 skaters, 11 goalies) |
 | Pending visual review (not published) | 0 |
 
 Published bytes (all four files per player): 1983.5 KB. Licence mix: CC BY-SA 4.0: 25, CC BY 2.0: 10, CC BY-SA 2.0: 9, CC BY 4.0: 1, CC BY-SA 2.5: 1.
@@ -96,7 +98,7 @@ Commons "Restrictions" tags on published files (e.g. personality rights): Alex N
 | Erik Karlsson | skater | 8474578 | [Erik Karlsson 1 2017-05-13.jpg](https://commons.wikimedia.org/wiki/File:Erik_Karlsson_1_2017-05-13.jpg) | Michael Miller | [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0) | 2017 |
 | Evan Bouchard | skater | 8480803 | [Evan Bouchard.jpg](https://commons.wikimedia.org/wiki/File:Evan_Bouchard.jpg) | TheAHL | [CC BY 2.0](https://creativecommons.org/licenses/by/2.0) | 2020 |
 | Filip Forsberg | skater | 8476887 | [Filip Forsberg closeup 2023.jpg](https://commons.wikimedia.org/wiki/File:Filip_Forsberg_closeup_2023.jpg) | JennG | [CC BY-SA 2.0](https://creativecommons.org/licenses/by-sa/2.0) | 2023 |
-| Ilya Sorokin | goalie | 8478009 | [Ilya Sorokin (cropped).jpg](https://commons.wikimedia.org/wiki/File:Ilya_Sorokin_(cropped).jpg) | Пресс-служба Президента России | [CC BY 4.0](https://creativecommons.org/licenses/by/4.0) | 2018 |
+| ~~Ilya Sorokin~~ (excluded, see Counts) | goalie | 8478009 | [Ilya Sorokin (cropped).jpg](https://commons.wikimedia.org/wiki/File:Ilya_Sorokin_(cropped).jpg) | Пресс-служба Президента России | [CC BY 4.0](https://creativecommons.org/licenses/by/4.0) | 2018 |
 | Jackson LaCombe | skater | 8481605 | [2025-05-04 Deutschland gegen USA (Eishockey-Länderspiel) by Sandro Halank–038.jpg](https://commons.wikimedia.org/wiki/File:2025-05-04_Deutschland_gegen_USA_(Eishockey-L%C3%A4nderspiel)_by_Sandro_Halank%E2%80%93038.jpg) | Sandro Halank, Wikimedia Commons | [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0) | 2025 |
 | Jake DeBrusk | skater | 8478498 | [Jake DeBrusk Boston Bruins 2017.jpg](https://commons.wikimedia.org/wiki/File:Jake_DeBrusk_Boston_Bruins_2017.jpg) | Meowwcat | [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0) | 2017 |
 | Jesper Bratt | skater | 8479407 | [2023-12-07 Jesper Bratt (cropped).jpeg](https://commons.wikimedia.org/wiki/File:2023-12-07_Jesper_Bratt_(cropped).jpeg) | Jenn G from Seattle, WA | [CC BY-SA 2.0](https://creativecommons.org/licenses/by-sa/2.0) | 2023 |

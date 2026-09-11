@@ -1,4 +1,5 @@
 import { $, $$, esc, on } from '../lib/dom.js';
+import { portraitCredits } from '../components/player.js';
 
 // Methodology: static editorial page. The hash router owns "#", so the table
 // of contents uses buttons that scroll, never "#id" links.
@@ -42,7 +43,7 @@ const SECTIONS = [
       ['Newsroom<br><span class="faint">NHL.com content API · Yahoo Sports NHL RSS</span>', 'Headline, source, time and a link out. Never bodies or summaries.', `${tag('Headlines + links only', 'confirmed')}<span class="mth-cell-note">Yahoo's RSS terms allow unmodified headlines with attribution, so those items say "via Yahoo Sports". NHL.com items fall under the owner risk decision above.</span>`],
       ['Odds and props<br><span class="faint">The Odds API</span>', 'Market snapshots with capture time, book and age', `${tag('Pending', 'unavailable')}<span class="mth-cell-note">Terms allow display in this product. The snapshot ingest is not running yet, so no price appears anywhere.</span>`],
       ['Pregame goalies, projected lines, injury statuses', '—', `${tag('Blocked by licensing', 'unavailable')}<span class="mth-cell-note">The sites that publish them prohibit scraping or commercial use. A licensed feed is required; until then these read UNKNOWN or unavailable.</span>`],
-      ['Player headshots', '—', `${tag('Not used', 'unavailable')}<span class="mth-cell-note">Not licensed. Players get a monogram.</span>`]
+      ['Player portraits<br><span class="faint">Wikimedia Commons</span>', 'Reviewed, openly licensed photos matched to the player through Wikidata (NHL player id)', `${tag('Credited', 'confirmed')}<span class="mth-cell-note">CC0, public domain, CC BY or CC BY-SA only, each credited below. NHL.com headshots are not used. Everyone else gets initials and a team mark.</span>`]
     ], 'mth-table--stack')}
     ${defs([
       ['OFFICIAL', 'Published by the NHL as league data: scores, box scores, rosters, scratches.'],
@@ -211,10 +212,30 @@ const SECTIONS = [
       <li><b>Shadow models never appear as picks.</b></li>
     </ol>
     <p><a class="pbe-btn" href="#/track-record">Open the Track Record</a></p>`
+  },
+  {
+    id: 'credits',
+    title: 'Image credits',
+    lede: 'Every photograph on this site, where it came from and under what license. Imagery is identification and atmosphere, never an endorsement: no player, team or league endorses PropBetEdge.',
+    body: () => {
+      const people = portraitCredits();
+      return `${defs([
+        ['Page photography', 'Tony Schnagl, Pavel Danilyuk, Tima Miroshnichenko and Ron Lach, via Pexels (Pexels License). Rink, crease and terminal backgrounds on Shot Lab, Methodology and Track Record are our own drawings.'],
+        ['Player portraits', `${people.length} players, from Wikimedia Commons, cropped to head and shoulders. Players without a reviewed, openly licensed photo get initials and a team mark rather than a guess.`],
+        ['Brand mark', 'The PropBetEdge mark and icons are our own. No NHL or club trademark is used as an identity.']
+      ])}
+      ${table(['Player', 'Photographer', 'License', 'Source'], people.map(e => [
+        `<a href="#/player/${esc(e.id)}">${esc(e.name)}</a>`,
+        esc(e.author || 'Unknown author'),
+        e.license_url ? `<a href="${esc(e.license_url)}" rel="noopener license" target="_blank">${esc(e.license)}</a>` : esc(e.license),
+        `<a href="${esc(e.source_page)}" rel="noopener" target="_blank">Wikimedia Commons ↗</a>`
+      ]), 'mth-table--stack mth-table--credits')}
+      <p class="dim">All portraits are cropped from the original. Licenses marked BY-SA apply to our crops as well.</p>`;
+    }
   }
 ];
 
-export function mount(root) {
+export function mount(root, params = {}) {
   root.innerHTML = `<section class="wrap section mth">
     <div class="section-head section-head--editorial"><div><span class="eyebrow">Methodology</span><h2>How every number on this site is made</h2></div>
       <p>Sources, definitions and the rules we hold ourselves to. When something is missing, this page explains why it stays missing.</p></div>
@@ -230,7 +251,7 @@ export function mount(root) {
           <span class="mth-num mono">${String(i + 1).padStart(2, '0')}</span>
           <h3 id="mth-h-${s.id}" class="mth-h" tabindex="-1">${esc(s.title)}</h3>
           <p class="mth-lede">${esc(s.lede)}</p>
-          <div class="mth-body">${s.body}</div>
+          <div class="mth-body">${typeof s.body === 'function' ? s.body() : s.body}</div>
         </section>`).join('')}
         <p class="micro mth-updated">Last reviewed Sep 11, 2026 · 2026-27 season</p>
       </article>
@@ -272,7 +293,29 @@ export function mount(root) {
     })
   ];
 
+  // #/methodology?section=credits (footer link) lands on that section.
+  // The font stylesheet loads without blocking, so a late swap reflows
+  // everything above the target: re-anchor on each font load for a few
+  // seconds, and stop as soon as the reader scrolls on their own.
+  let releaseAnchor = () => {};
+  if (params.section && $(`#mth-${params.section}`, root)) {
+    const jump = () => { const t = $(`#mth-${params.section}`, root); if (t?.isConnected) { t.scrollIntoView({ block: 'start' }); setActive(params.section); } };
+    const onFonts = () => requestAnimationFrame(jump);
+    const stop = () => { releaseAnchor(); };
+    releaseAnchor = () => {
+      document.fonts?.removeEventListener?.('loadingdone', onFonts);
+      ['wheel', 'touchstart', 'keydown'].forEach(t => window.removeEventListener(t, stop));
+      clearTimeout(timer);
+      releaseAnchor = () => {};
+    };
+    document.fonts?.addEventListener?.('loadingdone', onFonts);
+    ['wheel', 'touchstart', 'keydown'].forEach(t => window.addEventListener(t, stop, { passive: true, once: true }));
+    const timer = setTimeout(stop, 4000);
+    requestAnimationFrame(jump);
+  }
+
   return () => {
+    releaseAnchor();
     observer?.disconnect();
     narrow.removeEventListener('change', syncBox);
     disposers.forEach(d => d());
