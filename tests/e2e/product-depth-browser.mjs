@@ -50,7 +50,10 @@ const sourceWire = {
   items: [{
     id: 'wire-1', title: 'Verified NHL source-wire headline', source: 'NHL.com', origin: 'nhl.com',
     url: 'https://www.nhl.com/news/source-wire', published_at: iso(9), category: 'League news',
-    category_basis: 'fixture', material: false, breaking: false, teams: ['DET'], players: [], related: [], related_count: 0
+    category_basis: 'fixture', material: false, breaking: false,
+    teams: ['CAR'], teams_basis: 'fixture',
+    players: [{ id: '9999999', name: 'QA Player' }],
+    related: [], related_count: 0
   }]
 };
 
@@ -84,6 +87,18 @@ function fail(message, details = '') {
   throw new Error(`${message}${details ? `\n${details}` : ''}`);
 }
 
+async function assertPlayerPhoto(page, route, width) {
+  await page.waitForSelector('.pid__img--official', { timeout: 10000 });
+  const identity = await page.locator('.pid__img--official').first().evaluate(img => ({
+    src: img.src,
+    broken: Boolean(img.complete && img.naturalWidth === 0)
+  }));
+  if (!identity.src.includes('propbet-img-proxy.sales-fd3.workers.dev')) fail(`${route} ${width}: player headshot bypassed CF image proxy: ${identity.src}`);
+  if (!decodeURIComponent(identity.src).includes('/20262027/CAR/9999999.png')) fail(`${route} ${width}: current-season NHL headshot candidate missing: ${identity.src}`);
+  if (identity.broken) fail(`${route} ${width}: player headshot rendered broken`);
+  return identity.src;
+}
+
 async function assertPage(page, route, width) {
   const errors = [];
   page.on('pageerror', e => errors.push(`pageerror: ${e.message}`));
@@ -93,6 +108,11 @@ async function assertPage(page, route, width) {
   await page.waitForSelector(route === '/news' ? '.dk-news' : '.wrap.changes', { timeout: 15000 });
   await page.waitForSelector(route === '/news' ? '.pbeo[data-pbe-originals]' : '.pbeo-board[data-pbe-originals-board]', { timeout: 15000 });
   await page.waitForTimeout(350);
+
+  // This comes from the bundled product itself: the operational source-wire
+  // fixture includes an unlisted player, forcing playerIdentity through its
+  // official NHL-headshot fallback rather than a reviewed local portrait.
+  const playerPhoto = await assertPlayerPhoto(page, route, width);
 
   const metrics = await page.evaluate(() => ({
     overflow: Math.max(0, document.documentElement.scrollWidth - innerWidth),
@@ -123,27 +143,10 @@ async function assertPage(page, route, width) {
     if (tabCards < 3) fail(`${route} ${width}: PBE tab did not populate (${tabCards})`);
   }
 
-  // Exercise the shared identity component directly. A valid-but-unlisted NHL
-  // id must generate the official-headshot path through the CF image proxy.
-  const identity = await page.evaluate(async () => {
-    const { playerIdentity } = await import('/src/components/player.js');
-    const host = document.createElement('div');
-    host.id = 'qa-player-photo';
-    host.innerHTML = playerIdentity({ id: '9999999', name: 'QA Player', team: 'CAR', size: 'lg', label: true });
-    document.body.appendChild(host);
-    await new Promise(resolve => setTimeout(resolve, 100));
-    const img = host.querySelector('.pid__img--official');
-    return { exists: Boolean(img), src: img?.src || '', broken: Boolean(img && img.complete && img.naturalWidth === 0) };
-  });
-  if (!identity.exists) fail(`${route} ${width}: shared player identity did not produce official headshot fallback`);
-  if (!identity.src.includes('propbet-img-proxy.sales-fd3.workers.dev')) fail(`${route} ${width}: player headshot bypassed CF image proxy: ${identity.src}`);
-  if (!decodeURIComponent(identity.src).includes('/20262027/CAR/9999999.png')) fail(`${route} ${width}: current-season NHL headshot candidate missing: ${identity.src}`);
-  if (identity.broken) fail(`${route} ${width}: player headshot rendered broken`);
-
   if (errors.length) fail(`${route} ${width}: console/page errors`, errors.join('\n'));
   const filename = `${route === '/' ? 'ice-board' : 'newsroom'}-${width}.png`;
   await page.screenshot({ path: path.join(outDir, filename), fullPage: true });
-  return { route, width, ...metrics, screenshot: filename, playerPhoto: identity.src };
+  return { route, width, ...metrics, screenshot: filename, playerPhoto };
 }
 
 const browser = await chromium.launch({ headless: true });
@@ -153,15 +156,23 @@ try {
     const context = await browser.newContext({ viewport: { width, height: width <= 480 ? 844 : 900 }, deviceScaleFactor: 1 });
     for (const route of ['/', '/news']) {
       const page = await context.newPage();
-      report.push(await assertPage(page, route, width));
-      await page.close();
+      try {
+        report.push(await assertPage(page, route, width));
+      } catch (error) {
+        const filename = `FAILED-${route === '/' ? 'ice-board' : 'newsroom'}-${width}.png`;
+        await page.screenshot({ path: path.join(outDir, filename), fullPage: true }).catch(() => {});
+        fs.writeFileSync(path.join(outDir, 'failure.txt'), String(error?.stack || error));
+        throw error;
+      } finally {
+        await page.close();
+      }
     }
     await context.close();
   }
 } finally {
   await browser.close();
+  fs.writeFileSync(path.join(outDir, 'report.json'), JSON.stringify(report, null, 2));
 }
 
-fs.writeFileSync(path.join(outDir, 'report.json'), JSON.stringify(report, null, 2));
 for (const row of report) console.log(`PASS ${row.width} ${row.route} overflow=${row.overflow} broken=${row.broken.length} cards=${row.pbeCards} sources=${row.sourceLinks}`);
 console.log('NHL product-depth browser gate: PASS');
