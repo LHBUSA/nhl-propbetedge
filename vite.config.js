@@ -5,9 +5,7 @@ import { pathToFileURL } from 'url';
 // Dev-only: serve /api/* through the same handlers Vercel runs, via a tiny
 // req/res shim. Production builds never include this.
 function vercelApiDev() {
-  return {
-    name: 'vercel-api-dev',
-    configureServer(server) {
+  const install = server => {
       server.middlewares.use(async (req, res, next) => {
         const url = new URL(req.url, 'http://localhost');
         const match = url.pathname.match(/^\/api\/([a-z-]+)$/);
@@ -27,8 +25,9 @@ function vercelApiDev() {
           res.end(JSON.stringify({ ok: false, error: String(error?.message || error) }));
         }
       });
-    }
   };
+  // Same shim for `vite preview`, so the production bundle can be measured locally.
+  return { name: 'vercel-api-dev', configureServer: install, configurePreviewServer: install };
 }
 
 export default defineConfig({
