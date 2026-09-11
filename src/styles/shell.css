@@ -18,11 +18,8 @@ html.is-locked, html.is-locked body { overflow: hidden; }
   display: flex; align-items: center; gap: var(--s-4);
 }
 .brand { display: inline-flex; align-items: center; gap: 10px; flex: none; min-height: 44px; }
-.brand__mark {
-  display: grid; place-items: center; width: 34px; height: 34px; border-radius: var(--r-sm);
-  border: 1px solid var(--pbe-gold); color: var(--pbe-gold);
-  font: 800 11px/1 var(--pbe-font-data); letter-spacing: .06em;
-}
+.brand__mark { display: block; width: 34px; height: 34px; flex: none; }
+.brand__mark svg { display: block; }
 .brand__word { font: 800 17px/1 var(--pbe-font-ui); letter-spacing: -.02em; color: var(--pbe-paper); }
 .brand__word b { color: var(--pbe-gold); font-weight: 800; }
 .brand__sport {

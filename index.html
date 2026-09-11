@@ -3,14 +3,87 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>PropBetEdge NHL — Hockey Intelligence</title>
+    <meta name="description" content="Hockey intelligence for bettors: who is starting in goal, who is out, what moved, and where the pressure is coming from. PBE Cast play-by-play, real shot maps, line deployment, news and market snapshots — every number sourced and time-stamped." />
+    <link rel="canonical" href="https://nhl.propbetedge.ai/" />
+    <meta name="robots" content="index, follow, max-image-preview:large" />
+    <meta name="application-name" content="PropBetEdge NHL" />
+    <meta name="apple-mobile-web-app-title" content="PBE NHL" />
+    <meta name="publisher" content="PropBetEdge" />
     <meta name="theme-color" content="#14110d" />
     <meta name="color-scheme" content="dark" />
-    <meta name="description" content="PropBetEdge NHL — who is starting, who is out, what moved, and where the pressure is coming from. Live PBE Cast, shot maps, goalies, lines and props with sourced, time-stamped data." />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="PropBetEdge" />
+    <meta property="og:locale" content="en_US" />
     <meta property="og:title" content="PropBetEdge NHL — Hockey Intelligence" />
-    <meta property="og:description" content="Live PBE Cast, real shot maps, goalie status, news and props — every value sourced and time-stamped." />
-    <meta property="og:image" content="/assets/nhl/hero-ice-1440.webp" />
-    <title>PropBetEdge NHL — Hockey Intelligence</title>
+    <meta property="og:description" content="PBE Cast, real shot maps, goalie status, line deployment, news and market snapshots — every number sourced and time-stamped." />
+    <meta property="og:url" content="https://nhl.propbetedge.ai/" />
+    <meta property="og:image" content="https://nhl.propbetedge.ai/og/propbetedge-nhl-1200x630.jpg" />
+    <meta property="og:image:type" content="image/jpeg" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="PropBetEdge NHL — Hockey Intelligence. Gold PropBetEdge mark over a dark ice-level arena photograph." />
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="PropBetEdge NHL — Hockey Intelligence" />
+    <meta name="twitter:description" content="PBE Cast, real shot maps, goalie status, line deployment, news and market snapshots — every number sourced and time-stamped." />
+    <meta name="twitter:image" content="https://nhl.propbetedge.ai/og/propbetedge-nhl-1200x630.jpg" />
+    <meta name="twitter:image:alt" content="PropBetEdge NHL — Hockey Intelligence. Gold PropBetEdge mark over a dark ice-level arena photograph." />
+
+    <link rel="icon" href="/favicon.ico" sizes="48x48" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/site.webmanifest" />
+
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@graph": [
+        {
+          "@type": "Organization",
+          "@id": "https://propbetedge.ai/#organization",
+          "name": "PropBetEdge",
+          "url": "https://propbetedge.ai/",
+          "logo": { "@type": "ImageObject", "url": "https://nhl.propbetedge.ai/icon-512.png", "width": 512, "height": 512 }
+        },
+        {
+          "@type": "WebSite",
+          "@id": "https://nhl.propbetedge.ai/#website",
+          "url": "https://nhl.propbetedge.ai/",
+          "name": "PropBetEdge NHL",
+          "alternateName": "PBE NHL",
+          "description": "Hockey intelligence for bettors: goalie status, line deployment, play-by-play, shot maps, news and market snapshots, with every number sourced and time-stamped.",
+          "inLanguage": "en-US",
+          "publisher": { "@id": "https://propbetedge.ai/#organization" }
+        },
+        {
+          "@type": "WebApplication",
+          "@id": "https://nhl.propbetedge.ai/#app",
+          "name": "PropBetEdge NHL",
+          "url": "https://nhl.propbetedge.ai/",
+          "applicationCategory": "SportsApplication",
+          "operatingSystem": "Web",
+          "browserRequirements": "Requires JavaScript",
+          "image": "https://nhl.propbetedge.ai/og/propbetedge-nhl-1200x630.jpg",
+          "publisher": { "@id": "https://propbetedge.ai/#organization" },
+          "isPartOf": { "@id": "https://nhl.propbetedge.ai/#website" }
+        },
+        {
+          "@type": "WebPage",
+          "@id": "https://nhl.propbetedge.ai/#webpage",
+          "url": "https://nhl.propbetedge.ai/",
+          "name": "PropBetEdge NHL — Hockey Intelligence",
+          "isPartOf": { "@id": "https://nhl.propbetedge.ai/#website" },
+          "about": { "@id": "https://nhl.propbetedge.ai/#app" },
+          "primaryImageOfPage": { "@type": "ImageObject", "url": "https://nhl.propbetedge.ai/og/propbetedge-nhl-1200x630.jpg", "width": 1200, "height": 630 }
+        }
+      ]
+    }
+    </script>
+
     <script>
       // Preload the hero only when the Ice Board is the landing route.
       (function () {
@@ -34,7 +107,12 @@
   </head>
   <body>
     <div id="app"></div>
-    <noscript><p style="padding:24px;color:#f5f1eb;background:#14110d;font-family:sans-serif">PropBetEdge NHL needs JavaScript for live data.</p></noscript>
+    <noscript>
+      <main style="padding:24px;max-width:720px;color:#f5f1eb;background:#14110d;font-family:system-ui,sans-serif;line-height:1.6">
+        <h1>PropBetEdge NHL — Hockey Intelligence</h1>
+        <p>Goalie status, line deployment, play-by-play, shot maps, news and market snapshots, with every number sourced and time-stamped. The live product needs JavaScript.</p>
+      </main>
+    </noscript>
     <script type="module" src="/src/main.js"></script>
   </body>
 </html>
