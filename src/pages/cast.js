@@ -1,6 +1,7 @@
 import { $, esc, on } from '../lib/dom.js';
 import { describeError, nhl, odds } from '../lib/api.js';
 import { marketPanel } from '../components/market.js';
+import { mountCenter } from './cast-center.js';
 import { freshStamp } from '../lib/freshness.js';
 import { countdownParts, dateLabel, dayET, gameTypeLabel, num, pct, periodLabel, share, svPct, timeET, titleCase, todayET } from '../lib/format.js';
 import { createPoller } from '../lib/poll.js';
@@ -260,6 +261,7 @@ function pickerMarkup(games, currentId, label) {
 }
 
 export function mount(root, params, ctx) {
+  if (params.view === 'all') return mountCenter(root, params, ctx);
   const state = {
     gameId: params.gameId || null,
     cast: null, meta: null, failed: false, error: null,
@@ -284,7 +286,7 @@ export function mount(root, params, ctx) {
 
   const renderPicker = () => {
     picker.innerHTML = `${pickerMarkup(state.pickGames, state.gameId, state.pickLabel)}
-      <div class="cast-replay"><label class="micro" for="replay-date">Replay a date</label>
+      <div class="cast-replay"><a class="pbe-btn pbe-btn--sm" href="#/cast?view=all${state.replayDate ? `&date=${esc(state.replayDate)}` : ''}">Command center</a><label class="micro" for="replay-date">Replay a date</label>
         <input id="replay-date" class="datenav__input" type="date" value="${esc(state.replayDate || '')}" max="${todayET()}">
         ${state.pickLabel ? `<span class="micro">${esc(state.pickLabel)}</span>` : ''}</div>`;
   };

@@ -164,6 +164,28 @@
 .cast-pregame__list { list-style: none; margin: var(--s-3) 0; padding: 0; display: grid; gap: 10px; font-size: var(--fs-sm); color: var(--pbe-dim); }
 .cast-pregame__list li { display: flex; gap: 10px; align-items: baseline; }
 
+/* ---------- command center */
+.cc-tools { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: var(--s-4); }
+.cc-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: var(--s-3); }
+.ctile { display: grid; gap: 10px; padding: var(--s-3) var(--s-4); background: var(--pbe-ink-2); border: 1px solid var(--pbe-line); border-radius: var(--r-md); position: relative; min-width: 0; }
+.ctile::before { content: ""; position: absolute; inset: 0 auto 0 0; width: 3px; border-radius: var(--r-md) 0 0 var(--r-md); background: linear-gradient(180deg, var(--away) 0 50%, var(--home) 50% 100%); }
+.ctile[data-state="LIVE"] { border-color: rgba(230,57,70,.45); }
+.ctile__head { display: flex; align-items: center; gap: 8px; }
+.ctile__head .watch-btn--compact { margin-left: auto; }
+.ctile__body { display: grid; gap: 6px; }
+.ctile__team { display: grid; grid-template-columns: auto auto 1fr auto auto; gap: 10px; align-items: center; font-family: var(--pbe-font-data); }
+.ctile__team b { font-size: var(--fs-data); }
+.ctile__sog { font-size: 12px; color: var(--pbe-dim); justify-self: end; }
+.ctile__score { font-size: var(--fs-data-lg); font-weight: 600; min-width: 1.4ch; text-align: right; }
+.ctile__recent { grid-column: 3; font-size: 11px; color: var(--pbe-gold-bright); }
+.ctile__cf { display: grid; gap: 4px; --away: var(--pbe-paper-2); --home: var(--pbe-gold); }
+.ctile__last { font-size: 12px; color: var(--pbe-dim); border-top: 1px solid var(--pbe-line-faint); padding-top: 8px; }
+.scout { margin-bottom: var(--s-4); padding: var(--s-3) var(--s-4); border: 1px solid var(--pbe-line); border-left: 3px solid var(--pbe-crimson-bright); border-radius: var(--r-sm); background: var(--pbe-ink-2); }
+.scout__row { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 8px; }
+.scout__item { display: inline-flex; align-items: baseline; gap: 6px; padding: 6px 10px; border-radius: var(--r-sm); background: var(--pbe-ink-3); font-size: 12px; }
+.scout__item b { font-size: var(--fs-data); color: var(--pbe-paper); }
+.scout__item--pp b { color: var(--pbe-gold-bright); }
+
 /* ---------- replay */
 .replay {
   margin-top: var(--s-3); padding: var(--s-3) var(--s-4);
