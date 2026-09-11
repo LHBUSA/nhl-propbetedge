@@ -1,0 +1,52 @@
+name: NHL Product Depth Browser Gate
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - 'src/components/player.js'
+      - 'src/services/editorial-depth.js'
+      - 'src/styles/product-depth.css'
+      - 'src/main.js'
+      - 'tests/e2e/product-depth-browser.mjs'
+      - '.github/workflows/product-depth-browser.yml'
+  push:
+    branches: [nhl-editorial-photo-depth-v1]
+
+permissions:
+  contents: read
+
+jobs:
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+      - run: npm ci
+      - name: Install Playwright for QA only
+        run: |
+          npm install --no-save playwright@1.55.0
+          npx playwright install --with-deps chromium
+      - name: Start static preview
+        run: |
+          npm run build
+          nohup npm run preview -- --host 127.0.0.1 --port 4173 >/tmp/nhl-preview.log 2>&1 &
+          for i in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:4173/ >/dev/null; then exit 0; fi
+            sleep 1
+          done
+          cat /tmp/nhl-preview.log
+          exit 1
+      - name: 1440 + 390 product-depth browser gate
+        run: node tests/e2e/product-depth-browser.mjs
+      - name: Upload browser evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nhl-product-depth-browser
+          path: artifacts/product-depth-browser
+          if-no-files-found: error
