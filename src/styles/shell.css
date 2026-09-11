@@ -150,7 +150,7 @@ html.is-locked, html.is-locked body { overflow: hidden; }
 .footer { margin-top: var(--s-7); border-top: 1px solid var(--pbe-line); background: var(--pbe-ink-4); }
 .footer__in { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 2fr); gap: var(--s-6); padding-block: var(--s-6); }
 .footer__copy { margin-top: 10px; color: var(--pbe-faint-text); font-size: var(--fs-sm); max-width: 44ch; }
-.footer__cols { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--s-5); }
+.footer__cols { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--s-5); }
 .footer__cols p { margin-top: 6px; color: var(--pbe-faint-text); font-size: var(--fs-sm); line-height: 1.7; }
 .footer__cols a:hover { color: var(--pbe-gold-bright); }
 @media (max-width: 900px) {
