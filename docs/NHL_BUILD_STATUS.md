@@ -122,7 +122,7 @@ MLB (`propbetedge-v2`) is the product-depth reference; its architecture shortcut
 
 ## Architecture decisions
 
-- Browser → Vercel `/api/nhl` (server-side secret, allowlisted) → PropSports Worker (`nhl-intelligence/src/entry.js`) → api-web.nhle.com / forge / Yahoo RSS. No provider or PropSports credential in browser code.
+- Browser → Cloudflare `nhl-gateway` (`https://nhl-api.propbetedge.ai`; allowlisted routes/params, product-origin CORS, scoped `NHL_GATEWAY_SECRET` attached inside Cloudflare) → `propsports-api` via service binding (`nhl-intelligence/src/entry.js`) → api-web.nhle.com / forge / Yahoo RSS. Vercel serves static files only; the `/api/nhl`, `/api/env`, `/api/odds` relays were removed 2026-09-11 (GitHub issue #3). No provider or PropSports credential in browser code or Vercel env.
 - Every payload carries `schema, source_urls, fetched_at, ttl_s, stale_after_s`. The frontend derives CURRENT / CACHED / STALE / UNAVAILABLE / ERROR and keeps ageing labels on a 1 s ticker so a failed refresh can never leave data labelled LIVE.
 - Newsroom headlines are dashboard-secret-only (paid API keys get 403): third-party headline terms do not allow re-serving through the sellable API.
 - Production scheduling stays on Cloudflare cron. GitHub Actions run tests only.

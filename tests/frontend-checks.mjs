@@ -2,18 +2,15 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
-import { resolveTarget } from '../api/nhl.js';
 
-// 1. Proxy allowlist: the owner secret can only reach NHL routes.
-const base = 'https://propsports.example';
-assert.equal(resolveTarget({ path: '/nhl/board' }, base).url, `${base}/nhl/board`);
-assert.equal(resolveTarget({ path: '/nhl/game/2025020500/cast' }, base).url, `${base}/nhl/game/2025020500/cast`);
-assert.equal(resolveTarget({ path: '/nhl/schedule', date: '2026-09-29' }, base).url, `${base}/nhl/schedule?date=2026-09-29`);
-for (const bad of ['/nhl/../mlb/odds', '/mlb/odds', '/nhl/admin/ingest/schedule', '//evil.test/x', '/nhl/game/123/cast', 'https://evil.test', '/nhl/team/tor/../../x']) {
-  assert.ok(resolveTarget({ path: bad }, base).error, `rejected: ${bad}`);
-}
-assert.ok(resolveTarget({ path: '/nhl/board', url: 'https://evil.test' }, base).error, 'unknown params rejected');
-assert.ok(resolveTarget({ path: '/nhl/board', date: '2026-9-1' }, base).error, 'malformed date rejected');
+// 1. Data path: browser -> Cloudflare nhl-gateway. Vercel serves static files
+// only; the retired /api/nhl, /api/env and /api/odds relays must not return.
+// (The route/query allowlist now lives in the gateway: LHBUSA/propsports-api-worker
+// nhl-gateway/ + test/nhl-gateway-regression.mjs.)
+assert.ok(!fs.existsSync('api'), 'no Vercel API functions: NHL data runs on Cloudflare');
+const apiSource = fs.readFileSync('src/lib/api.js', 'utf8');
+assert.match(apiSource, /'https:\/\/nhl-api\.propbetedge\.ai'/, 'production gateway is the default data origin');
+assert.match(apiSource, /credentials: 'omit'/, 'gateway requests never carry cookies');
 
 // 2. Truth rules: no randomness or stale launch copy in shipped source.
 const files = [];
@@ -25,14 +22,15 @@ const walk = dir => {
   }
 };
 walk('src');
-walk('api');
-files.push('index.html');
+files.push('index.html', 'vite.config.js');
 const banned = [
   [/Math\.random\s*\(/, 'Math.random in shipped code'],
   [/Launching Oct/i, 'stale launch copy'],
   [/30 teams/i, '30-team copy (NHL has 32)'],
   [/tip-?off/i, '"tip-off" (use puck drop)'],
-  [/VITE_[A-Z_]*(KEY|SECRET|TOKEN)/, 'secret exposed through VITE_ env']
+  [/VITE_[A-Z_]*(KEY|SECRET|TOKEN)/, 'secret exposed through VITE_ env'],
+  [/\/api\/(nhl|env|odds)(?![A-Za-z])/, 'retired Vercel data relay (/api/nhl, /api/env, /api/odds)'],
+  [/X-Dashboard-Secret|X-NHL-Gateway-Secret|PROPSPORTS_DASHBOARD_SECRET|NHL_GATEWAY_SECRET|X-API-Key/i, 'backend credential referenced in browser code']
 ];
 for (const file of files) {
   const text = fs.readFileSync(file, 'utf8');

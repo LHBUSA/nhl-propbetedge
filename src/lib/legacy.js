@@ -4,6 +4,7 @@
 // Real NHL schedule data only; provenance is labelled as the legacy route and
 // fetched_at is the moment this browser received it. No scores are inferred.
 import { addDays } from './format.js';
+import { gatewayUrl } from './api.js';
 import { TEAMS } from './teams.js';
 
 // Verified 2026-09-11 from api-web.nhle.com /schedule (preSeasonStartDate,
@@ -64,7 +65,7 @@ function phase(date) {
 }
 
 async function legacySchedule(date, signal) {
-  const res = await fetch(`/api/nhl?path=${encodeURIComponent('/nhl/schedule')}&date=${date}`, { signal, headers: { Accept: 'application/json' } });
+  const res = await fetch(gatewayUrl('/nhl/schedule', { date }), { signal, mode: 'cors', credentials: 'omit', headers: { Accept: 'application/json' } });
   if (!res.ok) throw new Error(`legacy schedule HTTP ${res.status}`);
   const data = await res.json();
   if (!Array.isArray(data?.games)) throw new Error('legacy schedule shape mismatch');

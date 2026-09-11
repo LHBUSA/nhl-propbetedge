@@ -21,7 +21,7 @@ for (const width of widths) {
     page.on('console', m => { if (m.type() === 'error') errors.push(m.text()); });
     page.on('pageerror', e => errors.push(`pageerror: ${e.message}`));
     page.on('requestfailed', r => failed.push(`${r.failure()?.errorText} ${r.url()}`));
-    page.on('response', r => { if (r.status() >= 400 && r.url().includes('/api/')) failed.push(`${r.status()} ${r.url()}`); });
+    page.on('response', r => { if (r.status() >= 400 && (r.url().includes('/api/') || r.url().includes('nhl-api.propbetedge.ai'))) failed.push(`${r.status()} ${r.url()}`); });
     const url = `${base}/#${route}`;
     await page.goto(url, { waitUntil: 'networkidle', timeout: 45000 }).catch(e => errors.push(`goto: ${e.message}`));
     await page.waitForTimeout(1500);

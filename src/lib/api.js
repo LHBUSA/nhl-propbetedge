@@ -1,5 +1,8 @@
-// All NHL data goes browser -> /api/nhl (Vercel server proxy) -> PropSports
-// Worker. No provider or PropSports credential ever reaches the browser.
+// All NHL data goes browser -> nhl-gateway (Cloudflare, nhl-api.propbetedge.ai)
+// -> propsports-api (service binding). The gateway attaches the backend
+// credential inside Cloudflare; no provider or PropSports credential ever
+// reaches the browser, and Vercel only serves the static app.
+export const GATEWAY_URL = String(import.meta.env?.VITE_NHL_GATEWAY_URL || 'https://nhl-api.propbetedge.ai').replace(/\/$/, '');
 
 export class ApiError extends Error {
   constructor(message, { status = 0, kind = 'error', payload = null } = {}) {
@@ -20,13 +23,18 @@ function qs(params = {}) {
   return search.toString();
 }
 
+export function gatewayUrl(path, params = {}) {
+  const query = qs(params);
+  return `${GATEWAY_URL}${path}${query ? `?${query}` : ''}`;
+}
+
 async function request(url, { signal, timeout = 10000 } = {}) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(new DOMException('timeout', 'TimeoutError')), timeout);
   const relay = () => controller.abort(signal.reason);
   signal?.addEventListener('abort', relay, { once: true });
   try {
-    const response = await fetch(url, { signal: controller.signal, headers: { Accept: 'application/json' } });
+    const response = await fetch(url, { signal: controller.signal, mode: 'cors', credentials: 'omit', headers: { Accept: 'application/json' } });
     const text = await response.text();
     let data = null;
     try { data = JSON.parse(text); } catch { /* non-JSON handled below */ }
@@ -38,6 +46,9 @@ async function request(url, { signal, timeout = 10000 } = {}) {
       throw new ApiError(data?.error || `HTTP ${response.status}`, { status: response.status, kind, payload: data });
     }
     if (!data || typeof data !== 'object') throw new ApiError('Non-JSON response', { status: response.status, kind: 'unavailable' });
+    // CURRENT | STALE (gateway served last-known data because the backend failed)
+    const semantics = response.headers.get('X-NHL-Semantics');
+    if (semantics) Object.defineProperty(data, '__gatewaySemantics', { value: semantics, enumerable: false });
     return data;
   } catch (error) {
     if (error instanceof ApiError) throw error;
@@ -61,17 +72,18 @@ function withMeta(data) {
       fetched_at: data.fetched_at || null,
       ttl_s: Number.isFinite(data.ttl_s) ? data.ttl_s : null,
       stale_after_s: Number.isFinite(data.stale_after_s) ? data.stale_after_s : null,
+      gateway_semantics: data.__gatewaySemantics || null,
       received_at: receivedAt
     }
   };
 }
 
-// Which contract this environment's API serves: 'v2' | 'legacy' | 'unknown'.
-// Resolved once from the server-side probe; 'unknown' lets requests through.
+// Which contract the gateway's backend serves: 'v2' | 'legacy' | 'unknown'.
+// Resolved once from the gateway readiness probe; 'unknown' lets requests through.
 let envPromise = null;
 function envInfo() {
   if (!envPromise) {
-    envPromise = fetch('/api/env', { headers: { Accept: 'application/json' } })
+    envPromise = fetch(gatewayUrl('/readiness'), { mode: 'cors', credentials: 'omit', headers: { Accept: 'application/json' } })
       .then(r => (r.ok ? r.json() : null))
       .catch(() => null);
   }
@@ -84,12 +96,11 @@ export async function oddsConfigured() {
   return (await envInfo())?.odds === 'configured';
 }
 
-// Scheduled market snapshot (nhl-odds Worker via /api/odds). Throws
-// not_deployed when this environment has no odds service configured.
+// Scheduled market snapshot (nhl-odds Worker via the gateway's /odds). Throws
+// not_deployed when the gateway has no odds service configured.
 export async function odds(params = {}, options = {}) {
   if (!(await oddsConfigured())) throw new ApiError('Market snapshots are not configured in this environment.', { kind: 'not_deployed' });
-  const q = qs(params);
-  const data = await request(`/api/odds${q ? `?${q}` : ''}`, options);
+  const data = await request(gatewayUrl('/odds', params), options);
   if (data.ok === false) throw new ApiError(data.reason || 'No market snapshot', { kind: 'unavailable', payload: data });
   return withMeta(data);
 }
@@ -101,9 +112,7 @@ export async function nhl(path, params = {}, options = {}) {
   if (!options.skipEnvCheck && (await dataLayer()) === 'legacy') {
     throw new ApiError('NHL intelligence v2 routes are not deployed in this environment.', { kind: 'not_deployed' });
   }
-  const query = qs(params);
-  const url = `/api/nhl?path=${encodeURIComponent(path)}${query ? `&${query}` : ''}`;
-  const data = await request(url, options);
+  const data = await request(gatewayUrl(path, params), options);
   if (!data.schema && options.requireSchema !== false) {
     throw new ApiError('Backend serves the legacy NHL contract (no provenance envelope).', { kind: 'legacy', payload: data });
   }
