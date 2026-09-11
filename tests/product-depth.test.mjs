@@ -7,6 +7,7 @@ const main = fs.readFileSync('src/main.js', 'utf8');
 const newsroom = fs.readFileSync('src/pages/news.js', 'utf8');
 const watcher = fs.readFileSync('src/services/watcher.js', 'utf8');
 const css = fs.readFileSync('src/styles/product-depth.css', 'utf8');
+const contextCss = fs.readFileSync('src/styles/contextual-intel.css', 'utf8');
 
 // Player photos: shared identity gets broad coverage without per-page hacks.
 assert.match(player, /assets\.nhle\.com\/mugs\/nhl\/\$\{season\}\/\$\{club\}\/\$\{playerId\}\.png/, 'official NHL headshot candidates are derived from verified CDN shape');
@@ -28,6 +29,20 @@ assert.match(editorial, /Verified source wire/, 'source wire is kept visibly sep
 assert.match(editorial, /PBE NHL Dispatch/, 'Ice Board receives a PBE editorial rail');
 assert.match(editorial, /PBE NHL\$\{state\.items\.length/, 'the formerly empty PBE tab becomes the PBE desk');
 
+// Contextual research: one editorial fetch/store now serves team + player pages.
+assert.match(editorial, /const players = Array\.isArray\(article\?\.take\?\.players\)/, 'PBE player tags survive normalization for research matching');
+assert.match(editorial, /function currentResearchContext\(\)/, 'team/player route context is explicit');
+assert.match(editorial, /function researchMatches\(ctx\)/, 'context matching is centralized');
+assert.match(editorial, /article\.teams\.includes\(ctx\.team\)/, 'team analysis is matched by explicit PBE team tags');
+assert.match(editorial, /article\.players\.some\(player => keyText\(player\) === name\)/, 'player analysis prefers explicit PBE player tags');
+assert.match(editorial, /title\.includes\(name\)/, 'full player-name title match is an allowed direct fallback');
+assert.match(editorial, /Team context around \$\{ctx\.name\}/, 'team fallback is visibly labeled instead of implied player attribution');
+assert.match(editorial, /PBE analysis is research context, not a status source/, 'context panel states the operational/editorial boundary');
+assert.match(editorial, /enhanceResearchContext\(\)/, 'context rail participates in the shared editorial apply loop');
+assert.match(editorial, /import '\.\.\/styles\/contextual-intel\.css'/, 'context CSS ships with the editorial chunk');
+assert.match(contextCss, /\.pbec-grid/, 'context rail has responsive grid styling');
+assert.match(contextCss, /@media \(max-width: 700px\)/, 'context rail has a mobile layout contract');
+
 // Known-risk generic fields must not be rendered into the NHL vertical. The
 // upstream source audit specifically flags copied/derivative summaries,
 // third-party article images and generated bet advice.
@@ -47,4 +62,4 @@ assert.match(main, /services\/editorial-depth\.js/, 'PBE editorial layer is boot
 assert.ok(!/Math\.random\s*\(/.test(editorial), 'editorial layer contains no synthetic/random data');
 assert.ok(!/VITE_[A-Z_]*(KEY|SECRET|TOKEN)/.test(editorial), 'editorial layer contains no frontend secret contract');
 
-console.log('NHL product depth: PASS — photos + PBE-first analysis + attributed source-wire separation');
+console.log('NHL product depth: PASS — photos + PBE-first analysis + contextual research + attributed source-wire separation');

@@ -1,0 +1,151 @@
+/* Contextual PBE NHL analysis on team + player research surfaces. */
+.pbec {
+  position: relative;
+  margin: 0 0 var(--s-5);
+  padding: clamp(16px, 2vw, 22px);
+  border: 1px solid var(--pbe-line-strong);
+  border-radius: var(--r-md);
+  overflow: hidden;
+  background:
+    radial-gradient(75% 130% at 0 0, rgba(214,166,72,.12), transparent 58%),
+    linear-gradient(145deg, rgba(24,20,14,.97), rgba(9,8,7,.98));
+  box-shadow: 0 20px 58px rgba(0,0,0,.18), inset 0 1px rgba(255,255,255,.025);
+}
+.pbec::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 3px;
+  background: linear-gradient(180deg, var(--pbe-gold-bright), rgba(214,166,72,.04));
+}
+.pbec-head {
+  display: grid;
+  grid-template-columns: auto minmax(0,1fr) auto;
+  gap: 15px;
+  align-items: center;
+  margin-bottom: 15px;
+}
+.pbec-head__identity {
+  display: grid;
+  place-items: center;
+  min-width: 58px;
+}
+.pbec-head h2 {
+  margin: 3px 0 5px;
+  font-family: var(--pbe-font-display);
+  font-size: clamp(19px, 2.25vw, 25px);
+  line-height: 1.05;
+  letter-spacing: -.025em;
+  color: var(--pbe-paper);
+}
+.pbec-head p {
+  max-width: 760px;
+  color: var(--pbe-faint);
+  font-size: 11px;
+  line-height: 1.45;
+}
+.pbec-head__all {
+  align-self: start;
+  color: var(--pbe-gold-bright);
+  font-size: 11px;
+  font-weight: 750;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.pbec-head__all:hover { text-decoration: underline; text-underline-offset: 3px; }
+.pbec-team-mark {
+  display: grid;
+  place-items: center;
+  width: 58px;
+  height: 58px;
+  border: 1px solid var(--pbe-line);
+  border-radius: 15px;
+  background: rgba(255,255,255,.025);
+}
+.pbec-team-mark img { width: 48px; height: 48px; object-fit: contain; }
+.pbec-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0,1fr));
+  gap: 9px;
+}
+.pbec-story {
+  min-width: 0;
+  padding: 13px;
+  border: 1px solid var(--pbe-line-faint);
+  border-radius: var(--r-sm);
+  background: rgba(255,255,255,.012);
+  transition: transform var(--t-fast), border-color var(--t-fast), background var(--t-fast);
+}
+.pbec-story:hover {
+  transform: translateY(-1px);
+  border-color: var(--pbe-line-strong);
+  background: rgba(255,255,255,.025);
+}
+.pbec-story__meta {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  flex-wrap: wrap;
+  color: var(--pbe-faint);
+  font: 700 9px/1.2 var(--pbe-font-data);
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+.pbec-story__meta > span:first-child { color: var(--pbe-gold-bright); }
+.pbec-story__title {
+  display: -webkit-box;
+  margin-top: 9px;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  color: var(--pbe-paper);
+  font-size: 13px;
+  font-weight: 720;
+  line-height: 1.28;
+  text-decoration: none;
+}
+.pbec-story__title:hover { color: var(--pbe-gold-bright); }
+.pbec-story__foot {
+  display: flex;
+  justify-content: space-between;
+  gap: 9px;
+  margin-top: 12px;
+  padding-top: 9px;
+  border-top: 1px solid var(--pbe-line-faint);
+  color: var(--pbe-faint);
+  font-size: 9px;
+  line-height: 1.25;
+}
+.pbec-story__foot a {
+  color: var(--pbe-dim);
+  text-align: right;
+  text-decoration: none;
+}
+.pbec-story__foot a:hover { color: var(--pbe-gold-bright); }
+
+@media (max-width: 1080px) {
+  .pbec-grid { grid-template-columns: repeat(2, minmax(0,1fr)); }
+}
+
+@media (max-width: 700px) {
+  .pbec { padding: 14px; }
+  .pbec-head {
+    grid-template-columns: auto minmax(0,1fr);
+    align-items: start;
+  }
+  .pbec-head__all {
+    grid-column: 1 / -1;
+    padding-left: 1px;
+  }
+  .pbec-grid { grid-template-columns: 1fr; }
+  .pbec-story__title { font-size: 14px; -webkit-line-clamp: 2; }
+}
+
+@media (max-width: 430px) {
+  .pbec-head__identity { min-width: 48px; }
+  .pbec-team-mark { width: 48px; height: 48px; border-radius: 12px; }
+  .pbec-team-mark img { width: 40px; height: 40px; }
+  .pbec-head h2 { font-size: 19px; }
+  .pbec-story__foot { flex-direction: column; }
+  .pbec-story__foot a { text-align: left; }
+}
