@@ -66,6 +66,8 @@ export function renderShell(app) {
         </div>
       </div>
     </header>
+    <div class="backdrop-wrap" id="backdrop" aria-hidden="true" hidden><div class="backdrop"></div></div>
+    <div id="mode-ribbon"></div>
     <main id="main" tabindex="-1"></main>
     <div class="toasts" id="toasts" aria-live="polite"></div>
     <footer class="footer">

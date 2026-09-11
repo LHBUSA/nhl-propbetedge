@@ -4,6 +4,7 @@ import { freshStamp } from '../lib/freshness.js';
 import { gameTypeLabel, n, num, svPct, todayET } from '../lib/format.js';
 import { TEAMS, TEAM_BY_ABBREV } from '../lib/teams.js';
 import { teamMark } from '../components/game.js';
+import { playerIdentity } from '../components/player.js';
 
 const REGULAR_SEASON_START = '2026-09-29';
 const CATS = {
@@ -73,7 +74,7 @@ function leadersTable(state) {
       const known = TEAM_BY_ABBREV.has(r.team);
       return `<tr>
         <td class="num rs-rank">${rank}</td>
-        <td><a class="rs-pl" href="#/player/${esc(r.id)}"><span class="rs-pl__no mono">${r.sweater_number ? `#${esc(r.sweater_number)}` : ''}</span><span><span class="rs-fn">${esc(r.first_name || '')} </span><span class="rs-fi">${esc((r.first_name || '').slice(0, 1))}. </span><b>${esc(r.last_name || r.name || '')}</b></span></a></td>
+        <td><a class="rs-pl" href="#/player/${esc(r.id)}">${playerIdentity({ id: r.id, name: r.name || `${r.first_name || ''} ${r.last_name || ''}`, team: r.team, size: 'sm' })}<span class="rs-pl__no mono">${r.sweater_number ? `#${esc(r.sweater_number)}` : ''}</span><span><span class="rs-fn">${esc(r.first_name || '')} </span><span class="rs-fi">${esc((r.first_name || '').slice(0, 1))}. </span><b>${esc(r.last_name || r.name || '')}</b></span></a></td>
         <td>${known ? `<a class="rs-tm" href="#/team/${esc(r.team)}">${teamMark({ abbrev: r.team, logo: r.team_logo }, 22)}<b>${esc(r.team)}</b></a>` : `<span class="rs-tm">${esc(r.team || '—')}</span>`}</td>
         <td class="num rs-val"><span class="rs-val__bar" style="--w:${width(r.value).toFixed(1)}%" aria-hidden="true"></span><b>${esc(fmtValue(cat, r.value))}</b></td>
         <td class="rs-hide-sm rs-pos">${esc(r.position || '')}</td>

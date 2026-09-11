@@ -8,6 +8,9 @@ import './styles/pages.css';
 import './styles/pages-desk.css';
 import './styles/pages-research.css';
 import './styles/pages-lab.css';
+import './styles/backdrops.css';
+import './styles/mode.css';
+import './styles/identity.css';
 
 import { ApiError, dataLayer, nhl } from './lib/api.js';
 import { legacyBoard } from './lib/legacy.js';
@@ -17,6 +20,8 @@ import { createRouter } from './lib/router.js';
 import { bindShell, renderShell, setActiveNav, setSeasonChip } from './components/shell.js';
 import { bindAlertsUI } from './components/alerts-ui.js';
 import { startWatcher } from './services/watcher.js';
+import { applyBackdrop } from './lib/backdrops.js';
+import { modeRibbon, seasonMode } from './components/mode.js';
 
 const app = document.querySelector('#app');
 const main = renderShell(app);
@@ -102,6 +107,19 @@ bindShell(ctx);
 bindAlertsUI();
 startFreshTicker();
 startWatcher(ctx);
-createRouter({ root: main, ctx, onRoute: id => setActiveNav(id) }).start();
+const backdrop = document.querySelector('#backdrop');
+// Operating-mode ribbon: rendered synchronously from the verified calendar so
+// it never shifts layout; the Ice Board shows the full capability panel instead.
+const ribbon = document.querySelector('#mode-ribbon');
+ribbon.innerHTML = modeRibbon(seasonMode());
+createRouter({
+  root: main,
+  ctx,
+  onRoute: id => {
+    setActiveNav(id);
+    applyBackdrop(backdrop, id);
+    ribbon.hidden = id === 'board' || !ribbon.innerHTML;
+  }
+}).start();
 // Warm the slate for the palette/season chip without blocking the first page.
 ctx.board().catch(() => {});

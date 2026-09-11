@@ -7,6 +7,7 @@ import { dayET, timeET, todayET } from '../lib/format.js';
 import { createPoller } from '../lib/poll.js';
 import { TEAMS, TEAM_BY_ABBREV } from '../lib/teams.js';
 import { teamMark } from '../components/game.js';
+import { playerIdentity } from '../components/player.js';
 
 // Logos here always sit next to visible team text: decorative, so alt="".
 const mark = (team, size) => teamMark(team, size).replace(/ alt="[^"]*"/, ' alt=""');
@@ -61,7 +62,7 @@ function chips(item) {
   const teams = (item.teams || []).filter(t => TEAM_BY_ABBREV.has(t));
   const players = (item.players || []).filter(p => p && p.id);
   if (!teams.length && !players.length) return '';
-  return `<div class="dk-chips">${teams.map(t => `<a class="dk-chip" href="#/team/${esc(t)}" title="Team link · basis: ${esc(item.teams_basis || 'not stated')}">${mark({ abbrev: t }, 18)}<span>${esc(t)}</span></a>`).join('')}${players.map(p => `<a class="dk-chip dk-chip--player" href="#/player/${esc(p.id)}"><span class="dk-mono dk-mono--xs" aria-hidden="true">${monogram(p.name)}</span><span>${esc(p.name || p.id)}</span></a>`).join('')}</div>`;
+  return `<div class="dk-chips">${teams.map(t => `<a class="dk-chip" href="#/team/${esc(t)}" title="Team link · basis: ${esc(item.teams_basis || 'not stated')}">${mark({ abbrev: t }, 18)}<span>${esc(t)}</span></a>`).join('')}${players.map(p => `<a class="dk-chip dk-chip--player" href="#/player/${esc(p.id)}">${playerIdentity({ id: p.id, name: p.name, team: teams.length === 1 ? teams[0] : null, size: 'xs' })}<span>${esc(p.name || p.id)}</span></a>`).join('')}</div>`;
 }
 
 function related(item, open) {

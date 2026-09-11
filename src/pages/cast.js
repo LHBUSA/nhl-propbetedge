@@ -2,6 +2,7 @@ import { $, esc, on } from '../lib/dom.js';
 import { describeError, nhl, odds } from '../lib/api.js';
 import { marketPanel } from '../components/market.js';
 import { mountCenter } from './cast-center.js';
+import { playerIdentity } from '../components/player.js';
 import { freshStamp } from '../lib/freshness.js';
 import { countdownParts, dateLabel, dayET, gameTypeLabel, num, pct, periodLabel, share, svPct, timeET, titleCase, todayET } from '../lib/format.js';
 import { createPoller } from '../lib/poll.js';
@@ -27,6 +28,9 @@ function feedMatch(play, f) {
 }
 
 const who = (play, role) => play.players.find(p => p.role === role);
+// Team abbreviation for a play's acting side (set per render in feedList).
+let feedTeams = null;
+const teamOf = play => (feedTeams && play.side ? feedTeams[play.side]?.abbrev : null);
 const nm = p => (p?.name ? esc(p.name) : '<span class="faint">unlisted</span>');
 
 function playText(play) {
@@ -37,7 +41,8 @@ function playText(play) {
     case 'goal': {
       const a1 = who(play, 'assist1'); const a2 = who(play, 'assist2');
       const assists = [a1, a2].filter(Boolean).map(nm).join(', ');
-      return `<b>GOAL</b> — ${nm(who(play, 'scorer'))}${type || dist ? ` <span class="dim">(${type}${dist})</span>` : ''}${assists ? ` · <span class="dim">A:</span> ${assists}` : ' · <span class="dim">unassisted</span>'}${s?.empty_net_against ? ' · <span class="dim">empty net</span>' : ''}`;
+      const sc = who(play, 'scorer');
+      return `${sc ? playerIdentity({ id: sc.id, name: sc.name, team: teamOf(play), size: 'xs' }) : ''}<b>GOAL</b> — ${nm(sc)}${type || dist ? ` <span class="dim">(${type}${dist})</span>` : ''}${assists ? ` · <span class="dim">A:</span> ${assists}` : ' · <span class="dim">unassisted</span>'}${s?.empty_net_against ? ' · <span class="dim">empty net</span>' : ''}`;
     }
     case 'shot-on-goal': return `Shot on goal — ${nm(who(play, 'shooter'))}${type || dist ? ` <span class="dim">(${type}${dist})</span>` : ''}${who(play, 'goalie') ? ` · saved by ${nm(who(play, 'goalie'))}` : ''}`;
     case 'missed-shot': return `Missed shot — ${nm(who(play, 'shooter'))}${s?.miss_reason ? ` <span class="dim">(${esc(titleCase(s.miss_reason))})</span>` : ''}`;
@@ -85,7 +90,9 @@ function header(cast, meta, failed) {
     ? `${periodLabel(g.status.period, g.status.period_type)} · ${g.status.clock || '—'}${st.key === 'INTERMISSION' ? ' · INT' : ''}`
     : st.key === 'FINAL' ? dayET(g.start_time_utc, true) : `${dayET(g.start_time_utc)} · ${timeET(g.start_time_utc)}`;
   const gin = cast.goalies_in_net || {};
-  const goalie = side => gin[side]?.name ? `${esc(gin[side].name)}${gin[side].in_net_now === false ? ' <span class="pbe-badge pbe-badge--alert">PULLED</span>' : ''}` : '<span class="faint">no attempt faced yet</span>';
+  const goalie = side => gin[side]?.name
+    ? `<a class="cast-gin" href="#/player/${esc(gin[side].id)}">${playerIdentity({ id: gin[side].id, name: gin[side].name, team: g.teams[side].abbrev, size: 'sm' })}<span>${esc(gin[side].name)}</span></a>${gin[side].in_net_now === false ? ' <span class="pbe-badge pbe-badge--alert">PULLED</span>' : ''}`
+    : '<span class="faint">no attempt faced yet</span>';
   const team = (t, side) => `<div class="cast-team cast-team--${side}">
       ${teamMark(t, 52)}
       <div class="cast-team__id"><b>${esc(t.abbrev || '')}</b><span>${esc(t.name || '')}</span></div>
@@ -211,6 +218,7 @@ function feedList(cast, filter, selected) {
     return `<p class="dim feed-empty">${cast.plays.length ? 'No events of this type yet.' : 'The play-by-play stream starts at puck drop.'}</p>`;
   }
   const g = cast.game;
+  feedTeams = g.teams;
   let lastPeriod = null;
   const out = [];
   plays.forEach((p, i) => {

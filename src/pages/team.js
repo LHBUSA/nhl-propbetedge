@@ -4,6 +4,7 @@ import { freshStamp } from '../lib/freshness.js';
 import { ageText, dayET, gameTypeLabel, n, num, svPct, timeET, todayET } from '../lib/format.js';
 import { TEAMS, TEAM_BY_ABBREV, teamAccent } from '../lib/teams.js';
 import { stateBadge, teamMark } from '../components/game.js';
+import { playerIdentity } from '../components/player.js';
 
 // ---- private helpers (lane-local by contract)
 const seasonLabel = s => {
@@ -155,7 +156,7 @@ function skatersSection(s, sort, showAll, rosterIds, abbr) {
       <tbody>${shown.map(r => {
         const gp = n(r.gamesPlayed);
         return `<tr>
-          <td><a href="#/player/${esc(r.playerId)}">${esc(r.firstName?.default || '')} <b>${esc(r.lastName?.default || '')}</b></a>${gone(r.playerId) ? '<span class="rs-dagger" title="Not on the current roster listing">†</span>' : ''}</td>
+          <td><a class="rs-pl" href="#/player/${esc(r.playerId)}">${playerIdentity({ id: r.playerId, name: `${r.firstName?.default || ''} ${r.lastName?.default || ''}`, team: abbr, size: 'xs' })}${esc(r.firstName?.default || '')} <b>${esc(r.lastName?.default || '')}</b></a>${gone(r.playerId) ? '<span class="rs-dagger" title="Not on the current roster listing">†</span>' : ''}</td>
           <td>${esc(r.positionCode || '')}</td>
           <td class="num">${num(r.gamesPlayed)}</td><td class="num">${num(r.goals)}</td><td class="num">${num(r.assists)}</td>
           <td class="num"><b>${num(r.points)}</b></td><td class="num">${num(r.shots)}</td>
@@ -179,7 +180,7 @@ function goaliesSection(s) {
     ${rows.length ? `<div class="table-wrap"><table class="pbe-table">
       <thead><tr><th>Goalie</th><th class="num">GP</th><th class="num">GS</th><th class="num" title="Wins-Losses-OT losses">W-L-OT</th><th class="num">SV%</th><th class="num">GAA</th><th class="num" title="Shots against">SA</th><th class="num" title="Shutouts">SO</th></tr></thead>
       <tbody>${rows.map(g => `<tr>
-        <td><a href="#/player/${esc(g.id)}"><b>${esc(g.name)}</b></a></td>
+        <td><a class="rs-pl" href="#/player/${esc(g.id)}">${playerIdentity({ id: g.id, name: g.name, team: s?.data?.team, size: 'sm' })}<b>${esc(g.name)}</b></a></td>
         <td class="num">${num(g.games_played)}</td><td class="num">${num(g.games_started)}</td>
         <td class="num">${num(g.wins)}-${num(g.losses)}-${num(g.ot_losses)}</td>
         <td class="num">${svPct(g.save_pct)}</td><td class="num">${num(g.gaa, 2)}</td>
@@ -202,7 +203,7 @@ function rosterSection(s, group = 'all') {
     return `<tr class="rs-grp rs-grp--2"><td colspan="7"><span class="rs-grp__in">${label} <span class="rs-grp__sub">${list.length}</span></span></td></tr>
       ${list.map(p => `<tr>
         <td class="num">${p.sweater_number ? esc(p.sweater_number) : '<span class="faint">—</span>'}</td>
-        <td><a href="#/player/${esc(p.id)}">${esc(p.first_name)} <b>${esc(p.last_name)}</b></a></td>
+        <td><a class="rs-pl" href="#/player/${esc(p.id)}">${playerIdentity({ id: p.id, name: `${p.first_name || ''} ${p.last_name || ''}`, team: s?.data?.team, number: p.sweater_number, size: 'xs' })}${esc(p.first_name)} <b>${esc(p.last_name)}</b></a></td>
         <td>${esc(p.position || '')}</td>
         <td>${esc(p.shoots_catches || '—')}</td>
         <td class="num">${esc(ageOn(p.birth_date, today) ?? '—')}</td>

@@ -5,6 +5,7 @@ import { dateLabel, dayET, gameTypeLabel, n, num, share, svPct, timeET, todayET 
 import { createPoller } from '../lib/poll.js';
 import { TEAM_BY_ABBREV, teamAccent } from '../lib/teams.js';
 import { stateBadge, stateOf, teamMark } from '../components/game.js';
+import { playerIdentity } from '../components/player.js';
 
 // ---- private helpers (lane-local by contract)
 const seasonLabel = s => {
@@ -142,7 +143,7 @@ function goaliePanel(g) {
     return `<div class="rs-gcol">
       <div class="rs-gcol__head">${teamMark({ abbrev: t.team }, 26)}<b>${esc(t.team)}</b>
         <span class="pbe-badge pbe-badge--${s.status === 'CONFIRMED' ? 'confirmed' : 'unknown'}">${esc(s.status || 'UNKNOWN')}</span></div>
-      <p class="rs-gcol__starter">${s.status === 'CONFIRMED' && s.name ? `<b>${s.goalie_id ? `<a href="#/player/${esc(s.goalie_id)}">${esc(s.name)}</a>` : esc(s.name)}</b> started` : '<b>Starter unknown</b>'}</p>
+      <p class="rs-gcol__starter">${playerIdentity({ id: s.status === 'CONFIRMED' ? s.goalie_id : null, name: s.status === 'CONFIRMED' ? s.name : null, team: t.team, size: 'md' })} ${s.status === 'CONFIRMED' && s.name ? `<b>${s.goalie_id ? `<a href="#/player/${esc(s.goalie_id)}">${esc(s.name)}</a>` : esc(s.name)}</b> started` : '<b>Starter unknown</b>'}</p>
       <p class="micro rs-gcol__basis">${esc(s.basis || 'No basis stated by the source.')}${src ? ` · <a class="gold" href="${esc(src)}" target="_blank" rel="noopener nofollow">source</a>` : ''}</p>
       ${goalies.length ? `<div class="table-wrap"><table class="pbe-table rs-gtab">
         <thead><tr><th>${esc(season)}</th><th class="num">GS</th><th class="num" title="Wins-Losses-OT losses">W-L-OT</th><th class="num">SV%</th><th class="num">GAA</th><th class="num" title="Save % over the last five appearances in the source window">L5 SV%</th></tr></thead>
@@ -225,7 +226,7 @@ function scorersPanel(game, stats, sort) {
       <div class="rs-sc__head">${teamMark({ abbrev: t }, 22)}<b>${esc(t)}</b><span class="micro">${esc(season)} ${esc((gameTypeLabel(s.data.game_type) || 'regular season').toLowerCase())}</span></div>
       <div class="table-wrap"><table class="pbe-table rs-sc__t">
         <thead><tr><th>Skater</th><th class="num">GP</th><th class="num">G</th><th class="num">P</th><th class="num" title="Shots on goal per game played">SOG/GP</th><th class="num">TOI/GP</th></tr></thead>
-        <tbody>${rows.map(r => `<tr><td><a href="#/player/${esc(r.playerId)}">${esc((r.firstName?.default || '').slice(0, 1))}. <b>${esc(r.lastName?.default || '')}</b></a></td><td class="num">${num(r.gamesPlayed)}</td><td class="num">${num(r.goals)}</td><td class="num">${num(r.points)}</td><td class="num">${n(r.gamesPlayed) ? (r.shots / r.gamesPlayed).toFixed(2) : '—'}</td><td class="num">${mmss(r.avgTimeOnIcePerGame)}</td></tr>`).join('')}</tbody>
+        <tbody>${rows.map(r => `<tr><td><a class="rs-pl" href="#/player/${esc(r.playerId)}">${playerIdentity({ id: r.playerId, name: `${r.firstName?.default || ''} ${r.lastName?.default || ''}`, size: 'xs' })}${esc((r.firstName?.default || '').slice(0, 1))}. <b>${esc(r.lastName?.default || '')}</b></a></td><td class="num">${num(r.gamesPlayed)}</td><td class="num">${num(r.goals)}</td><td class="num">${num(r.points)}</td><td class="num">${n(r.gamesPlayed) ? (r.shots / r.gamesPlayed).toFixed(2) : '—'}</td><td class="num">${mmss(r.avgTimeOnIcePerGame)}</td></tr>`).join('')}</tbody>
       </table></div></div>`;
   };
   return `${panelHead('Top skaters', `<div class="chips" role="group" aria-label="Rank skaters by">${[['points', 'Points'], ['shots', 'SOG/GP']].map(([k, l]) => `<button class="chip" data-sc="${k}" aria-pressed="${sort === k}">${l}</button>`).join('')}</div>`)}

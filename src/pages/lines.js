@@ -8,6 +8,7 @@ import { freshStamp } from '../lib/freshness.js';
 import { dateLabel, todayET } from '../lib/format.js';
 import { TEAMS, TEAM_BY_ABBREV, teamAccent } from '../lib/teams.js';
 import { teamMark } from '../components/game.js';
+import { playerIdentity } from '../components/player.js';
 
 // Logos here always sit next to visible team text: decorative, so alt="".
 const mark = (team, size) => teamMark(team, size).replace(/ alt="[^"]*"/, ' alt=""');
@@ -132,11 +133,11 @@ function changesPanel() {
 const mmss = s => (Number.isFinite(s) ? `${Math.floor(s / 60)}:${String(Math.round(s % 60)).padStart(2, '0')}` : '—');
 const GAME_TYPE = { 1: 'preseason', 2: 'regular season', 3: 'playoffs' };
 
-function unitRows(units, label) {
+function unitRows(units, label, teamAbbr) {
   if (!units?.length) return `<p class="micro">No ${esc(label.toLowerCase())} with shared ice time in this game.</p>`;
   return `<ol class="dk-units">${units.map(u => `<li class="dk-unit${u.limited_sample ? ' is-limited' : ''}">
     <span class="dk-unit__tag mono">${esc(u.unit)}</span>
-    <span class="dk-unit__players">${u.players.map(p => `<a href="#/player/${esc(p.id)}">${esc(p.name || '')}</a> <span class="faint mono">${esc(p.position || '')}</span>`).join('<span class="dk-sep" aria-hidden="true"> · </span>')}</span>
+    <span class="dk-unit__players">${u.players.map(p => `<a class="dk-unit__p" href="#/player/${esc(p.id)}">${playerIdentity({ id: p.id, name: p.name, team: teamAbbr, size: 'sm' })}<span>${esc(p.name || '')} <span class="faint mono">${esc(p.position || '')}</span></span></a>`).join('')}</span>
     <span class="dk-unit__time mono" title="Seconds all members were on the ice together at this strength">${mmss(u.shared_s)} together${u.limited_sample ? ' · <span class="dk-limited">limited sample</span>' : ''}</span>
   </li>`).join('')}</ol>`;
 }
@@ -160,10 +161,10 @@ function deploymentPanel(abbrev, entry) {
     <p class="micro dk-deploy__label">${esc(abbrev)} ${d.side === 'home' ? 'vs' : '@'} ${esc(opp || '')} · ${esc(lg.date ? dateLabel(lg.date, { long: true }) : '')} · ${esc(seasonLabel(lg.season))} ${esc(GAME_TYPE[lg.game_type] || '')} · game <a class="link-u" href="#/cast/${esc(lg.id)}">${esc(lg.id)}</a></p>
     <p class="dim small">Who actually shared the ice in that game, from the official NHL shift charts and play-by-play strength (${esc(d.method)}). It shows deployment, not tonight's lineup.</p>
     <div class="dk-deploy__grid">
-      <div><h4 class="eyebrow">Forward lines · 5v5</h4>${unitRows(t?.forward_lines, 'Forward lines')}</div>
-      <div><h4 class="eyebrow">Defense pairs · 5v5</h4>${unitRows(t?.defense_pairs, 'Defense pairs')}</div>
-      <div><h4 class="eyebrow">Power play</h4>${unitRows(t?.power_play_units, 'Power-play units')}</div>
-      <div><h4 class="eyebrow">Penalty kill</h4>${unitRows(t?.penalty_kill_units, 'Penalty-kill units')}</div>
+      <div><h4 class="eyebrow">Forward lines · 5v5</h4>${unitRows(t?.forward_lines, 'Forward lines', abbrev)}</div>
+      <div><h4 class="eyebrow">Defense pairs · 5v5</h4>${unitRows(t?.defense_pairs, 'Defense pairs', abbrev)}</div>
+      <div><h4 class="eyebrow">Power play</h4>${unitRows(t?.power_play_units, 'Power-play units', abbrev)}</div>
+      <div><h4 class="eyebrow">Penalty kill</h4>${unitRows(t?.penalty_kill_units, 'Penalty-kill units', abbrev)}</div>
     </div>
     <div class="dk-deploy__foot">${freshStamp(entry.meta, { source: 'NHL shift charts' })}</div>
   </section>`;

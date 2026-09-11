@@ -1,0 +1,17 @@
+/* identity.css — player identity placements across pages (identity pass). */
+.dk-gname { display: inline-flex; align-items: center; gap: 8px; }
+.dk-starter__who > .pid { flex: none; }
+.dk-unit__players { display: flex; flex-wrap: wrap; gap: 6px 14px; }
+.dk-unit__p { display: inline-flex; align-items: center; gap: 7px; min-height: 34px; }
+.dk-unit__p:hover > span { color: var(--pbe-gold-bright); }
+.dk-unit__time { grid-column: 2; }
+.cast-gin { display: inline-flex; align-items: center; gap: 8px; vertical-align: middle; }
+.cast-gin:hover span { color: var(--pbe-gold-bright); }
+.feed-item--goal .feed-text .pid { margin-right: 8px; vertical-align: -6px; }
+.dk-chip--player .pid { margin-right: 2px; }
+.rs-pl { display: inline-flex; align-items: center; gap: 8px; }
+.rs-gcol__starter { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+/* What-changed items with an entity: identity on the left, badge + story on the right. */
+.change.has-id { grid-template-columns: auto auto 1fr; }
+.change.has-id > .pid, .change.has-id > .team-mark { grid-row: 1 / span 2; align-self: center; }
+.change.has-id .micro { grid-column: 2 / -1; }

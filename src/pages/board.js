@@ -4,6 +4,9 @@ import { freshStamp } from '../lib/freshness.js';
 import { addDays, countdownParts, dateLabel, dayET, daysUntil, gameTypeLabel, timeET, todayET, ageText } from '../lib/format.js';
 import { createPoller } from '../lib/poll.js';
 import { gameCard, stateOf, teamMark } from '../components/game.js';
+import { modePanel, seasonMode } from '../components/mode.js';
+import { playerIdentity } from '../components/player.js';
+import { dataLayer, oddsConfigured } from '../lib/api.js';
 
 const HERO = '/assets/nhl/';
 const heroPicture = () => `
@@ -90,7 +93,7 @@ function changesMarkup(board, newsState) {
   }
   const newsItems = newsState?.items || [];
   for (const item of newsItems.slice(0, 12)) {
-    items.push({ tag: item.breaking ? 'BREAKING' : (item.category || 'NEWS'), tone: item.material ? 'alert' : 'news', text: item.title, href: item.url, external: true, src: item.source, at: item.published_at, more: item.related_count || 0 });
+    items.push({ tag: item.breaking ? 'BREAKING' : (item.category || 'NEWS'), tone: item.material ? 'alert' : 'news', text: item.title, href: item.url, external: true, src: item.source, at: item.published_at, more: item.related_count || 0, pl: item.players?.[0] || null, team: item.teams?.length === 1 ? item.teams[0] : null });
   }
   const newsLine = newsState?.error
     ? `<span class="micro">Newsroom: ${esc(newsState.error)}</span>`
@@ -102,7 +105,8 @@ function changesMarkup(board, newsState) {
     if (!newsState) return '<div class="pbe-skeleton" style="height:44px"></div>';
     return `<div class="changes__empty"><b>No material changes in the last 24 hours.</b> <span class="dim">Injury, goalie, line and transaction reports appear here as sources publish them.</span> ${newsLine}</div>`;
   }
-  return `<ol class="changes__list">${items.slice(0, 6).map(it => `<li class="change change--${it.tone}">
+  return `<ol class="changes__list">${items.slice(0, 6).map(it => `<li class="change change--${it.tone}${it.pl || it.team ? ' has-id' : ''}">
+      ${it.pl ? playerIdentity({ id: it.pl.id, name: it.pl.name, team: it.team, size: 'md' }) : it.team ? teamMark({ abbrev: it.team }, 40) : ''}
       <span class="pbe-badge pbe-badge--${it.tone === 'news' ? 'sched' : it.tone}">${esc(it.tag)}</span>
       <a href="${esc(it.href)}" ${it.external ? 'target="_blank" rel="noopener nofollow"' : ''}>${esc(it.text)}</a>
       <span class="micro">${esc(it.src || '')}${it.more ? ` +${it.more} more` : ''}${it.at ? ` · ${esc(ageText((Date.now() - Date.parse(it.at)) / 1000))}` : ''}</span>
@@ -148,8 +152,9 @@ function boardSection(state) {
       <div class="chips" role="group" aria-label="Filter games">${FILTERS.map(([k, l]) => `<button class="chip" data-filter="${k}" aria-pressed="${filter === k}">${l}<span class="count">${counts[k]}</span></button>`).join('')}</div>
       ${board ? freshStamp(meta, { failed }) : ''}
     </div>
-    ${board?.compat ? `<div class="pbe-note page-note"><b>Limited mode.</b> This environment's PropSports API does not serve the NHL intelligence routes yet, so the board shows the official schedule from the legacy route only — no live clock, shots, goalies or newsroom here. Nothing is filled in.</div>` : ''}
-    <div class="coverage" aria-label="Data coverage">
+    ${state.env && modePanel(seasonMode(state.today || board), state.env) ? `<div id="mode-panel">${modePanel(seasonMode(state.today || board), state.env)}</div>` : ''}
+    ${board?.compat ? `<div class="pbe-note page-note"><b>Limited data layer.</b> This environment's PropSports API does not serve the NHL intelligence routes yet, so the board shows the official schedule from the legacy route only — no live clock, shots, goalies or newsroom here. Nothing is filled in.</div>` : ''}
+    <div class="coverage" aria-label="Data coverage"${seasonMode(state.today || board).key.startsWith('PRESEASON') ? ' hidden' : ''}>
       <span><i class="ok"></i>Schedule${board?.compat ? '' : ' &amp; scores'} · NHL</span>
       <span><i class="${board?.compat ? 'off' : 'ok'}"></i>Play-by-play &amp; shot coordinates${board?.compat ? ' · not in this environment' : ' · NHL'}</span>
       <span><i class="${board?.compat ? 'off' : 'part'}"></i>Starting goalies · ${board?.compat ? 'not in this environment' : 'confirmed at puck drop'}</span>
@@ -165,8 +170,14 @@ export function mount(root, params, ctx) {
     filter: 'ALL',
     board: null, meta: null, failed: false, error: null,
     today: null, todayMeta: null, todayFailed: false,
-    news: null
+    news: null,
+    env: null
   };
+  Promise.all([dataLayer(), oddsConfigured()]).then(([layer, odds]) => {
+    state.env = { dataLayer: layer, odds };
+    renderBoard();
+    if (params.mode) $('#mode-panel', root)?.scrollIntoView({ block: 'start' });
+  });
   root.innerHTML = `
     <section class="hero" aria-labelledby="hero-title">
       ${heroPicture()}

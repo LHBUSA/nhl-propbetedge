@@ -9,6 +9,7 @@ import { addDays, clockET, dateLabel, dayET, gameTypeLabel, n, num, svPct, timeE
 import { createPoller } from '../lib/poll.js';
 import { teamAccent, TEAM_BY_ABBREV } from '../lib/teams.js';
 import { stateBadge, stateOf, teamMark } from '../components/game.js';
+import { playerIdentity } from '../components/player.js';
 
 // Logos here always sit next to visible team text: decorative, so alt="".
 const mark = (team, size) => teamMark(team, size).replace(/ alt="[^"]*"/, ' alt=""');
@@ -73,8 +74,8 @@ function starterBlock(t, big) {
   const name = g?.name || s.name;
   const src = safeUrl(s.source_url);
   const who = lv === 'UNKNOWN'
-    ? '<div class="dk-starter__who"><span class="dk-mono dk-mono--empty" aria-hidden="true">?</span><div><b>Starter not confirmed</b><span class="micro">No defensible source yet</span></div></div>'
-    : `<div class="dk-starter__who"><span class="dk-mono">${monogram(name)}</span><div>${s.goalie_id ? `<a href="#/player/${esc(s.goalie_id)}"><b>${esc(name || 'Unnamed')}</b></a>` : `<b>${esc(name || 'Unnamed')}</b>`}<span class="micro">${lv === 'CONFIRMED' ? 'Started · on record' : 'Reported starter · not official'}</span></div></div>`;
+    ? `<div class="dk-starter__who">${playerIdentity({ team: t.team, size: big ? 'lg' : 'md' })}<div><b>Starter not confirmed</b><span class="micro">No defensible source yet</span></div></div>`
+    : `<div class="dk-starter__who">${playerIdentity({ id: s.goalie_id, name, team: t.team, size: big ? 'lg' : 'md' })}<div>${s.goalie_id ? `<a href="#/player/${esc(s.goalie_id)}"><b>${esc(name || 'Unnamed')}</b></a>` : `<b>${esc(name || 'Unnamed')}</b>`}<span class="micro">${lv === 'CONFIRMED' ? 'Started · on record' : 'Reported starter · not official'}</span></div></div>`;
   return `<div class="dk-starter dk-starter--${lv.toLowerCase()}${big ? ' dk-starter--big' : ''}">
     ${ladder(lv)}
     ${who}
@@ -85,8 +86,7 @@ function starterBlock(t, big) {
 
 function restBlock(t, game) {
   const r = t.rest;
-  const past = seasonIdFor(game.date || todayET()) < seasonIdFor(todayET());
-  if (past) return '<p class="micro dk-rest__note">Rest context is computed for current-season games only.</p>';
+  // Rest is computed from the game's own season schedule (backend 7edb1a5).
   if (!r) return '<p class="micro dk-rest__note">Rest context unavailable — the team schedule source did not answer.</p>';
   const prev = r.previous_game_date;
   const b2b = r.back_to_back;
@@ -108,7 +108,7 @@ function goalieTable(t, big, gameId = '') {
     <div class="table-wrap" tabindex="0" role="region" aria-label="${esc(t.team || '')} goalie season lines${gameId ? ` · game ${esc(gameId)}` : ''}"><table class="pbe-table dk-gtable">
       <thead><tr><th>Goalie</th><th class="num">GP</th><th class="num">GS</th><th class="num">W-L-OTL</th><th class="num">SV%</th><th class="num">GAA</th><th class="num">SA</th>${big ? '<th class="num">SO</th>' : ''}</tr></thead>
       <tbody>${rows.map(g => `<tr${g.id === starterId ? ' class="is-starter"' : ''}>
-        <td><a href="#/player/${esc(g.id)}">${esc(g.name || 'Unnamed')}</a>${g.id === starterId ? ' <span class="pbe-badge pbe-badge--confirmed">Started</span>' : ''}</td>
+        <td><a class="dk-gname" href="#/player/${esc(g.id)}">${playerIdentity({ id: g.id, name: g.name, team: t.team, size: 'sm' })}<span>${esc(g.name || 'Unnamed')}</span></a>${g.id === starterId ? ' <span class="pbe-badge pbe-badge--confirmed">Started</span>' : ''}</td>
         <td class="num">${num(g.games_played)}</td><td class="num">${num(g.games_started)}</td>
         <td class="num">${num(g.wins)}-${num(g.losses)}-${num(g.ot_losses)}</td>
         <td class="num">${svPct(g.save_pct)}</td><td class="num">${num(g.gaa, 2)}</td><td class="num">${num(g.shots_against)}</td>

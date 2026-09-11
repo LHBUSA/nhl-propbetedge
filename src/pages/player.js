@@ -4,6 +4,7 @@ import { freshStamp } from '../lib/freshness.js';
 import { ageText, dateLabel, dayET, n, num, pct, svPct, timeET, todayET } from '../lib/format.js';
 import { TEAM_BY_ABBREV, teamAccent } from '../lib/teams.js';
 import { teamMark } from '../components/game.js';
+import { playerIdentity } from '../components/player.js';
 
 // ---- private helpers (lane-local by contract)
 const seasonLabel = s => {
@@ -81,9 +82,17 @@ function seasonTotals(rows, gameType, season = null) {
   return out;
 }
 
+// Player identity hero: approved licensed portrait when one exists, otherwise
+// the shared team-accented identity card (components/player.js).
 function monogram(p) {
-  const i = `${(p.first_name || '').trim()[0] || ''}${(p.last_name || '').trim()[0] || ''}`.toUpperCase();
-  return `<span class="rs-mono" style="--accent:${teamAccent(p.current_team_abbrev)}" aria-hidden="true">${esc(i || '#')}</span>`;
+  return playerIdentity({
+    id: p.id,
+    name: p.full_name || `${p.first_name || ''} ${p.last_name || ''}`,
+    team: p.current_team_abbrev,
+    number: p.sweater_number,
+    size: 'xl',
+    credit: true
+  });
 }
 
 function headerMarkup(p, meta, nextGame) {

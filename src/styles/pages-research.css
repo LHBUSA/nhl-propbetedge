@@ -369,3 +369,10 @@ a.rs-team:hover b, a.rs-team:hover .rs-tname { color: var(--pbe-gold-bright); }
   .rs-cmp-head .pbe-badge { grid-column: 1 / -1; justify-self: start; order: -1; white-space: normal; line-height: 1.3; }
   .rs-cmp-head .rs-cmp-key:last-child { justify-self: end; }
 }
+
+/* Player identity hero (components/player.js) takes the monogram's slot. */
+.rs-phead > .pid { grid-column: 1; grid-row: 1 / span 2; align-self: start; flex-direction: column; align-items: flex-start; gap: 0; }
+.rs-phead > .pid .pid__credit { max-width: var(--pid); }
+@media (max-width: 768px) {
+  .rs-phead > .pid { --pid: 88px !important; grid-row: 1; align-self: center; }
+}

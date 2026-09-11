@@ -176,3 +176,34 @@
 
 /* Inline links inside running text are underlined (not colour alone). */
 .link-u { text-decoration: underline; text-underline-offset: 2px; }
+
+/* ---------- player identity (components/player.js) */
+.pid { position: relative; display: inline-flex; align-items: center; gap: 10px; min-width: 0; vertical-align: middle; color: inherit; }
+.pid__frame {
+  position: relative; flex: none; width: var(--pid); height: var(--pid); border-radius: 50%; overflow: hidden;
+  background: radial-gradient(120% 90% at 30% 20%, color-mix(in srgb, var(--team) 38%, #1d1914), #0d0b08 75%);
+  box-shadow: inset 0 0 0 1px rgba(255,245,220,.14), 0 0 0 1.5px color-mix(in srgb, var(--team) 55%, transparent);
+}
+.pid--lg .pid__frame, .pid--xl .pid__frame { border-radius: var(--r-md); }
+.pid__fallback { position: absolute; inset: 0; display: grid; place-items: center; align-content: center; gap: 2px; }
+.pid__fallback b { font: 800 calc(var(--pid) * .36)/1 var(--pbe-font-ui); letter-spacing: -.02em; color: rgba(245,241,235,.92); }
+.pid__fallback em { font: 700 calc(max(10px, var(--pid) * .12))/1 var(--pbe-font-data); font-style: normal; letter-spacing: .08em; color: var(--pbe-gold); }
+.pid--xs .pid__fallback b { font-size: 10px; }
+.pid__pbe { width: 45%; height: 45%; background: url('/favicon.svg') center/contain no-repeat; opacity: .8; }
+.pid__img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; object-position: 50% 22%; opacity: 0; transition: opacity .25s ease; }
+.pid__frame.is-loaded .pid__img { opacity: 1; }
+.pid__frame.has-photo.is-loaded .pid__fallback { visibility: hidden; }
+.pid__team {
+  position: absolute; left: calc(var(--pid) * .70); top: calc(var(--pid) * .66);
+  width: calc(var(--pid) * .40); height: calc(var(--pid) * .40); border-radius: 50%;
+  display: grid; place-items: center; background: #0d0b08; box-shadow: 0 0 0 1.5px var(--pbe-line-strong);
+}
+.pid--lg .pid__team, .pid--xl .pid__team { left: auto; right: auto; top: auto; left: calc(var(--pid) - var(--pid) * .30); top: calc(var(--pid) - var(--pid) * .30); width: calc(var(--pid) * .34); height: calc(var(--pid) * .34); border-radius: var(--r-sm); }
+.pid__team img { width: 78%; height: 78%; object-fit: contain; }
+.pid__text { display: grid; min-width: 0; }
+.pid__text b { font-weight: 700; font-size: var(--fs-sm); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pid__text small { font: 600 var(--fs-micro)/1.3 var(--pbe-font-data); letter-spacing: .08em; text-transform: uppercase; color: var(--pbe-dim); }
+.pid--labelled .pid__team { left: calc(var(--pid) * .70); }
+.pid__credit { display: block; margin-top: 6px; font-size: var(--fs-micro); color: var(--pbe-faint-text); }
+a.pid:hover .pid__text b { color: var(--pbe-gold-bright); }
+.pid--xl { flex-direction: column; align-items: flex-start; gap: 0; }
