@@ -1,6 +1,7 @@
 import { esc, safeUrl } from '../lib/dom.js';
 import { logoUrl, teamAccent } from '../lib/teams.js';
 import portraits from '../data/player-portraits.json';
+import optout from '../data/portrait-optout.json';
 
 // Player identity, one component for the whole product.
 // Priority: reviewed local portrait -> NHL asset-feed headshot -> branded
@@ -12,6 +13,10 @@ import portraits from '../data/player-portraits.json';
 
 const SIZES = { xs: 24, sm: 32, md: 48, lg: 88, xl: 168 };
 const PHOTOS = portraits?.players || {};
+// Opt-out: no reviewed portrait AND no NHL asset-feed headshot for these ids;
+// they fall through to initials + team badge. Empty unless the owner withdraws
+// a portrait (scripts/player-portraits/withdraw.mjs).
+const NO_IMAGE = new Set(Object.keys(optout?.players || {}));
 const IMG_PROXY = 'https://propbet-img-proxy.sales-fd3.workers.dev/?url=';
 const NHL_HEADSHOT_SEASONS = ['20262027', '20252026'];
 
@@ -84,8 +89,9 @@ function imageMarkup({ photo, official, px, want }) {
 // opts: { id, name, team, position, number, size, credit, href, label, headshot }
 export function playerIdentity({ id, name, team, position = null, number = null, size = 'md', credit = false, href = null, label = false, headshot = null } = {}) {
   const px = SIZES[size] || SIZES.md;
-  const photo = id ? playerPhoto(id) : null;
-  const official = id ? officialHeadshotCandidates(id, team, headshot) : [];
+  const suppressed = id ? NO_IMAGE.has(String(id)) : false;
+  const photo = id && !suppressed ? playerPhoto(id) : null;
+  const official = id && !suppressed ? officialHeadshotCandidates(id, team, headshot) : [];
   const hasImage = Boolean(photo || official.length);
   const accent = teamAccent(team);
   const logo = team && size !== 'xs' ? safeUrl(logoUrl({ abbrev: team })) : null;

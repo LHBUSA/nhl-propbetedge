@@ -1,0 +1,17 @@
+{
+  "note": "Published portraits whose Wikimedia Commons file carries a personality-rights restriction tag. The photograph's copyright licence is clean (CC BY / CC BY-SA, credited); publicity/personality rights are a separate question because this is betting-adjacent product. STATUS: under owner review, portraits are still published. Nothing here changes the site until scripts/player-portraits/withdraw.mjs is run with --apply.",
+  "reviewed_at": "2026-09-11",
+  "restriction": "commons:personality",
+  "players": {
+    "8477934": "Leon Draisaitl",
+    "8477949": "Alex Tuch",
+    "8477968": "Alex Nedeljkovic",
+    "8478916": "Joey Daccord",
+    "8479343": "Clayton Keller",
+    "8479420": "Tage Thompson",
+    "8481605": "Jackson LaCombe",
+    "8483445": "Cutter Gauthier",
+    "8483457": "Lane Hutson",
+    "8484801": "Macklin Celebrini"
+  }
+}

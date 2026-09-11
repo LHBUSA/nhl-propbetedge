@@ -51,6 +51,15 @@ Published bytes (all four files per player): 1983.5 KB. Licence mix: CC BY-SA 4.
 
 Commons "Restrictions" tags on published files (e.g. personality rights): Alex Nedeljkovic (personality); Alex Tuch (personality); Clayton Keller (personality); Cutter Gauthier (personality); Jackson LaCombe (personality); Joey Daccord (personality); Lane Hutson (personality); Leon Draisaitl (personality); Macklin Celebrini (personality); Tage Thompson (personality).
 
+**Prepared withdrawal path (not applied).** Those 10 are listed in `scripts/player-portraits/personality-flagged.json` and remain published. If the owner decides publicity rights outweigh the (clean) photo licences, one command removes exactly those portraits and nothing else:
+
+```
+node scripts/player-portraits/withdraw.mjs            # dry run: lists the 10, writes nothing
+node scripts/player-portraits/withdraw.mjs --apply    # 45 published portraits -> 35
+```
+
+It moves each ledger entry from `approved` to `rejected` with reason `personality_rights_withdrawn` (so `build.mjs` cannot silently republish them), drops them from `src/data/player-portraits.json` and `public/assets/players/manifest.json`, and deletes their four image files. No UI change is required: a player with no manifest entry already renders as initials + team badge, and the Methodology "Image credits" table is generated from the same manifest, so the credit goes with the portrait. `--restore --ids <id>` re-allows a player; re-running `build.mjs` fetches the images again. Verified end to end on a copy of the manifest tree (45 -> 35, 40 files removed, ledger blocked, restore returns the entry).
+
 ### Rejection reasons
 
 | Reason | Players |

@@ -1,0 +1,4 @@
+{
+  "note": "Players whose identity image is suppressed entirely: no reviewed Commons portrait and no NHL asset-feed headshot. They render as initials + team badge. EMPTY BY DEFAULT — nothing is suppressed today. Written by scripts/player-portraits/withdraw.mjs when the owner decides to withdraw specific portraits (e.g. the personality-rights review in scripts/player-portraits/personality-flagged.json).",
+  "players": {}
+}
