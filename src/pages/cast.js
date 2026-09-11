@@ -7,6 +7,7 @@ import { teamAccent } from '../lib/teams.js';
 import { stateBadge, stateOf, teamMark } from '../components/game.js';
 import { LAYERS, renderRink, rinkLegend, shotLabel } from '../components/rink.js';
 import { SPEEDS, replayBar, seek, sliceCast } from '../components/replay.js';
+import { watchButton } from '../components/alerts-ui.js';
 
 const FEED_FILTERS = [
   ['all', 'All'], ['goal', 'Goals'], ['shots', 'Shots'], ['penalty', 'Penalties'],
@@ -103,6 +104,7 @@ function header(cast, meta, failed) {
       <span><span class="micro">${esc(a.abbrev || 'Away')} in net</span> ${goalie('away')}</span>
       <span><span class="micro">${esc(h.abbrev || 'Home')} in net</span> ${goalie('home')}</span>
       <span class="micro">${esc(gameTypeLabel(g.game_type))} · ${esc(g.venue || '')} · Game ${esc(g.id)}</span>
+      ${['FINAL', 'REPLAY'].includes(st.key) ? '' : watchButton(g.id)}
     </div>`;
 }
 
@@ -372,7 +374,9 @@ export function mount(root, params, ctx) {
             <div class="feed-scroll">${feedList(cast, state.feed, state.selected)}</div>
           </section>
         </div>
-        <div class="cast-col cast-col--stats">${statsPanel(cast)}</div>
+        <div class="cast-col cast-col--stats">${pre && !full.plays.length
+          ? '<section class="pbe-panel cast-card"><div class="panel-head"><h3>Intelligence</h3><span class="pbe-badge pbe-badge--sched">At puck drop</span></div><p class="dim small">Shot share, Corsi/Fenwick, period splits, official team stats, goalie lines and live stat lines populate from the first recorded event.</p></section>'
+          : statsPanel(cast)}</div>
       </div>`;
     const scroller = $('.feed-scroll', body);
     if (scroller) scroller.scrollTop = feedScroll;

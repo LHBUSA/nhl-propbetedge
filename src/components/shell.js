@@ -27,7 +27,8 @@ const ICONS = {
   props: '<path d="M4 18l5-6 4 3 7-9 M15 6h5v5"/>',
   news: '<path d="M4 5h13v14H6a2 2 0 0 1-2-2z M17 9h3v8a2 2 0 0 1-2 2 M7 9h7 M7 13h7"/>',
   more: '<circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/>',
-  search: '<circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/>'
+  search: '<circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/>',
+  bell: '<path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z M10 20a2 2 0 0 0 4 0"/>'
 };
 const icon = name => `<svg class="ico" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${ICONS[name] || ''}</svg>`;
 
@@ -52,6 +53,13 @@ export function renderShell(app) {
         </nav>
         <div class="topbar__tools">
           <span class="season-chip" id="season-chip" aria-live="polite"></span>
+          <div class="alerts-wrap">
+            <button class="bell-btn" type="button" data-alerts aria-expanded="false" aria-controls="alert-center" aria-label="Alerts">${icon('bell')}<span class="bell-count" id="alert-count" hidden></span></button>
+            <div class="alert-center" id="alert-center" hidden>
+              <div class="panel-head"><span class="eyebrow">Alerts · last 36 hours</span><button type="button" class="pbe-btn pbe-btn--ghost pbe-btn--sm" data-close-alerts>Close</button></div>
+              <ul class="alert-list" id="alert-list"></ul>
+            </div>
+          </div>
           <button class="search-btn" type="button" data-open-search aria-label="Search teams, games and pages (Ctrl K)">
             ${icon('search')}<span class="search-btn__label">Search</span><kbd>Ctrl K</kbd>
           </button>
@@ -59,6 +67,7 @@ export function renderShell(app) {
       </div>
     </header>
     <main id="main" tabindex="-1"></main>
+    <div class="toasts" id="toasts" aria-live="polite"></div>
     <footer class="footer">
       <div class="wrap footer__in">
         <div>

@@ -8,9 +8,9 @@ const DEFAULT_BASE = 'https://propsports-api.sales-fd3.workers.dev';
 const ROUTES = [
   /^\/health\/nhl-sources$/,
   /^\/nhl\/(?:board|news|schedule|schedule\/today|scoreboard|games\/live|standings|leaders|goalies\/leaders)$/,
-  /^\/nhl\/game\/\d{10}(?:\/(?:boxscore|plays|shots|cast|goalies))?$/,
+  /^\/nhl\/game\/\d{10}(?:\/(?:boxscore|plays|shots|cast|goalies|deployment))?$/,
   /^\/nhl\/player\/\d{6,10}(?:\/(?:stats|game-log))?$/,
-  /^\/nhl\/team\/[A-Z]{2,4}\/(?:roster|stats|schedule)$/,
+  /^\/nhl\/team\/[A-Z]{2,4}\/(?:roster|stats|schedule|deployment)$/,
   /^\/nhl\/goalie\/\d{6,10}\/edge$/
 ];
 

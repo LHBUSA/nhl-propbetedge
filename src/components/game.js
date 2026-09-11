@@ -1,6 +1,7 @@
 import { esc, safeUrl } from '../lib/dom.js';
 import { gameTypeLabel, periodLabel, timeET, dayET } from '../lib/format.js';
 import { logoUrl, teamAccent } from '../lib/teams.js';
+import { watchButton } from './alerts-ui.js';
 
 export function teamMark(team = {}, size = 36) {
   const src = safeUrl(logoUrl(team));
@@ -65,6 +66,7 @@ export function gameCard(game, { compact = false } = {}) {
       ${stateBadge(game)}
       <span class="gcard__when mono">${esc(dayET(game.start_time_utc))}${st.key !== 'SCHEDULED' ? ` · ${esc(timeET(game.start_time_utc))}` : ''}</span>
       ${type && game.game_type !== 2 ? `<span class="micro gcard__type">${esc(type)}</span>` : ''}
+      ${st.key === 'FINAL' ? '' : watchButton(game.id, true)}
     </header>
     <div class="gcard__teams">
       ${teamLine(a, game, awayWin)}

@@ -15,6 +15,8 @@ import { startFreshTicker } from './lib/freshness.js';
 import { daysUntil, dateLabel, todayET } from './lib/format.js';
 import { createRouter } from './lib/router.js';
 import { bindShell, renderShell, setActiveNav, setSeasonChip } from './components/shell.js';
+import { bindAlertsUI } from './components/alerts-ui.js';
+import { startWatcher } from './services/watcher.js';
 
 const app = document.querySelector('#app');
 const main = renderShell(app);
@@ -83,7 +85,9 @@ function updateSeasonChip(board) {
 }
 
 bindShell(ctx);
+bindAlertsUI();
 startFreshTicker();
+startWatcher(ctx);
 createRouter({ root: main, ctx, onRoute: id => setActiveNav(id) }).start();
 // Warm the slate for the palette/season chip without blocking the first page.
 ctx.board().catch(() => {});

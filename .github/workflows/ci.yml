@@ -21,4 +21,6 @@ jobs:
       - run: npm install
       - name: Proxy allowlist + truth-rule checks
         run: node tests/frontend-checks.mjs
+      - name: Alert rules
+        run: node tests/alerts.test.mjs
       - run: npm run build
