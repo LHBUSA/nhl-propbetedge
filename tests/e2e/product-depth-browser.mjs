@@ -48,9 +48,9 @@ const sourceWire = {
   fetched_at: now.toISOString(), ttl_s: 120, stale_after_s: 600, degraded: false,
   sources: [{ key: 'nhl_general', ok: true, count: 1, ms: 42, url: 'https://www.nhl.com/news' }],
   items: [{
-    id: 'wire-1', title: 'Verified NHL source-wire headline', source: 'NHL.com', origin: 'nhl.com',
-    url: 'https://www.nhl.com/news/source-wire', published_at: iso(9), category: 'League news',
-    category_basis: 'fixture', material: false, breaking: false,
+    id: 'wire-1', title: 'Verified NHL source-wire injury update', source: 'NHL.com', origin: 'nhl.com',
+    url: 'https://www.nhl.com/news/source-wire', published_at: iso(9), category: 'Injuries',
+    category_basis: 'fixture', material: true, breaking: false,
     teams: ['CAR'], teams_basis: 'fixture',
     players: [{ id: '9999999', name: 'QA Player' }],
     related: [], related_count: 0
@@ -110,8 +110,9 @@ async function assertPage(page, route, width) {
   await page.waitForTimeout(350);
 
   // This comes from the bundled product itself: the operational source-wire
-  // fixture includes an unlisted player, forcing playerIdentity through its
-  // official NHL-headshot fallback rather than a reviewed local portrait.
+  // fixture includes an unlisted player on a material update, forcing
+  // playerIdentity through its official NHL-headshot fallback rather than a
+  // reviewed local portrait.
   const playerPhoto = await assertPlayerPhoto(page, route, width);
 
   const metrics = await page.evaluate(() => ({
