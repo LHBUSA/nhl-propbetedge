@@ -1,7 +1,8 @@
 # NHL PropBetEdge — build status
 
-Branches: frontend `nhl-ufc2-production` (LHBUSA/nhl-propbetedge) · backend `nhl-intelligence-v1` (LHBUSA/propsports-api-worker).
-Nothing merged to `main`. Production NHL/PropSports Worker not deployed. Last updated 2026-09-11.
+Release line: **`main` is production** (Vercel deploys `main`; the Cloudflare `nhl-gateway` serves the browser). `nhl-ufc2-production` was merged and is an ancestor of `main`. Last updated 2026-09-11.
+
+**Live:** nhl.propbetedge.ai served `2aba93b` (`dpl_BErKyuPQS8qG1iTVY1CYUdRSHDc9`) when this acceptance started and `d119017` (`dpl_Bgh3CLbHGMgK4AFjsN8CCkhE3yeY`, PR #5) by the time it finished. The identity + visual depth pass is **production complete** on both — see "Production acceptance" below. Do not re-promote branch builds or roll back to reach it.
 
 Status words: **PROVEN** = verified by a command that was actually run (evidence given) · **IN PROGRESS** · **BLOCKED** (with the blocker) · **UNVERIFIED** (built or planned, not yet proven).
 
@@ -72,9 +73,34 @@ Status words: **PROVEN** = verified by a command that was actually run (evidence
 | Layout shift | **IMPROVED** | metric-matched font fallbacks (`src/styles/fonts.css`): Team desktop 0.122 → 0.004, Player mobile 0.119 → 0, Cast desktop 0.045 → 0.004. Ice Board: top-anchored hero + fixed-height rail + legacy-sized panel slot — desktop 0.07 → 0.004 (v2) and 0.113 → 0.004 (legacy, what production serves), phones 0.02 → 0 |
 | Mobile LCP on photo-backdrop pages | **REGRESSED (accepted)** | backdrop became the LCP element; Cast mobile 3.0 → 4.4 s simulated (perf 88 → 78). Preload added; observed LCP = FCP. Owner can disable photos on phones in one line |
 | Cast mobile CLS 0.062 (`#cast-body` skeleton under throttling) | **UNVERIFIED fix** | pre-existing (0.072 before the pass); not addressed here |
-| NHL.com headshots | **BLOCKED (owner)** | not used, never requested — licensing decision |
-| Personality rights on 10 Commons portraits | **OWNER DECISION** | copyright licence is clean; publicity rights next to betting content are not |
-| Production carries the identity pass | **BLOCKED (owner)** | production is `6d834e2`; needs promotion of the branch head (B9) |
+| NHL.com headshots | **LIVE since `d119017` — needs owner confirmation** | PR #5 made the NHL asset feed (`assets.nhle.com/mugs/...`, via `propbet-img-proxy.sales-fd3.workers.dev`) the fallback between the reviewed portrait and the initials, labelled "Player image · NHL asset feed". `docs/NHL_PRODUCT_DEPTH_V1.md` records an owner approval dated 2026-09-11; the brief this session was working to said headshots stay unused. Flagged, not reverted |
+| Personality rights on 10 Commons portraits | **OWNER DECISION (does not block the live release)** | copyright licence is clean; publicity rights next to betting content are not. Prepared, unmerged withdrawal path: branch `nhl-portrait-optout-prep` (`586bb72`) |
+| Team logos from `assets.nhle.com` | **OWNER DECISION (does not block the live release)** | league marks, hotlinked through one function (`logoUrl` in `src/lib/teams.js`) |
+| Production carries the identity pass | **PROVEN (live)** | accepted against nhl.propbetedge.ai twice on 2026-09-11 (`2aba93b`, then `d119017`) — see "Production acceptance" |
+
+## Production acceptance — nhl.propbetedge.ai (2026-09-11)
+
+Chromium (Playwright) against the public site: 8 routes × 1440 / 390 (`/`, `/cast/2026020001`, `/cast/2025020500`, `/news`, `/players`, `/player/8480018`, `/injuries`, `/props`). Run once on `2aba93b`, then again after production moved to `d119017` mid-acceptance. Both runs green on every check below.
+
+| Check | Result |
+|---|---|
+| Console errors / page errors | **0** on all 16 loads, both runs |
+| Horizontal overflow | **0 px** on all 16 loads, both runs |
+| Broken images | **0** — 271 images in the first run, 452 in the second (News 122, Players 82, Injuries 64, Props 44) |
+| Portraits | 0 broken. On `2aba93b`, 45 reviewed Commons portraits with 15–23 initials fallbacks per page; on `d119017`, near-full coverage (Players 25 portraits, 0 fallbacks) because the NHL asset feed now fills the gaps |
+| Cinematic backdrops | correct file per route and viewport (`cast/news/players/injuries/props-2000.avif` at 1440, `-m-700.avif` at 390); Ice Board keeps its hero photo |
+| Identity / icons | every icon, the manifest and the OG card serve 200 and are **byte-identical to `main`** (SHA-256): hockey-stick P favicon (SVG/ICO/16/32), apple-touch 180, PWA 192/512/maskable, `og/propbetedge-nhl-1200x630.jpg` |
+| Head / structured data | one `<title>`, one canonical, absolute `og:image`, `summary_large_image`, one JSON-LD block (Organization / WebSite / WebApplication / WebPage) with no rating, review, offer, award or interaction-count claim; 0 localhost or preview URLs |
+| Live gateway data | all NHL data via `nhl-api.propbetedge.ai`: 43 responses per run, **all 200 with `X-NHL-Semantics: CURRENT`**, 0 failed requests. The gateway refuses off-product callers (403, `ERROR` semantics) |
+| Scheduled odds-snapshot semantics | stated as a schedule, never as live: Cast pregame "Scheduled market snapshot below (08:00 / 13:00 / 18:00 ET). Not a live feed."; Props "MARKET SNAPSHOT (THE ODDS API), SCHEDULED 08:00 / 13:00 / 18:00 ET — NOT A LIVE FEED" with the snapshot's age (`CACHED · 4h 25m ago`), no-vig and book counts; player props read "no book has posted NHL player markets in this snapshot" |
+| NHL Pro purchase / paywall surface | present on every page, opens and closes; Founding Season $9.99 / month and $3.99 / week; checkout **closed** — CTA "Founding Season checkout coming online", no Stripe link in the DOM, "No free trial. No fake urgency. Cancel anytime." No purchase attempted |
+
+Open items this run surfaced (none of them release-blocking):
+
+1. **NHL asset-feed headshots are live** (see the table above) and need owner confirmation, because the standing instruction to this session was that NHL.com headshots stay unused. They are proxied through `propbet-img-proxy.sales-fd3.workers.dev` — a `workers.dev` host serving third-party images from a production surface, which is worth its own look.
+2. **Text below 10 px**: `.pbepro__open` (the `NHL PRO` topbar button) at 9 px, and `.pbeo-mini__source` links ("Source: …") at 9 px. 3–8 such nodes per page on `d119017`, versus 2 on `2aba93b`.
+3. **Ice Board editorial sources** now include The Hockey Writers, ESPN and Daily Faceoff links. Confirm that path stays headline-and-link-only: ESPN and Daily Faceoff terms bar automated collection (`docs/NHL_SOURCE_MATRIX.md`).
+
 
 ## IN PROGRESS
 
@@ -93,7 +119,7 @@ Status words: **PROVEN** = verified by a command that was actually run (evidence
 | B6 | Odds ingest Worker (3×/day KV snapshot, NFL pattern) must be a separate Worker (Odds API terms forbid re-serving through the sellable PropSports API) — code can be written; deploy + `ODDS_API_KEY` secret need approval. | Owner approval |
 | B7 | Supabase migration 002 (shot-event context columns) — written by the backfill lane, **not applied**. | Owner approval to apply |
 | B8 | **Backend CI cannot run**: GitHub refuses to start jobs on the private `propsports-api-worker` repo — "recent account payments have failed or your spending limit needs to be increased". All six suites pass locally at every commit. | Owner: GitHub billing |
-| B9 | **Production frontend is a dashboard promotion** (not by this session): Vercel shows `6d834e2` promoted (`dpl_FtE14yadYgWFoa1PWk3NH4LwEpsJ`, verified 2026-09-11). That build has limited mode, so nhl.propbetedge.ai renders honestly on the legacy API — but it predates the identity pass: production 404s `/og/propbetedge-nhl-1200x630.jpg`, `/apple-touch-icon.png`, `/site.webmanifest`, `/icon-512.png`, and its `og:image` is a relative hero path. | Owner: promote `6ad362d` (or later) when approved; long-term fix is B1 + backend promotion |
+| ~~B9~~ | **Resolved 2026-09-11.** The identity pass reached production the normal way: `nhl-ufc2-production` merged to `main`, and `main` deploys production. Rollback candidate: `dpl_BErKyuPQS8qG1iTVY1CYUdRSHDc9` (`2aba93b`). | — |
 | B10 | Model-version INSERTs for xG/SOG candidates generated as SQL, not executed. | Owner approval |
 
 ## UNVERIFIED / OWNER DECISIONS
