@@ -5,7 +5,11 @@
   margin-top: calc(-1 * var(--nhl-topbar-h));
   padding-top: calc(var(--nhl-topbar-h) + var(--s-7));
   min-height: min(88vh, 780px);
-  display: flex; flex-direction: column; justify-content: flex-end;
+  /* Top-anchored: the What-changed rail below the headline resolves to four
+     cards, one "unavailable" line or an empty note depending on the
+     environment, and grows into the hero's spare space instead of pushing
+     the headline up (CLS). */
+  display: flex; flex-direction: column; justify-content: flex-start;
   overflow: hidden;
   background: var(--pbe-ink-4);
 }
@@ -28,6 +32,9 @@
   align-items: end;
 }
 .hero__eyebrow { color: var(--pbe-gold); }
+/* The phase line fills in after the board loads and wraps to two lines on
+   phones: hold both so the headline does not step down. */
+@media (max-width: 640px) { .hero__eyebrow { display: block; min-height: 2lh; } }
 .hero__title {
   margin-top: var(--s-3);
   font-size: clamp(34px, 5.4vw, 64px);
@@ -49,9 +56,9 @@
   box-shadow: var(--sh-3);
 }
 /* Reserve the loaded panel's height so the hero never reflows (desktop CLS). */
-.hero__panel-slot { min-height: 430px; display: flex; flex-direction: column; justify-content: flex-end; }
-.hero__panel--loading { min-height: 430px; }
-@media (max-width: 960px) { .hero__panel-slot, .hero__panel--loading { min-height: 0; } .hero__panel--loading { height: 430px; } }
+.hero__panel-slot { min-height: 450px; display: flex; flex-direction: column; justify-content: flex-end; }
+.hero__panel--loading { min-height: 450px; }
+@media (max-width: 960px) { .hero__panel-slot, .hero__panel--loading { min-height: 0; } .hero__panel--loading { height: 450px; } }
 #changes { min-height: 72px; }
 .hero__live { display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--s-3); font-weight: 600; }
 .hero__next-when { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
@@ -95,13 +102,14 @@
 .change .micro { grid-column: 2; }
 .changes__empty { padding: 12px 14px; background: rgba(20,17,13,.8); border: 1px solid var(--pbe-line); border-radius: var(--r-sm); font-size: var(--fs-sm); display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
 .changes__foot { margin-top: 8px; }
-/* The hero is bottom-anchored, so the loading placeholder holds the usual
-   loaded height (two rows of cards + the source line) and the headline does
-   not jump when the newsroom answers. Phones keep a short bar: the rail sits
-   below the fold there. */
+/* The rail keeps one height on wide screens whatever it resolves to (two
+   rows of cards, an "unavailable" line in the legacy environment, or an
+   empty note), so neither the headline nor the board below moves when the
+   newsroom answers. Phones keep a short bar: the rail is below the fold. */
+#changes { min-height: 203px; }
 .changes__skel { height: 203px; }
-@media (max-width: 1100px) { .changes__skel { height: 185px; } }
-@media (max-width: 640px) { .changes__skel { height: 44px; } }
+@media (max-width: 1100px) { #changes { min-height: 185px; } .changes__skel { height: 185px; } }
+@media (max-width: 640px) { #changes { min-height: 72px; } .changes__skel { height: 44px; } }
 
 @media (max-width: 960px) {
   .hero { min-height: 0; padding-top: calc(var(--nhl-topbar-h) + var(--s-6)); }

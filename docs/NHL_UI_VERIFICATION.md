@@ -1,11 +1,11 @@
 # NHL UI verification
 
-Run: 2026-09-11 · frontend branch `nhl-ufc2-production` · Chromium (Playwright 1.55) · harness `tests/e2e/shoot.mjs`.
+Run: 2026-09-11 (identity pass) · frontend `nhl-ufc2-production` at the commit that adds this file · Chromium (Playwright) · harness `tests/e2e/shoot.mjs`.
 
-Stack under test (local, because the branch preview Worker deploy is blocked — see NHL_BUILD_STATUS B1):
+Stack under test (local, because the branch preview Worker deploy is blocked — NHL_BUILD_STATUS B1):
 Vite dev server → the real `api/nhl.js` / `api/odds.js` / `api/env.js` handlers → branch Worker (`wrangler dev --local`, `nhl-intelligence-v1`) → live api-web.nhle.com / forge / Yahoo RSS; odds from the real `nhl-odds` handler serving the snapshot of a real ingest (2026-09-11 12:13Z, 15 games, 10 books).
 
-Checks per route × width: horizontal overflow (document scrollWidth − viewport), broken images (complete with naturalWidth 0), text under 10px, console errors / page errors.
+Checks per route × width: horizontal overflow (document scrollWidth − viewport), broken images (complete with naturalWidth 0 — covers portraits and logos), text under 10 px, console errors / page errors.
 
 ## Result: 72 / 72 route×width combinations PASS
 
@@ -30,11 +30,11 @@ Checks per route × width: horizontal overflow (document scrollWidth − viewpor
 | `#/track-record` | PASS | PASS | PASS | PASS |
 | `#/methodology` | PASS | PASS | PASS | PASS |
 
-"Failed requests" logged by the harness as `net::ERR_ABORTED` are requests cancelled when the harness closes the page; they are not counted. A single-page probe with no navigation shows no failed request.
+111 requests were logged as `net::ERR_ABORTED`: polls cancelled when the harness closes each page. Other failed requests: 0.
 
-## Limited mode (production's legacy API)
+## Limited mode (production's legacy API) — 16 / 16 PASS
 
-Same bundle pointed at `https://propsports-api.sales-fd3.workers.dev` (legacy NHL contract):
+Same code with `PROPSPORTS_BASE_URL` pointed at the legacy production Worker and no dashboard secret — the environment nhl.propbetedge.ai serves today. Covers the Preseason Intelligence Mode ribbon and the Ice Board capability panel where the v2 data layer is missing.
 
 | Route | Width | Result |
 |---|---|---|
@@ -43,41 +43,69 @@ Same bundle pointed at `https://propsports-api.sales-fd3.workers.dev` (legacy NH
 | `#/news` | 1440px | PASS |
 | `#/props` | 1440px | PASS |
 | `#/goalies` | 1440px | PASS |
+| `#/lines?team=MTL` | 1440px | PASS |
+| `#/players` | 1440px | PASS |
 | `#/standings` | 1440px | PASS |
 | `#/` | 390px | PASS |
 | `#/cast/2025020500` | 390px | PASS |
 | `#/news` | 390px | PASS |
 | `#/props` | 390px | PASS |
 | `#/goalies` | 390px | PASS |
+| `#/lines?team=MTL` | 390px | PASS |
+| `#/players` | 390px | PASS |
 | `#/standings` | 390px | PASS |
 
-## Interaction tests
+## Identity / social checks
 
-- `tests/e2e/replay.e2e.mjs` — PBE Cast replay: opens at 326/326 and 4–5; start → 1/326 and 0–0; next goal → 1–0 and deep link written; ArrowLeft → 0–0; ArrowRight → back to the goal; Fast playback advances; end → 4–5 and SOG 18 = official; `?t=175` deep link restores 1–0; 0 page errors. PASS.
-- `tests/alerts.test.mjs` — alert rules. PASS.
-- Lab lane scripted interactions (Shot Lab layers, row → rink highlight, sort; Methodology TOC): 38/38 PASS.
+- `tests/identity-checks.mjs` (CI): one title / description / canonical (`https://nhl.propbetedge.ai/`); no localhost, `vercel.app` or `workers.dev` URL in `<head>`; `og:image` absolute, file exists, 1200×630 JPEG under 300 KB, `twitter:image` identical; every linked icon exists at its declared size (PNG IHDR parse), `favicon.ico` is an ICO, manifest icons match their declared sizes and include a maskable icon; exactly one JSON-LD block, parsing to Organization / WebSite / WebApplication / WebPage with no rating, review, offer, award or interaction-count claims; the boot-script backdrop preload map matches `src/lib/backdrops.js` and the router, and all 72 backdrop files exist. PASS.
+- Served locally: `/favicon.ico` (image/x-icon), `/favicon.svg` (image/svg+xml), 16/32 PNG, `/apple-touch-icon.png` 180×180, `/site.webmanifest` (application/manifest+json), `/og/propbetedge-nhl-1200x630.jpg` 1200×630, `/icon-192.png`, `/icon-512.png`, `/icon-maskable-512.png` — all 200 with the right type.
+- Built `dist/index.html`: one each of canonical / manifest / apple-touch-icon, four icon links, no duplicate meta tags, no preview or local URLs.
+- The Vercel branch preview for each pushed head built READY. It sits behind Vercel Authentication, so social scrapers cannot read it (expected). Production (`6d834e2`, a dashboard promotion) predates the pass: its `/og/…`, `/apple-touch-icon.png`, `/site.webmanifest` and `/icon-512.png` return 404 until a build from this pass is promoted.
 
-## Lighthouse (production bundle via `vite preview`, local)
+## Lighthouse (production bundle via `vite preview`, local, simulated throttling)
+
+Measured at `af116be`, except the Ice Board rows, which were re-measured on the final CSS. The footer network column (`75d9818`, from a parallel session) landed in between; it is covered by the screenshot matrix above.
 
 | Page | Form factor | Perf | A11y | Best practices | SEO | LCP | CLS |
 |---|---|---|---|---|---|---|---|
-| Home | desktop | 97 | 100 | 100 | 92 | 0.9 s | 0.07 |
-| Home | mobile | 81–87 | 100 | 100 | 92 | 3.9 s | 0.021 |
-| PBE Cast (replay) | desktop | 99 | 100 | 100 | 92 | 0.9 s | 0.045 |
-| PBE Cast (replay) | mobile | 88 | 100 | 100 | 92 | 3.0 s | 0.072 |
-| Standings | mobile | 98 | 100 | 100 | 92 | 2.1 s | 0.006 |
-| Shot Lab | mobile | 94 | 97 → fixed (`cff4045`) | 100 | 92 | 2.7 s | 0.086 |
-| Goalies / Injuries / News / Lines / Props | mobile (dev) | — | 100 | — | — | — | ≤ 0.003 |
+| Ice Board | desktop | 97 | 100 | 100 | 92 | 1.0 s | 0.004 |
+| Ice Board | mobile | 82 | 100 | 100 | 92 | 3.9 s | 0.02 |
+| PBE Cast (replay) | desktop | 96 | 100 | 100 | 92 | 1.1 s | 0.004 |
+| PBE Cast (replay) | mobile | 78 | 100 | 100 | 92 | 4.4 s | 0.062 |
+| Props | desktop | 98 | 100 | 100 | 92 | 1.0 s | 0.004 |
+| Props | mobile | 83 | 100 | 100 | 92 | 3.7 s | 0 |
+| Goalie Center | desktop | 92 | 100 | 100 | 92 | 1.5 s | 0.004 |
+| Goalie Center | mobile | 81 | 100 | 100 | 92 | 3.9 s | 0 |
+| Lines | desktop | 97 | 100 | 100 | 92 | 0.9 s | 0.004 |
+| Lines | mobile | 83 | 100 | 100 | 92 | 3.6 s | 0 |
+| News | desktop | 100 | 100 | 100 | 92 | 0.5 s | 0.019 |
+| News | mobile | 85 | 100 | 100 | 92 | 3.4 s | 0 |
+| Shot Lab | desktop | 97 | 100 | 100 | 92 | 0.9 s | 0.05 |
+| Shot Lab | mobile | 83 | 100 | 100 | 92 | 3.7 s | 0.058 |
+| Players | desktop | 98 | 100 | 100 | 92 | 0.9 s | 0.004 |
+| Players | mobile | 88 | 100 | 100 | 92 | 3.1 s | 0 |
+| Player (portrait) | desktop | 97 | 100 | 100 | 92 | 0.9 s | 0.004 |
+| Player (portrait) | mobile | 81 | 100 | 100 | 92 | 4.1 s | 0 |
+| Standings | desktop | 98 | 100 | 100 | 92 | 0.8 s | 0.006 |
+| Standings | mobile | 88 | 100 | 100 | 92 | 3.0 s | 0 |
+| Methodology | desktop | 98 | 100 | 100 | 92 | 0.9 s | 0.004 |
+| Methodology | mobile | 87 | 100 | 100 | 92 | 3.2 s | 0 |
 
-Mobile perf varies ±6 run to run under simulated throttling. Known: home mobile LCP ~3.9 s (the H1 is rendered by JS after the shell loads on simulated slow 4G). SEO 92 reflects hash routing.
+What changed in this pass, measured:
+- **Font-swap CLS removed.** Metric-matched local fallbacks (`src/styles/fonts.css`): Team desktop 0.122 → 0.004, Player mobile 0.119 → 0, PBE Cast desktop 0.045 → 0.004.
+- **Ice Board CLS → 0.004 desktop / 0 phones in both environments.** Before: 0.07 desktop (v2), 0.113 desktop in the legacy environment production serves, 0.02 phones. The hero is now top-anchored, the What-changed rail keeps one height on wide screens whatever it resolves to, the next-puck-drop slot reserves the taller legacy panel, and the phase line reserves two lines on phones (measured with a layout-shift observer and Lighthouse).
+- Pre-existing, not addressed: PBE Cast mobile CLS about 0.06 (`#cast-body` placeholder under throttling; 0.072 before the pass) and Shot Lab about 0.05.
+- **Mobile LCP on photo-backdrop pages is higher than before the pass** (PBE Cast 3.0 s → about 4.3 s simulated): the backdrop is now the largest element. In the unthrottled trace it paints at first contentful paint, and the boot script preloads it alongside the bundle, but Lantern's simulation charges it for the ~80 KB of web fonts requested earlier. Accepted as the cost of the visual system; turning photos off on phones is a one-line change in `applyBackdrop` if the owner prefers the score.
+- A11y fixes found by this run: heading order on Player / Team, link names on leaders / matchup team links, Methodology TOC target size. Props phones: prose notes at 12 px.
+- SEO 92 everywhere is hash routing. Mobile perf varies about ±5 run to run on this machine (memory pressure during the run).
 
 ## Screenshots
 
-`docs/qa/` — 40 WebP captures (viewport height) of Home, PBE Cast (replay, pregame, command center), Injuries, News, Props, Shot Lab, Lines and Goalies at 1440 / 1024 / 390 / 360.
+`docs/qa/` — 76 WebP files: every route above at 1440 / 1024 / 390 / 360 (viewport height, `<route>-<width>.webp`) plus `contact-sheet-<width>.webp` per width.
 
 ## Not verified here
 
-- Live games: no NHL game is live before 2026-09-19. Live polling (5 s), intermission, manpower changes and alerts were verified with completed games, replay and unit tests, not against a live feed.
-- Postponed / cancelled: state mapping is unit-tested (`semantics('FUT','PPD') → POSTPONED`); no real postponed game was available.
-- Vercel preview with the v2 data layer (blocked, B1). Production currently serves the promoted `98530a4` build (B9).
-- Worker-egress behaviour of every source (checks ran from a residential IP).
+- Live games: none before 2026-09-19. Live polling, intermission, manpower changes and alerts are verified with completed games, replay and unit tests, not a live feed.
+- Postponed / cancelled: state mapping unit-tested; no real postponed game available.
+- Vercel preview with the v2 data layer (blocked, B1). Social-card unfurl on real platforms needs a public URL (production promotion).
+- Safari / Firefox rendering of the fallback font faces and `image-set()` (Chromium only; `image-set` has a WebP `url()` fallback).

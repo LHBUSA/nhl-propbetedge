@@ -59,6 +59,23 @@ Status words: **PROVEN** = verified by a command that was actually run (evidence
 | Best Line | Props renders every priced game from the stored snapshot: best price + book, EV vs ≥2-book no-vig consensus (market comparison, not model edge), puck line, total, moves since open (`5743fca`) |
 | Backend QA fixes | as-of goalie workload (last 5 before the game date, game's season); "sign" no longer mis-files stories as Transactions (`7edb1a5`) |
 
+## Identity + visual depth pass (2026-09-11)
+
+| Item | Status | Evidence |
+|---|---|---|
+| App identity (favicon SVG/ICO/16/32, apple-touch 180, PWA 192/512/maskable) | **PROVEN** | Hockey-stick P mark (approved, merged `670dbc1` from a separate session) replaces the first faceoff-circle P (`f6604d0`); own drawing, no league marks; `tests/identity-checks.mjs` asserts every size |
+| Meta / SEO / social: canonical, robots, OG + Twitter with purpose-built 1200×630 card, JSON-LD (Organization, WebSite, WebApplication, WebPage — no ratings/reviews/offers/user counts), web manifest, no service worker | **PROVEN** | identity-checks in CI; served locally 200 with correct types; no preview/local URLs in the built head |
+| Page backdrops: 9 licensed Pexels photos (Cast, Props, Goalies, Lines, Injuries, News, Matchups, Players, Standings) + owned generated art (Shot Lab rink, Methodology geometry, Track Record terminal) | **PROVEN** | `6ad362d`; AVIF/WebP at 800/1400/2000 + 7:9 mobile, one image per route, preloaded only for the landing route; licenses in `docs/IMAGE_SOURCES.md` §5 |
+| Player identity component + 45 licensed Commons portraits, fallback initials + team badge → neutral PBE mark | **PROVEN** | `dd1ddac`; credits visible on the player hero, in image titles, and in Methodology → Image credits (generated from the manifest) |
+| Preseason Intelligence Mode (ribbon on every page, capability panel on the Ice Board) | **PROVEN** | `1836719`; renders in the v2 and legacy environments (limited-mode QA) |
+| Visual QA 18 routes × 1440/1024/390/360 + limited mode; Lighthouse 11 pages × 2 | **PROVEN** | `docs/NHL_UI_VERIFICATION.md`, screenshots + contact sheets in `docs/qa/`; a11y 100 and best practices 100 on all 22 Lighthouse runs |
+| Layout shift | **IMPROVED** | metric-matched font fallbacks (`src/styles/fonts.css`): Team desktop 0.122 → 0.004, Player mobile 0.119 → 0, Cast desktop 0.045 → 0.004. Ice Board: top-anchored hero + fixed-height rail + legacy-sized panel slot — desktop 0.07 → 0.004 (v2) and 0.113 → 0.004 (legacy, what production serves), phones 0.02 → 0 |
+| Mobile LCP on photo-backdrop pages | **REGRESSED (accepted)** | backdrop became the LCP element; Cast mobile 3.0 → 4.4 s simulated (perf 88 → 78). Preload added; observed LCP = FCP. Owner can disable photos on phones in one line |
+| Cast mobile CLS 0.062 (`#cast-body` skeleton under throttling) | **UNVERIFIED fix** | pre-existing (0.072 before the pass); not addressed here |
+| NHL.com headshots | **BLOCKED (owner)** | not used, never requested — licensing decision |
+| Personality rights on 10 Commons portraits | **OWNER DECISION** | copyright licence is clean; publicity rights next to betting content are not |
+| Production carries the identity pass | **BLOCKED (owner)** | production is `6d834e2`; needs promotion of the branch head (B9) |
+
 ## IN PROGRESS
 
 - Live prop tracker (market line vs live stat + TOI pace) — needs posted player props (provider had none 18 days out).
