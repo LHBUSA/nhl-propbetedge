@@ -38,7 +38,7 @@ export function renderShell(app) {
     <header class="topbar" id="topbar">
       <div class="topbar__in">
         <a class="brand" href="#/" title="PropBetEdge NHL — Ice Board">
-          <span class="brand__mark" aria-hidden="true"><svg viewBox="0 0 32 32" width="34" height="34"><rect width="32" height="32" rx="7" fill="#14110d"/><rect x=".75" y=".75" width="30.5" height="30.5" rx="6.4" fill="none" stroke="#d4af37" stroke-opacity=".45" stroke-width="1"/><path fill="#e2bf4a" fill-rule="evenodd" d="M7 5 H16.5 A7 7 0 0 1 16.5 19 H11.3 V27 H7 Z M16.5 9 A3 3 0 1 0 16.51 9 Z"/><circle cx="16.5" cy="12" r="1.1" fill="#f6e39b"/></svg></span>
+          <span class="brand__mark" aria-hidden="true"><svg viewBox="0 0 512 512" width="34" height="34"><rect width="512" height="512" rx="104" fill="#14110d"/><rect x="12" y="12" width="488" height="488" rx="94" fill="none" stroke="#d4af37" stroke-opacity=".45" stroke-width="16"/><g transform="translate(260 256) scale(0.86) skewX(-7) translate(-256 -256)"><path fill="#e8c452" fill-rule="evenodd" d="M214 82 Q214 72 224 72 H330 A122 122 0 0 1 330 316 H318 V352 A88 88 0 0 1 230 440 H92 Q52 440 52 406 Q52 372 92 368 L190 364 Q214 362 214 336 Z M318 142 H328 A52 52 0 0 1 328 246 H318 Z"/></g></svg></span>
           <span class="brand__word">PropBet<b>Edge</b></span>
           <span class="brand__sport">NHL</span>
         </a>
