@@ -135,8 +135,14 @@
 .feed-filters { margin-bottom: var(--s-3); }
 .feed-list { list-style: none; margin: 0; padding: 0; }
 .feed-period { position: sticky; top: 0; z-index: 1; padding: 8px 0 6px; background: var(--pbe-ink-2); color: var(--pbe-gold); border-bottom: 1px solid var(--pbe-line); }
+.feed-loc {
+  width: 28px; height: 28px; align-self: center; display: grid; place-items: center; padding: 0;
+  border: 1px solid transparent; border-radius: var(--r-xs); background: none; color: var(--pbe-dim); font-size: 14px;
+}
+.feed-loc:hover, .feed-loc[aria-pressed="true"] { border-color: var(--pbe-line-strong); color: var(--pbe-paper); }
+.feed-loc--none { visibility: hidden; }
 .feed-item {
-  display: grid; grid-template-columns: 3.4em 3.2em minmax(0, 1fr) auto; gap: 8px; align-items: baseline;
+  display: grid; grid-template-columns: 28px 3.4em 3.2em minmax(0, 1fr) auto; gap: 8px; align-items: baseline;
   padding: 9px 6px; border-bottom: 1px solid var(--pbe-line-faint); font-size: var(--fs-sm); line-height: 1.4;
 }
 .feed-item[data-select] { cursor: pointer; }
@@ -147,14 +153,14 @@
 .feed-item--goal .feed-text b { color: var(--pbe-crimson-text); }
 .feed-item--penalty .feed-text b { color: var(--pbe-gold-bright); }
 .feed-item--stoppage, .feed-item--faceoff { color: var(--pbe-dim); }
-.feed-time { font-size: 12px; color: var(--pbe-faint); }
+.feed-time { font-size: 12px; color: var(--pbe-dim); }
 .feed-team { font: 700 11px/1 var(--pbe-font-data); letter-spacing: .04em; padding-left: 6px; border-left: 3px solid var(--c); color: var(--pbe-paper-2); }
 .feed-score { font-weight: 700; color: var(--pbe-paper); }
 .feed-str { font: 700 var(--fs-micro)/1 var(--pbe-font-data); letter-spacing: .08em; color: var(--pbe-gold-bright); border: 1px solid currentColor; border-radius: var(--r-xs); padding: 2px 4px; margin-left: 4px; white-space: nowrap; }
 .feed-empty { padding: var(--s-4) 0; }
 @media (max-width: 400px) {
-  .feed-item { grid-template-columns: 3em 2.8em minmax(0, 1fr); }
-  .feed-score { grid-column: 3; }
+  .feed-item { grid-template-columns: 28px 3em 2.8em minmax(0, 1fr); }
+  .feed-score { grid-column: 4; }
 }
 
 /* ---------- pregame */
@@ -203,9 +209,9 @@
 .rp-btn--play { width: 48px; background: var(--pbe-gold); border-color: var(--pbe-gold); color: var(--pbe-ink); }
 .rp-btn--play:hover { background: var(--pbe-gold-bright); color: var(--pbe-ink); }
 .replay__pos { margin-left: auto; font-size: var(--fs-data-sm); color: var(--pbe-dim); }
-.replay__track { position: relative; height: 28px; }
+.replay__track { position: relative; height: 36px; }
 .replay__range {
-  position: absolute; inset: 8px 0 auto; width: 100%; height: 12px; margin: 0; appearance: none; background: transparent; cursor: pointer; z-index: 2;
+  position: absolute; inset: 6px 0 auto; width: 100%; height: 24px; margin: 0; appearance: none; background: transparent; cursor: pointer; z-index: 2;
 }
 .replay__range::-webkit-slider-runnable-track { height: 4px; border-radius: 2px; background: linear-gradient(90deg, var(--pbe-gold) var(--pct), var(--pbe-ink-4) var(--pct)); }
 .replay__range::-moz-range-track { height: 4px; border-radius: 2px; background: var(--pbe-ink-4); }
@@ -213,10 +219,14 @@
 .replay__range::-webkit-slider-thumb { appearance: none; width: 16px; height: 16px; margin-top: -6px; border-radius: 50%; background: var(--pbe-paper); border: 2px solid var(--pbe-gold); }
 .replay__range::-moz-range-thumb { width: 14px; height: 14px; border-radius: 50%; background: var(--pbe-paper); border: 2px solid var(--pbe-gold); }
 .replay__marks { position: absolute; inset: 0; pointer-events: none; }
-.rp-mark { position: absolute; top: 0; width: 10px; height: 10px; margin-left: -5px; padding: 0; border: 0; border-radius: 50%; pointer-events: auto; cursor: pointer; z-index: 3; }
-.rp-mark--goal { background: var(--pbe-crimson-bright); }
-.rp-mark--penalty { top: 20px; width: 8px; height: 8px; margin-left: -4px; border-radius: 1px; background: var(--pbe-gold-bright); }
-.rp-mark--period { top: 4px; width: 2px; height: 20px; margin-left: -1px; border-radius: 0; background: var(--pbe-line-strong); }
+/* 24px hit areas; the visible mark is the ::before dot. */
+.rp-mark { position: absolute; top: -8px; width: 24px; height: 24px; margin-left: -12px; padding: 0; border: 0; background: none; pointer-events: none; z-index: 3; }
+.rp-mark::before { content: ""; position: absolute; left: 7px; top: 7px; width: 10px; height: 10px; border-radius: 50%; }
+.rp-mark--goal::before { background: var(--pbe-crimson-bright); }
+.rp-mark--penalty { top: 20px; }
+.rp-mark--penalty::before { left: 8px; top: 8px; width: 8px; height: 8px; border-radius: 1px; background: var(--pbe-gold-bright); }
+.rp-mark--period { top: 6px; pointer-events: none; }
+.rp-mark--period::before { left: 11px; top: 0; width: 2px; height: 24px; border-radius: 0; background: var(--pbe-line-strong); }
 .replay__keys { margin-left: auto; }
 @media (max-width: 768px) {
   .replay__keys { display: none; }

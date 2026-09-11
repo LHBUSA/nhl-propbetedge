@@ -106,7 +106,9 @@ export function replayBar(state, cast) {
   const cur = state.cursor ?? n - 1;
   const at = cast.plays[cur];
   const pct = n > 1 ? (cur / (n - 1)) * 100 : 100;
-  const marks = markers(cast.plays).map(m => `<button type="button" class="rp-mark rp-mark--${m.kind}" style="left:${n > 1 ? (m.i / (n - 1)) * 100 : 0}%" data-rp-goto="${m.i}" title="${esc(m.label)}" aria-label="Jump to ${esc(m.label)}"></button>`).join('');
+  // Markers are visual; the Goal/Penalty/Power play/Period chips are the
+  // keyboard- and touch-sized way to jump (markers can sit pixels apart).
+  const marks = markers(cast.plays).map(m => `<span class="rp-mark rp-mark--${m.kind}" style="left:${n > 1 ? (m.i / (n - 1)) * 100 : 0}%" title="${esc(m.label)}" aria-hidden="true"></span>`).join('');
   return `<div class="replay" role="group" aria-label="Replay controls">
     <div class="replay__row">
       <span class="pbe-badge pbe-badge--${state.cursor === null ? 'final' : 'sched'}">${state.cursor === null ? 'Full game' : 'Replay'}</span>

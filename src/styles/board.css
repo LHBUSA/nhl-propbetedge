@@ -48,6 +48,11 @@
   padding: var(--s-4);
   box-shadow: var(--sh-3);
 }
+/* Reserve the loaded panel's height so the hero never reflows (desktop CLS). */
+.hero__panel-slot { min-height: 430px; display: flex; flex-direction: column; justify-content: flex-end; }
+.hero__panel--loading { min-height: 430px; }
+@media (max-width: 960px) { .hero__panel-slot, .hero__panel--loading { min-height: 0; } .hero__panel--loading { height: 430px; } }
+#changes { min-height: 72px; }
 .hero__live { display: flex; align-items: center; justify-content: space-between; margin-bottom: var(--s-3); font-weight: 600; }
 .hero__next-when { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
 .hero__next-when b { font-size: 18px; }

@@ -220,7 +220,8 @@ function feedList(cast, filter, selected) {
     }
     const team = p.side ? g.teams[p.side] : null;
     const scoreAfter = p.score_after ? `<span class="feed-score mono">${p.score_after.away}–${p.score_after.home}</span>` : '';
-    out.push(`<li class="feed-item feed-item--${esc(p.kind)}${i === 0 && filter === 'all' ? ' is-latest' : ''}${selected === p.sort_order ? ' is-selected' : ''}" ${p.shot?.has_coordinates ? `data-select="${p.sort_order}" tabindex="0" role="button" aria-label="Show on rink"` : ''}>
+    out.push(`<li class="feed-item feed-item--${esc(p.kind)}${i === 0 && filter === 'all' ? ' is-latest' : ''}${selected === p.sort_order ? ' is-selected' : ''}"${p.shot?.has_coordinates ? ` data-select="${p.sort_order}"` : ''}>
+      ${p.shot?.has_coordinates ? `<button type="button" class="feed-loc" data-select="${p.sort_order}" aria-label="Show this ${esc(p.time_in_period || '')} attempt on the rink" aria-pressed="${selected === p.sort_order}">⌖</button>` : '<span class="feed-loc feed-loc--none" aria-hidden="true"></span>'}
       <span class="feed-time mono">${esc(p.time_in_period || '')}</span>
       <span class="feed-team" style="--c:${team ? teamAccent(team.abbrev) : 'transparent'}">${team ? esc(team.abbrev) : ''}</span>
       <span class="feed-text">${playText(p)}${p.strength && p.strength.state !== 'EV' && p.kind !== 'faceoff' ? ` <span class="feed-str">${esc(p.strength.label)} ${esc(p.strength.state)}</span>` : ''}</span>
@@ -249,15 +250,15 @@ function pregamePanel(cast) {
 
 function pickerMarkup(games, currentId, label) {
   if (!games.length) return '';
-  return `<div class="cast-picker" role="list" aria-label="${esc(label)}">
+  return `<nav class="cast-picker" aria-label="${esc(label || 'Games')}">
     ${games.map(g => {
       const st = stateOf(g);
-      return `<a role="listitem" class="pick${String(g.id) === String(currentId) ? ' is-active' : ''}" href="#/cast/${esc(g.id)}" data-state="${st.key}">
+      return `<a class="pick${String(g.id) === String(currentId) ? ' is-active' : ''}" href="#/cast/${esc(g.id)}" data-state="${st.key}">
         <span class="pick__teams mono">${esc(g.teams.away.abbrev)} <span class="faint">@</span> ${esc(g.teams.home.abbrev)}</span>
         <span class="pick__state">${['LIVE', 'INTERMISSION', 'FINAL'].includes(st.key) ? `${g.teams.away.score ?? ''}–${g.teams.home.score ?? ''} · ` : ''}${esc(st.text)}</span>
       </a>`;
     }).join('')}
-  </div>`;
+  </nav>`;
 }
 
 export function mount(root, params, ctx) {
@@ -346,7 +347,7 @@ export function mount(root, params, ctx) {
       ${!pre && full.plays.length ? replayBar(state, full) : ''}
       ${cast.partial?.boxscore || cast.partial?.right_rail ? `<div class="pbe-note" style="margin-top:12px"><b>Partial data.</b> ${cast.partial.boxscore ? 'Box score unavailable. ' : ''}${cast.partial.right_rail ? 'Official team stats unavailable. ' : ''}Play-by-play is current.</div>` : ''}
       <div class="cast-tabs" role="tablist" aria-label="PBE Cast sections">
-        ${[['feed', 'Play-by-play'], ['rink', 'Shot map'], ['stats', 'Intelligence']].map(([k, l]) => `<button role="tab" class="chip" aria-selected="${state.tab === k}" aria-pressed="${state.tab === k}" data-tab="${k}">${l}</button>`).join('')}
+        ${[['feed', 'Play-by-play'], ['rink', 'Shot map'], ['stats', 'Intelligence']].map(([k, l]) => `<button role="tab" class="chip" aria-selected="${state.tab === k}" data-tab="${k}">${l}</button>`).join('')}
       </div>
       <div class="cast-grid" data-tab="${state.tab}">
         <div class="cast-col cast-col--rink">
@@ -472,14 +473,15 @@ export function mount(root, params, ctx) {
     on(root, 'click', '[data-normalize]', () => { state.normalize = !state.normalize; renderBody(); }),
     on(root, 'click', '[data-feed]', (_, b) => { state.feed = b.dataset.feed; renderBody(); }),
     on(root, 'click', '[data-tab]', (_, b) => { if (b.tagName === 'BUTTON') { state.tab = b.dataset.tab; renderBody(); } }),
-    on(root, 'click', '[data-select]', (_, li) => {
+    on(root, 'click', '[data-select]', (event, li) => {
+      if (li.tagName === 'LI' && event.target.closest('a')) return;
+      event.stopPropagation();
       const id = Number(li.dataset.select);
       state.selected = state.selected === id ? null : id;
       if (state.selected !== null && state.team !== 'both') state.team = 'both';
       renderBody();
       if (window.matchMedia('(max-width: 768px)').matches && state.selected !== null) { state.tab = 'rink'; renderBody(); }
     }),
-    on(root, 'keydown', '[data-select]', (event, li) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); li.click(); } }),
     on(root, 'click', '[data-rp]', (_, b) => {
       const n = state.cast?.plays.length || 0;
       const act = b.dataset.rp;

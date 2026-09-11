@@ -182,7 +182,7 @@ export function mount(root, params, ctx) {
             <a class="pbe-btn pbe-btn--ghost" href="#/methodology">How we source</a>
           </div>
         </div>
-        <div id="hero-panel" class="hero__panel-slot"><div class="hero__panel pbe-skeleton" style="min-height:300px"></div></div>
+        <div id="hero-panel" class="hero__panel-slot"><div class="hero__panel pbe-skeleton hero__panel--loading"></div></div>
       </div>
       <div class="wrap changes" aria-labelledby="changes-title">
         <div class="changes__head"><span class="eyebrow" id="changes-title">What changed · last 24 hours</span><a class="micro changes__all" href="#/news">Newsroom →</a></div>

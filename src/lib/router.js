@@ -1,7 +1,11 @@
 // Hash router. Every page module exports mount(root, params, ctx) and returns
 // an unmount() that clears its timers, listeners and in-flight requests.
+import * as boardPage from '../pages/board.js';
+
+// The Ice Board is the landing route: bundled with the shell so first paint
+// does not wait on a second chunk. Everything else loads on demand.
 const ROUTES = [
-  { pattern: /^\/?$/, id: 'board', load: () => import('../pages/board.js') },
+  { pattern: /^\/?$/, id: 'board', load: async () => boardPage },
   { pattern: /^\/cast(?:\/(\d{10}))?$/, id: 'cast', keys: ['gameId'], load: () => import('../pages/cast.js') },
   { pattern: /^\/props$/, id: 'props', load: () => import('../pages/props.js') },
   { pattern: /^\/goalies(?:\/(\d{10}))?$/, id: 'goalies', keys: ['gameId'], load: () => import('../pages/goalies.js') },

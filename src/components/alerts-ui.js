@@ -7,7 +7,12 @@ const KIND_LABEL = { schedule: 'Schedule', goal: 'Goal', game: 'Game', goalie: '
 
 export function watchButton(gameId, compact = false) {
   const on_ = watch.has(gameId);
-  return `<button type="button" class="watch-btn${compact ? ' watch-btn--compact' : ''}" data-watch="${esc(gameId)}" aria-pressed="${on_}" aria-label="${on_ ? 'Stop watching this game' : 'Watch this game for alerts'}" title="${on_ ? 'Watching — goal, puck-drop, goalie and schedule alerts' : 'Watch for alerts'}">${on_ ? '★' : '☆'}${compact ? '' : `<span>${on_ ? 'Watching' : 'Watch'}</span>`}</button>`;
+  return `<button type="button" class="watch-btn${compact ? ' watch-btn--compact' : ''}" data-watch="${esc(gameId)}" aria-pressed="${on_}"${compact ? ' aria-label="Watch this game for alerts"' : ''} title="${on_ ? 'Watching — goal, puck-drop, goalie and schedule alerts' : 'Watch for alerts'}">${watchInner(on_, compact)}</button>`;
+}
+
+// aria-pressed carries the state; the star is decorative.
+function watchInner(on_, compact) {
+  return `<span aria-hidden="true">${on_ ? '★' : '☆'}</span>${compact ? '' : `<span>${on_ ? 'Watching' : 'Watch'}</span>`}`;
 }
 
 function itemMarkup(a) {
@@ -75,8 +80,7 @@ export function bindAlertsUI() {
       for (const node of document.querySelectorAll(`[data-watch="${CSS.escape(id)}"]`)) {
         const compact = node.classList.contains('watch-btn--compact');
         node.setAttribute('aria-pressed', String(now));
-        node.innerHTML = `${now ? '★' : '☆'}${compact ? '' : `<span>${now ? 'Watching' : 'Watch'}</span>`}`;
-        node.setAttribute('aria-label', now ? 'Stop watching this game' : 'Watch this game for alerts');
+        node.innerHTML = watchInner(now, compact);
       }
     })
   ];

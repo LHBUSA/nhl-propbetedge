@@ -1,4 +1,8 @@
 html.is-locked, html.is-locked body { overflow: hidden; }
+/* Reserve the viewport for the routed page so the footer never paints at the
+   top and then jumps (was CLS 0.56 on mobile). */
+#main { display: block; min-height: calc(100vh - var(--nhl-topbar-h)); }
+#main:focus { outline: none; }
 
 /* ---------- top bar */
 .topbar {

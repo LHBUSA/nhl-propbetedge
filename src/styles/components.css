@@ -22,7 +22,8 @@
 .pbe-badge--confirmed { color: var(--pbe-pos); }
 .pbe-badge--confirmed::before { content: "✓"; }
 .pbe-badge--reported { color: var(--pbe-gold-bright); }
-.pbe-badge--unknown, .pbe-badge--unavailable { color: var(--pbe-unavailable); }
+/* --pbe-unavailable (#7e7a72) is 4.36:1 on ink; badge text needs AA. */
+.pbe-badge--unknown, .pbe-badge--unavailable { color: #9c978d; }
 .pbe-badge--unavailable::before, .pbe-badge--unknown::before { content: "—"; }
 .pbe-badge--alert { color: var(--pbe-crimson-text); }
 .pbe-badge--heuristic { color: var(--pbe-dim); border-style: dashed; }

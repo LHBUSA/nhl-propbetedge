@@ -37,7 +37,7 @@ export function renderShell(app) {
     <a class="skip-link" href="#main" data-skip>Skip to content</a>
     <header class="topbar" id="topbar">
       <div class="topbar__in">
-        <a class="brand" href="#/" aria-label="PropBetEdge NHL — Ice Board">
+        <a class="brand" href="#/" title="PropBetEdge NHL — Ice Board">
           <span class="brand__mark" aria-hidden="true">PBE</span>
           <span class="brand__word">PropBet<b>Edge</b></span>
           <span class="brand__sport">NHL</span>
@@ -60,8 +60,8 @@ export function renderShell(app) {
               <ul class="alert-list" id="alert-list"></ul>
             </div>
           </div>
-          <button class="search-btn" type="button" data-open-search aria-label="Search teams, games and pages (Ctrl K)">
-            ${icon('search')}<span class="search-btn__label">Search</span><kbd>Ctrl K</kbd>
+          <button class="search-btn" type="button" data-open-search>
+            ${icon('search')}<span class="search-btn__label" aria-hidden="true">Search</span><kbd aria-hidden="true">Ctrl K</kbd><span class="sr-only">Search teams, games and pages (Ctrl K)</span>
           </button>
         </div>
       </div>

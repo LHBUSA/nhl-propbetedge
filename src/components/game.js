@@ -7,10 +7,11 @@ import { cardMarket } from './market.js';
 export function teamMark(team = {}, size = 36) {
   const src = safeUrl(logoUrl(team));
   const abbr = esc(team.abbrev || '—');
+  // Decorative: every placement shows the abbreviation as text beside it.
   // onerror swaps to the abbreviation, so a blocked logo never renders broken.
   return `<span class="team-mark" style="--mark:${size}px">${src
-    ? `<img src="${esc(src)}" alt="${abbr}" width="${size}" height="${size}" loading="lazy" decoding="async" onerror="this.replaceWith(Object.assign(document.createElement('span'),{textContent:this.alt}))">`
-    : `<span>${abbr}</span>`}</span>`;
+    ? `<img src="${esc(src)}" alt="" data-abbr="${abbr}" width="${size}" height="${size}" loading="lazy" decoding="async" onerror="this.replaceWith(Object.assign(document.createElement('span'),{textContent:this.dataset.abbr}))">`
+    : `<span aria-hidden="true">${abbr}</span>`}</span>`;
 }
 
 export function stateOf(game) {
