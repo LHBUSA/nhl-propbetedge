@@ -12,6 +12,7 @@ import './styles/pages-lab.css';
 import './styles/backdrops.css';
 import './styles/mode.css';
 import './styles/identity.css';
+import './styles/product-depth.css';
 
 import { ApiError, dataLayer, nhl } from './lib/api.js';
 import { legacyBoard } from './lib/legacy.js';
@@ -29,6 +30,11 @@ const main = renderShell(app);
 // Purchase UI is additive and presentation-only. Load it after renderShell so
 // it can attach to the existing toolbar without observing or racing the shell.
 import('./lib/pro.js').catch(error => console.error('[nhl-pro] failed to load', error));
+// First-party NHL editorial is also additive. It reads the public PropBetEdge
+// News Cloudflare API and never replaces the verified operational NHL wire.
+import('./services/editorial-depth.js')
+  .then(({ startEditorialDepth }) => startEditorialDepth())
+  .catch(error => console.error('[nhl-editorial] failed to load', error));
 
 // Shared, short-lived app state. Pages read the board through here so the
 // search palette and the season chip reuse one request.
