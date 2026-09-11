@@ -4,7 +4,7 @@ on:
   push:
     branches: [main, nhl-product-v1, nhl-ufc2-production]
   pull_request:
-    branches: [main]
+    branches: [main, nhl-ufc2-production]
 
 permissions:
   contents: read
@@ -25,4 +25,6 @@ jobs:
         run: node tests/identity-checks.mjs
       - name: Alert rules
         run: node tests/alerts.test.mjs
+      - name: Founding Season pricing contract
+        run: node tests/pro-pricing.test.mjs
       - run: npm run build
