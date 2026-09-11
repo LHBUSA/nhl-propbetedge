@@ -625,3 +625,16 @@
 .dk-unit__time { font-size: 11px; color: var(--pbe-dim); }
 .dk-limited { color: var(--pbe-gold-bright); }
 @media (max-width: 900px) { .dk-deploy__grid { grid-template-columns: 1fr; } }
+
+/* ---------- Best Line (market price intelligence) */
+.dk-bl { margin-bottom: var(--s-5); }
+.dk-bltable td { vertical-align: top; }
+.dk-bltable td.num b { display: block; font-size: var(--fs-data-sm); color: var(--pbe-paper); }
+.dk-bl__game { display: inline-flex; align-items: center; gap: 6px; font-family: var(--pbe-font-data); }
+.dk-bl__game + .micro { display: block; margin-top: 2px; }
+.dk-bl__book { display: block; font-size: 11px; color: var(--pbe-dim); }
+.dk-bl__ev { display: block; font: 600 11px/1.3 var(--pbe-font-data); color: var(--pbe-dim); }
+.dk-bl__plus .dk-bl__ev { color: var(--pbe-pos); }
+.dk-bl__note { margin-top: 10px; line-height: 1.6; }
+.dk-bl__tot span { display: block; font: 500 12px/1.4 var(--pbe-font-data); color: var(--pbe-paper-2); white-space: nowrap; }
+.dk-bl__tot i { font-style: normal; font-size: 11px; color: var(--pbe-dim); }

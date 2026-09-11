@@ -1,10 +1,14 @@
-// Props Board frame. No odds pipeline exists yet, so this page shows the board
-// the product will run — its columns and what each one requires — plus the
-// verified market coverage from a one-time provider check. It renders no
-// prices, no lines and no edges: nothing here may look like a quote.
+// Props Board. Where the nhl-odds snapshot service exists, a Best Line board
+// renders real stored quotes (best price per side, book, no-vig consensus).
+// The player-props board stays an empty frame until books post player
+// markets. No price is ever shown that a stored snapshot does not contain,
+// and market comparisons are never presented as model edges.
 import { $, esc } from '../lib/dom.js';
-import { dateLabel, todayET } from '../lib/format.js';
+import { odds } from '../lib/api.js';
+import { freshStamp } from '../lib/freshness.js';
+import { dateLabel, dayET, timeET, todayET } from '../lib/format.js';
 import { teamMark } from '../components/game.js';
+import { bookName, price } from '../components/market.js';
 
 // Logos here always sit next to visible team text: decorative, so alt="".
 const mark = (team, size) => teamMark(team, size).replace(/ alt="[^"]*"/, ' alt=""');
@@ -40,8 +44,8 @@ const PLAYER_MARKETS = [
 ];
 const BOOKS = ['DraftKings', 'FanDuel', 'BetMGM', 'Caesars', 'BetRivers', 'Fanatics', 'Bovada', 'BetOnline', 'LowVig', 'BetUS'];
 
-function boardFrame() {
-  return `<section class="dk-props-board" aria-labelledby="dk-p-board">
+function boardFrame(hasMarket = false) {
+  return `<section class="dk-props-board" id="dk-p-frame" aria-labelledby="dk-p-board">
     <div class="dk-props-board__head">
       <div><span class="eyebrow">Props Board</span><h3 id="dk-p-board">Player markets</h3></div>
       <div class="chips dk-p-markets" aria-label="Markets (inactive until snapshots exist)">
@@ -56,7 +60,7 @@ function boardFrame() {
       <tbody>
         <tr><td colspan="${COLUMNS.length}" class="dk-ptable__empty">
           <span class="pbe-badge pbe-badge--unavailable">No market data</span>
-          <b>Market snapshots not integrated — no prices are shown until a verified ingest exists.</b>
+          <b>${hasMarket ? 'No book has posted NHL player markets in the current snapshot.' : 'Market snapshots not integrated — no prices are shown until a verified ingest exists.'}</b>
           <span class="dim">Each row will be one book's quote for one player market, stamped with its capture time.</span>
         </td></tr>
       </tbody>
@@ -114,13 +118,47 @@ function activationPanel() {
   </section>`;
 }
 
+// ---- Best Line (market price intelligence). Rendered only from a stored
+// scheduled snapshot; consensus needs >= 2 books quoting both sides.
+const evPct = v => (Number.isFinite(v) ? `${v >= 0 ? '+' : '−'}${Math.abs(v * 100).toFixed(1)}%` : '—');
+function bestLineBoard(events, meta) {
+  const rows = events.filter(e => e.game_id).sort((a, b) => a.commence_time.localeCompare(b.commence_time)).map(e => {
+    const ml = e.pricing?.h2h; const tot = e.pricing?.totals?.[0]; const pl = e.pricing?.spreads?.[0];
+    const evA = ml?.ev_vs_consensus?.away; const evH = ml?.ev_vs_consensus?.home;
+    const cell = (p, book, ev) => `<td class="num${Number.isFinite(ev) && ev > 0 ? ' dk-bl__plus' : ''}"><b>${price(p)}</b><span class="dk-bl__book">${esc(bookName(book))}</span>${Number.isFinite(ev) ? `<span class="dk-bl__ev" title="Expected value of the best price against the no-vig consensus of ${ml?.consensus?.books || 0} books — market comparison, not a model">${evPct(ev)}</span>` : ''}</td>`;
+    const moved = (e.opening?.movement || []).length;
+    return `<tr>
+      <td><a class="dk-bl__game" href="#/cast/${esc(e.game_id)}">${mark({ abbrev: e.away }, 20)}<b>${esc(e.away)}</b><span class="faint">@</span>${mark({ abbrev: e.home }, 20)}<b>${esc(e.home)}</b></a><span class="micro">${esc(dayET(e.commence_time))} · ${esc(timeET(e.commence_time))}</span></td>
+      ${cell(ml?.best?.away?.price, ml?.best?.away?.book, evA)}
+      ${cell(ml?.best?.home?.price, ml?.best?.home?.book, evH)}
+      <td class="num">${ml?.consensus ? `${(ml.consensus.home * 100).toFixed(1)}%` : '—'}<span class="dk-bl__book">${ml?.consensus ? `${ml.consensus.books} books` : 'no consensus'}</span></td>
+      <td class="num">${pl ? `${esc(String(pl.home_point))} <b>${price(pl.best?.home?.price)}</b><span class="dk-bl__book">${esc(bookName(pl.best?.home?.book))}</span>` : '—'}</td>
+      <td class="num dk-bl__tot">${tot ? `<b>${esc(tot.point)}</b><span>o ${price(tot.best?.over?.price)} <i>${esc(bookName(tot.best?.over?.book))}</i></span><span>u ${price(tot.best?.under?.price)} <i>${esc(bookName(tot.best?.under?.book))}</i></span>` : '—'}</td>
+      <td class="num">${moved ? `${moved}` : '0'}</td>
+    </tr>`;
+  });
+  const props = events.flatMap(e => (e.props || []).map(p => ({ ...p, game: e })));
+  return `<section class="dk-bl" aria-labelledby="dk-bl-title">
+    <div class="dk-props-board__head">
+      <div><span class="eyebrow">Best Line · market price intelligence</span><h3 id="dk-bl-title">Best available price, every game</h3></div>
+      ${freshStamp(meta, { source: 'Market snapshot' })}
+    </div>
+    <div class="table-wrap" tabindex="0" role="region" aria-label="Best line by game"><table class="pbe-table dk-bltable">
+      <thead><tr><th>Game</th><th class="num">Away ML · best</th><th class="num">Home ML · best</th><th class="num">No-vig home</th><th class="num">Home puck line</th><th class="num">Total · best o / u</th><th class="num">Book moves since open</th></tr></thead>
+      <tbody>${rows.join('') || `<tr><td colspan="7" class="dk-ptable__empty">No priced games in the current snapshot.</td></tr>`}</tbody>
+    </table></div>
+    <p class="micro dk-bl__note">Scheduled snapshot (08:00 / 13:00 / 18:00 ET), not a live feed. Percentages next to a price compare that price with the mean no-vig probability of the books quoting both sides — a market comparison, never a PropBetEdge model edge. ${props.length ? '' : 'Player props: no book has posted NHL player markets in this snapshot.'}</p>
+  </section>`;
+}
+
 export function mount(root, params, ctx) {
   root.innerHTML = `<section class="wrap section dk dk-props">
     <div class="section-head section-head--editorial">
       <div><span class="eyebrow">Props</span><h2>Props Board</h2></div>
-      <p>Every player market, every book, every quote with its age — once a verified market ingest exists. Until then the board stays empty rather than showing a number we cannot stand behind.</p>
+      <p>Every market, every book, every quote with its age. Nothing is shown that a stored, verified snapshot does not contain.</p>
     </div>
     <div id="dk-p-slate"></div>
+    <div id="dk-p-bestline"></div>
     ${boardFrame()}
     <div class="dk-p-grid">
       ${coveragePanel()}
@@ -149,10 +187,18 @@ export function mount(root, params, ctx) {
         label = `Next slate · ${dateLabel(nd)}`;
       }
       if (!games.length) return;
-      slateEl.innerHTML = `<div class="dk-p-slate"><span class="micro">${esc(label)} · ${games.length} game${games.length === 1 ? '' : 's'} · no markets captured</span>
+      slateEl.innerHTML = `<div class="dk-p-slate"><span class="micro">${esc(label)} · ${games.length} game${games.length === 1 ? '' : 's'} · markets not posted in the snapshot</span>
         <div class="dk-p-slate__list">${games.map(g => `<a class="dk-p-slate__g" href="#/matchup/${esc(g.id)}">${mark(g.teams.away, 20)}<b>${esc(g.teams.away.abbrev)}</b><span class="faint">@</span>${mark(g.teams.home, 20)}<b>${esc(g.teams.home.abbrev)}</b></a>`).join('')}</div></div>`;
     } catch { /* slate context is optional on this page */ }
   })();
+
+  // Market snapshot, when this environment has the odds service.
+  odds({}, { signal: ctl.signal, timeout: 8000 })
+    .then(res => {
+      $('#dk-p-bestline', root).innerHTML = bestLineBoard(res.data.events || [], res.meta);
+      if (!(res.data.events || []).some(e => e.props?.length)) $('#dk-p-frame', root).outerHTML = boardFrame(true);
+    })
+    .catch(() => { /* absent service: the frame below explains what is missing */ });
 
   return () => ctl.abort();
 }
