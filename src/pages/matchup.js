@@ -119,7 +119,7 @@ function comparePanel(game, s) {
     </div>
     <div class="table-wrap rs-cmp-table"><table class="pbe-table">
       <thead><tr><th>${esc(season)}</th><th class="num">Record</th><th class="num">PTS</th><th class="num">Home</th><th class="num">Road</th><th class="num">L10</th><th class="num">Strk</th></tr></thead>
-      <tbody>${[ra, rh].map(r => `<tr><td><a class="rs-tm" href="#/team/${esc(r.team)}">${teamMark({ abbrev: r.team, logo: r.logo }, 20)}<b>${esc(r.team)}</b></a></td><td class="num">${esc(r.wins)}-${esc(r.losses)}-${esc(r.ot_losses)}</td><td class="num">${esc(r.points)}</td><td class="num">${esc(r.home || '—')}</td><td class="num">${esc(r.road || '—')}</td><td class="num">${esc(r.l10 || '—')}</td><td class="num">${esc(r.streak || '—')}</td></tr>`).join('')}</tbody>
+      <tbody>${[ra, rh].map(r => `<tr><td><a class="rs-tm" href="#/team/${esc(r.team)}" aria-label="${esc(r.team)} team page">${teamMark({ abbrev: r.team, logo: r.logo }, 20)}<b>${esc(r.team)}</b></a></td><td class="num">${esc(r.wins)}-${esc(r.losses)}-${esc(r.ot_losses)}</td><td class="num">${esc(r.points)}</td><td class="num">${esc(r.home || '—')}</td><td class="num">${esc(r.road || '—')}</td><td class="num">${esc(r.l10 || '—')}</td><td class="num">${esc(r.streak || '—')}</td></tr>`).join('')}</tbody>
     </table></div>
     ${hindsight ? `<p class="micro rs-after">Season-final numbers include games played after this ${esc(dateLabel(game.date))} game.</p>` : ''}
     <p class="micro rs-after">Context, not a prediction. No win probability or head-to-head pick is published.</p>`;

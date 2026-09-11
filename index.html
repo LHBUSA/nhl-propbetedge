@@ -85,10 +85,24 @@
     </script>
 
     <script>
-      // Preload the hero only when the Ice Board is the landing route.
+      // Preload the one image that paints first on the landing route: the
+      // Ice Board hero, or that page's photo backdrop (same size rule as
+      // src/lib/backdrops.js — keep the two in step). Nothing else is preloaded.
       (function () {
         var h = location.hash;
-        if (h && h !== '#' && h !== '#/' && h.indexOf('#/?') !== 0) return;
+        var seg = h.replace(/^#\/?/, '').split(/[/?]/)[0];
+        var BD = { cast: 'cast', props: 'props', goalies: 'goalies', lines: 'lines', injuries: 'injuries', news: 'news', matchup: 'matchups', players: 'players', player: 'players', standings: 'standings', team: 'standings' };
+        if (seg) {
+          var key = BD[seg];
+          if (!key) return;
+          var vw = window.innerWidth, need = Math.min(vw * (window.devicePixelRatio || 1), 2000);
+          var size = vw <= 700 ? 'm-700' : need <= 800 ? '800' : need <= 1400 ? '1400' : '2000';
+          var b = document.createElement('link');
+          b.rel = 'preload'; b.as = 'image'; b.type = 'image/avif'; b.fetchPriority = 'high';
+          b.href = '/assets/nhl/backdrops/' + key + '-' + size + '.avif';
+          document.head.appendChild(b);
+          return;
+        }
         var mobile = window.matchMedia('(max-width: 600px)').matches;
         var l = document.createElement('link');
         l.rel = 'preload'; l.as = 'image'; l.type = 'image/avif'; l.fetchPriority = 'high';

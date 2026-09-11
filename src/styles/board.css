@@ -95,6 +95,13 @@
 .change .micro { grid-column: 2; }
 .changes__empty { padding: 12px 14px; background: rgba(20,17,13,.8); border: 1px solid var(--pbe-line); border-radius: var(--r-sm); font-size: var(--fs-sm); display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
 .changes__foot { margin-top: 8px; }
+/* The hero is bottom-anchored, so the loading placeholder holds the usual
+   loaded height (two rows of cards + the source line) and the headline does
+   not jump when the newsroom answers. Phones keep a short bar: the rail sits
+   below the fold there. */
+.changes__skel { height: 203px; }
+@media (max-width: 1100px) { .changes__skel { height: 185px; } }
+@media (max-width: 640px) { .changes__skel { height: 44px; } }
 
 @media (max-width: 960px) {
   .hero { min-height: 0; padding-top: calc(var(--nhl-topbar-h) + var(--s-6)); }

@@ -102,7 +102,7 @@ function changesMarkup(board, newsState) {
     if (newsState?.error) {
       return `<div class="changes__empty"><b>Material updates unavailable here.</b> <span class="dim">The newsroom feed is not connected in this environment, so changes cannot be listed — which is not the same as nothing changing.</span> ${newsLine}</div>`;
     }
-    if (!newsState) return '<div class="pbe-skeleton" style="height:44px"></div>';
+    if (!newsState) return '<div class="pbe-skeleton changes__skel"></div>';
     return `<div class="changes__empty"><b>No material changes in the last 24 hours.</b> <span class="dim">Injury, goalie, line and transaction reports appear here as sources publish them.</span> ${newsLine}</div>`;
   }
   return `<ol class="changes__list">${items.slice(0, 6).map(it => `<li class="change change--${it.tone}${it.pl || it.team ? ' has-id' : ''}">
@@ -197,7 +197,7 @@ export function mount(root, params, ctx) {
       </div>
       <div class="wrap changes" aria-labelledby="changes-title">
         <div class="changes__head"><span class="eyebrow" id="changes-title">What changed · last 24 hours</span><a class="micro changes__all" href="#/news">Newsroom →</a></div>
-        <div id="changes"><div class="pbe-skeleton" style="height:44px"></div></div>
+        <div id="changes"><div class="pbe-skeleton changes__skel"></div></div>
       </div>
     </section>
     <section class="wrap section board" id="ice-board" aria-label="Ice Board" data-fresh-scope></section>`;

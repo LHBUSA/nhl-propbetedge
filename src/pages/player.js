@@ -4,7 +4,7 @@ import { freshStamp } from '../lib/freshness.js';
 import { ageText, dateLabel, dayET, n, num, pct, svPct, timeET, todayET } from '../lib/format.js';
 import { TEAM_BY_ABBREV, teamAccent } from '../lib/teams.js';
 import { teamMark } from '../components/game.js';
-import { playerIdentity } from '../components/player.js';
+import { playerIdentity, playerPhoto, photoCredit } from '../components/player.js';
 
 // ---- private helpers (lane-local by contract)
 const seasonLabel = s => {
@@ -49,7 +49,7 @@ const errorBox = (error, playerId) => {
   const e = describeError(error);
   return `<div class="pbe-error"><strong>${esc(e.title)}</strong>${esc(e.body)}</div>`;
 };
-const panelHead = (title, right = '') => `<div class="panel-head"><h3>${esc(title)}</h3>${right}</div>`;
+const panelHead = (title, right = '') => `<div class="panel-head"><h2>${esc(title)}</h2>${right}</div>`;
 const newsTime = iso => {
   const t = Date.parse(iso || '');
   return Number.isFinite(t) ? ageText((Date.now() - t) / 1000) : '';
@@ -107,6 +107,7 @@ function headerMarkup(p, meta, nextGame) {
       <span class="eyebrow">${esc(POS[p.position] || p.position || 'Player')}${p.sweater_number ? ` · #${esc(p.sweater_number)}` : ''}${p.is_active === false ? ' · inactive' : ''}</span>
       <h1 class="pbe-display">${esc(p.full_name || `${p.first_name || ''} ${p.last_name || ''}`)}</h1>
     </div>
+    ${playerPhoto(p.id) ? `<small class="rs-phead__credit">${esc(photoCredit(playerPhoto(p.id)))}</small>` : ''}
     <p class="rs-phead__team">${team ? `${known ? `<a href="#/team/${esc(team)}">` : '<span>'}${teamMark({ abbrev: team, logo: p.team_logo }, 26)}<b>${esc(p.current_team_name || team)}</b>${known ? '</a>' : '</span>'}` : '<span class="dim">No current NHL club listed</span>'}
       ${nextGame || ''}</p>
     <div class="rs-phead__stamp">${freshStamp(meta)}</div>
@@ -227,7 +228,7 @@ function chartsSection(p, logState, totals) {
       ${barChart(last.map(r => ({ v: r.shots, axis: axis(r), title: `${when(r)}: ${num(r.shots)} SOG` })), {
         avg, avgText: `Dashed = ${avg.toFixed(2)} SOG/GP across all ${log.length} logged games`, label: `Shots on goal per game, last ${last.length} games, ${season}`
       })}
-      <h4 class="rs-h4">Historical frequency</h4>
+      <h3 class="rs-h4">Historical frequency</h3>
       ${frequencyTable(log)}
       <p class="micro rs-freq-note">Historical frequency over ${log.length} games (${esc(season)}) — not a probability or a projection.</p>`;
   }
@@ -238,7 +239,7 @@ function chartsSection(p, logState, totals) {
   const seasonSv = totals?.savePctg ?? (saTotal ? (saTotal - gaTotal) / saTotal : null);
   return `${panelHead('Shots against by game', `<span class="micro">${esc(season)} · last ${last.length} appearances</span>`)}
     ${barChart(sa, { avg: saTotal / log.length, avgText: `Dashed = ${(saTotal / log.length).toFixed(1)} SA per appearance across ${log.length} logged games`, label: `Shots against per game, last ${last.length} appearances, ${season}` })}
-    <h4 class="rs-h4">Save % by game</h4>
+    <h3 class="rs-h4">Save % by game</h3>
     ${lineChart(sv, { avg: n(seasonSv), avgText: `Dashed = ${svPct(seasonSv)} ${seasonLabel(logState.data.season)} ${typeLabel(logState.data.game_type)} SV%`, label: `Save percentage per game, last ${last.length} appearances` })}
     <p class="micro rs-freq-note">GSAx: not available — requires a validated xG model, none is released.</p>`;
 }

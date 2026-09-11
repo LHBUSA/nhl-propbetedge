@@ -85,4 +85,30 @@ const flat = JSON.stringify(graph);
 for (const banned of ['aggregateRating', 'review', 'offers', 'award', 'interactionStatistic']) assert.ok(!flat.includes(banned), `no ${banned} claims`);
 for (const node of graph) if (node.url) assert.ok(node.url.startsWith('https://'), 'absolute https urls');
 
+// Landing-image preload: the boot script's route -> backdrop map must match
+// src/lib/backdrops.js + the router, and every preloaded file must exist.
+{
+  const bd = head.match(/var BD = (\{[^}]+\})/);
+  assert.ok(bd, 'boot script declares its backdrop map');
+  const bootMap = JSON.parse(bd[1].replace(/'/g, '"').replace(/(\w+):/g, '"$1":'));
+  const lib = fs.readFileSync('src/lib/backdrops.js', 'utf8');
+  const routeKey = JSON.parse(lib.match(/const ROUTE_KEY = (\{[\s\S]*?\});/)[1].replace(/'/g, '"').replace(/(\w+):/g, '"$1":'));
+  const photoKeys = [...lib.matchAll(/^\s{2}(\w+):\s+\{ pos:/gm)].map(m => m[1]);
+  const router = fs.readFileSync('src/lib/router.js', 'utf8');
+  const routes = router.split('\n').filter(l => l.includes('pattern:') && l.includes("id: '")).map(l => {
+    const after = l.split('pattern: /^')[1].slice(2); // drop the escaped leading slash
+    return [after.match(/^[a-z-]*/)[0], l.match(/id: '([a-z]+)'/)[1]];
+  });
+  assert.ok(routes.length >= 15, 'router table parsed');
+  for (const [seg, id] of routes) {
+    const key = routeKey[id];
+    const expected = key && photoKeys.includes(key) ? key : undefined;
+    if (!seg) continue; // Ice Board: hero preload
+    assert.equal(bootMap[seg], expected, `boot preload for #/${seg} matches backdrops.js (${expected || 'none'})`);
+  }
+  for (const key of photoKeys) for (const size of ['800', '1400', '2000', 'm-700']) for (const ext of ['avif', 'webp']) {
+    assert.ok(fs.existsSync(`public/assets/nhl/backdrops/${key}-${size}.${ext}`), `backdrop ${key}-${size}.${ext} exists`);
+  }
+}
+
 console.log('identity checks: PASS');

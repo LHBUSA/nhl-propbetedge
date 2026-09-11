@@ -1,0 +1,51 @@
+/* Metric-matched fallbacks for the three web fonts.
+   Until Inter / JetBrains Mono / Playfair Display arrive (display=swap), text
+   renders in a local font scaled to the web font's advance widths and
+   vertical metrics, so the swap does not re-wrap lines or move the layout.
+   Values computed with fontTools from the Google Fonts files against the
+   local fonts (sample: UI copy + digits), 2026-09-11. */
+
+@font-face {
+  font-family: "PBE UI Fallback";
+  src: local("Arial"), local("ArialMT");
+  font-weight: 100 549;
+  size-adjust: 104.66%; ascent-override: 92.56%; descent-override: 23.05%; line-gap-override: 0%;
+}
+@font-face {
+  font-family: "PBE UI Fallback";
+  src: local("Arial Bold"), local("Arial-BoldMT");
+  font-weight: 550 900;
+  size-adjust: 102.08%; ascent-override: 94.9%; descent-override: 23.63%; line-gap-override: 0%;
+}
+/* Android has no Arial. */
+@font-face {
+  font-family: "PBE UI Fallback Roboto";
+  src: local("Roboto"), local("Roboto-Regular");
+  size-adjust: 107.4%; ascent-override: 90.2%; descent-override: 22.46%; line-gap-override: 0%;
+}
+
+@font-face {
+  font-family: "PBE Display Fallback";
+  src: local("Georgia Bold"), local("Georgia-Bold");
+  font-weight: 100 900;
+  size-adjust: 90.55%; ascent-override: 119.5%; descent-override: 27.72%; line-gap-override: 0%;
+}
+
+@font-face {
+  font-family: "PBE Mono Fallback";
+  src: local("Consolas");
+  font-weight: 100 549;
+  size-adjust: 109.13%; ascent-override: 93.47%; descent-override: 27.49%; line-gap-override: 0%;
+}
+@font-face {
+  font-family: "PBE Mono Fallback";
+  src: local("Consolas Bold"), local("Consolas-Bold");
+  font-weight: 550 900;
+  size-adjust: 109.13%; ascent-override: 93.47%; descent-override: 27.49%; line-gap-override: 0%;
+}
+/* macOS / iOS: Menlo and Courier New share JetBrains Mono's 0.6 em advance. */
+@font-face {
+  font-family: "PBE Mono Fallback 2";
+  src: local("Menlo Regular"), local("Menlo-Regular"), local("Courier New"), local("CourierNewPSMT");
+  size-adjust: 99.98%; ascent-override: 102.02%; descent-override: 30%; line-gap-override: 0%;
+}

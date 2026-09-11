@@ -60,7 +60,7 @@
   display: flex; align-items: center; justify-content: space-between; gap: var(--s-3);
   flex-wrap: wrap; margin-bottom: var(--s-3);
 }
-.panel-head h3 { font-size: var(--fs-h3); }
+.panel-head h2, .panel-head h3 { font-size: var(--fs-h3); }
 .panel-head .eyebrow { color: var(--pbe-gold); }
 
 /* ---------- buttons */

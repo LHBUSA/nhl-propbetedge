@@ -373,6 +373,15 @@ a.rs-team:hover b, a.rs-team:hover .rs-tname { color: var(--pbe-gold-bright); }
 /* Player identity hero (components/player.js) takes the monogram's slot. */
 .rs-phead > .pid { grid-column: 1; grid-row: 1 / span 2; align-self: start; flex-direction: column; align-items: flex-start; gap: 0; }
 .rs-phead > .pid .pid__credit { max-width: var(--pid); }
+/* The credit sits under the portrait on wide screens; on phones it gets a
+   full-width row of its own (one or two lines) so a late font swap cannot
+   re-wrap a narrow column and push the hero down. */
+.rs-phead__credit { display: none; }
 @media (max-width: 768px) {
   .rs-phead > .pid { --pid: 88px !important; grid-row: 1; align-self: center; }
+  .rs-phead > .pid .pid__credit { display: none; }
+  .rs-phead__credit { display: block; grid-column: 1 / -1; grid-row: 2; margin-top: -4px; font: 500 12px/1.45 var(--pbe-font-ui); color: var(--pbe-faint-text); }
+  .rs-phead__credit ~ .rs-phead__team { grid-row: 3; }
+  .rs-phead__credit ~ .rs-phead__stamp { grid-row: 4; }
+  .rs-phead__credit ~ .rs-phead__kv { grid-row: 5; }
 }

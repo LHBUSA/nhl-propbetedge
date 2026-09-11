@@ -76,13 +76,14 @@ Status words: **PROVEN** = verified by a command that was actually run (evidence
 | B6 | Odds ingest Worker (3×/day KV snapshot, NFL pattern) must be a separate Worker (Odds API terms forbid re-serving through the sellable PropSports API) — code can be written; deploy + `ODDS_API_KEY` secret need approval. | Owner approval |
 | B7 | Supabase migration 002 (shot-event context columns) — written by the backfill lane, **not applied**. | Owner approval to apply |
 | B8 | **Backend CI cannot run**: GitHub refuses to start jobs on the private `propsports-api-worker` repo — "recent account payments have failed or your spending limit needs to be increased". All six suites pass locally at every commit. | Owner: GitHub billing |
-| B9 | **Production frontend was promoted** from the dashboard to `98530a4` (not by this session). Production's API is still the legacy Worker, so nhl.propbetedge.ai runs in limited mode once a build ≥ `bf08a67` is promoted; `98530a4` itself shows raw 403 errors on the board. | Owner: promote `bf08a67`+ or roll back; long-term fix is B1 + backend promotion |
+| B9 | **Production frontend is a dashboard promotion** (not by this session): Vercel shows `6d834e2` promoted (`dpl_FtE14yadYgWFoa1PWk3NH4LwEpsJ`, verified 2026-09-11). That build has limited mode, so nhl.propbetedge.ai renders honestly on the legacy API — but it predates the identity pass: production 404s `/og/propbetedge-nhl-1200x630.jpg`, `/apple-touch-icon.png`, `/site.webmanifest`, `/icon-512.png`, and its `og:image` is a relative hero path. | Owner: promote `6ad362d` (or later) when approved; long-term fix is B1 + backend promotion |
 | B10 | Model-version INSERTs for xG/SOG candidates generated as SQL, not executed. | Owner approval |
 
 ## UNVERIFIED / OWNER DECISIONS
 
 - **NHL.com Terms of Service** limit use to "non-commercial, informational, personal use" and bar automated collection (`docs/NHL_SOURCE_MATRIX.md` §0). Every official-data feature depends on accepting that risk. Not a code problem — an owner decision.
-- **Team logos** are hotlinked from `assets.nhle.com` (league marks). The brief asks for logos; the source matrix flags marks as unlicensed. One switch (`logoUrl` in `src/lib/teams.js`) falls back to monograms. Player headshots are **not** used.
+- **Team logos** are hotlinked from `assets.nhle.com` (league marks), all through one function (`logoUrl` in `src/lib/teams.js`; nothing else references that host). The source matrix flags marks as unlicensed; returning `null` there switches every surface to monograms. Owner decision.
+- **Player likeness.** 45 Wikimedia Commons portraits are shown with credits (copyright cleared: CC BY / BY-SA). 10 carry Commons personality-rights tags; publicity rights next to betting content are an owner decision. NHL.com headshots: PENDING OWNER DECISION, not used (`docs/IMAGE_SOURCES.md` §6).
 - **propbet-news-api** (network news service) republishes AI-rewritten DailyFaceoff/ESPN bodies and generated betting advice at propbetedge.ai/news. NHL does not consume it. Network-wide exposure — owner should review.
 - The Odds API key is shared across products (96,580 credits remaining after 3 spent in verification).
 - Source checks were run from a residential IP, not from a Worker; Worker-egress behaviour (e.g. ESPN User-Agent gating) is unverified.

@@ -46,7 +46,7 @@ const signed = v => {
   return `<span class="rs-diff ${x > 0 ? 'is-pos' : 'is-neg'}">${x > 0 ? '+' : '−'}${Math.abs(x)}</span>`;
 };
 const CLINCH = { p: "Presidents' Trophy", z: 'Clinched conference', y: 'Clinched division', x: 'Clinched playoff berth', e: 'Eliminated' };
-const panelHead = (title, right = '') => `<div class="panel-head"><h3>${esc(title)}</h3>${right}</div>`;
+const panelHead = (title, right = '') => `<div class="panel-head"><h2>${esc(title)}</h2>${right}</div>`;
 const loading = h => `<div class="pbe-skeleton" style="height:${h}px"></div>`;
 const ordinal = v => {
   const x = n(v);
@@ -129,7 +129,7 @@ function scheduleSection(s, abbr) {
   return `${panelHead(`${season || ''} schedule`.trim(), freshStamp(s.meta, { label: `${season} · ${games.length} listed` }))}
     <p class="micro rs-sub">Next ${upcoming.length || 0} · ${regCount} regular-season games listed · times ET</p>
     ${upcoming.length ? `<ol class="rs-games" aria-label="Upcoming games">${upRows}</ol>` : '<p class="dim">No upcoming games in the source schedule window.</p>'}
-    <h4 class="rs-h4">Recent results</h4>
+    <h3 class="rs-h4">Recent results</h3>
     ${finRows ? `<ol class="rs-games" aria-label="Recent results">${finRows}</ol>`
       : `<p class="dim small">No completed games in the ${esc(season || 'current')} schedule yet — results appear here after each final.</p>`}`;
 }
