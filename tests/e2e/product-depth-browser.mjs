@@ -26,7 +26,7 @@ const pbeArticles = [
     title: 'Goalie deployment is the first market signal to watch this week',
     author: 'PropBetEdge Editorial Team', body: longBody,
     published_at: iso(67), source: 'daily-faceoff', source_url: 'https://www.dailyfaceoff.com/source-story-2',
-    take: { impact_score: 3, teams: ['CAR'] }
+    take: { impact_score: 3, teams: ['CAR'], players: ['QA Player'] }
   },
   {
     id: 'pbe-nhl-3', slug: 'pbe-nhl-depth-analysis-3', sport: 'nhl',
@@ -69,11 +69,12 @@ function json(route, payload, status = 200) {
   return route.fulfill({ status, contentType: 'application/json', headers: { 'Access-Control-Allow-Origin': '*' }, body: JSON.stringify(payload) });
 }
 
+const svgAsset = '<svg xmlns="http://www.w3.org/2000/svg" width="180" height="180"><rect width="180" height="180" fill="#1b1812"/><circle cx="90" cy="65" r="34" fill="#d6a648"/><path d="M38 170c7-48 32-70 52-70s45 22 52 70" fill="#d6a648"/></svg>';
+
 async function installRoutes(page) {
   await page.route('https://propbet-news-api.sales-fd3.workers.dev/**', route => json(route, { articles: pbeArticles, page: 1, limit: 50, total: pbeArticles.length }));
-  await page.route('https://propbet-img-proxy.sales-fd3.workers.dev/**', route => route.fulfill({
-    status: 200, contentType: 'image/svg+xml', body: '<svg xmlns="http://www.w3.org/2000/svg" width="180" height="180"><rect width="180" height="180" fill="#1b1812"/><circle cx="90" cy="65" r="34" fill="#d6a648"/><path d="M38 170c7-48 32-70 52-70s45 22 52 70" fill="#d6a648"/></svg>'
-  }));
+  await page.route('https://propbet-img-proxy.sales-fd3.workers.dev/**', route => route.fulfill({ status: 200, contentType: 'image/svg+xml', body: svgAsset }));
+  await page.route('https://assets.nhle.com/**', route => route.fulfill({ status: 200, contentType: 'image/svg+xml', body: svgAsset }));
   await page.route('https://nhl-api.propbetedge.ai/**', route => {
     const u = new URL(route.request().url());
     if (u.pathname === '/readiness') return json(route, { ok: true, schema: 'nhl-readiness-v1', data_layer: 'v2', odds: 'not_configured', fetched_at: now.toISOString() });
@@ -97,6 +98,17 @@ async function assertPlayerPhoto(page, route, width) {
   if (!decodeURIComponent(identity.src).includes('/20262027/CAR/9999999.png')) fail(`${route} ${width}: current-season NHL headshot candidate missing: ${identity.src}`);
   if (identity.broken) fail(`${route} ${width}: player headshot rendered broken`);
   return identity.src;
+}
+
+async function baseMetrics(page, selector = 'body') {
+  return page.evaluate(sel => {
+    const root = document.querySelector(sel) || document.body;
+    return {
+      overflow: Math.max(0, document.documentElement.scrollWidth - innerWidth),
+      broken: [...root.querySelectorAll('img')].filter(img => img.complete && img.naturalWidth === 0 && img.getAttribute('src')).map(img => img.src),
+      body: root.textContent || ''
+    };
+  }, selector);
 }
 
 async function assertPage(page, route, width) {
@@ -150,6 +162,62 @@ async function assertPage(page, route, width) {
   return { route, width, ...metrics, screenshot: filename, playerPhoto };
 }
 
+async function assertContextualResearch(page, width) {
+  const errors = [];
+  page.on('pageerror', e => errors.push(`pageerror: ${e.message}`));
+  page.on('console', m => { if (m.type() === 'error') errors.push(`console: ${m.text()}`); });
+  await installRoutes(page);
+  await page.goto(`${base}/#/`, { waitUntil: 'networkidle', timeout: 45000 });
+  await page.waitForFunction(() => (window.PBENhlEditorialDepth?.state?.items?.length || 0) >= 3, null, { timeout: 15000 });
+
+  // Team research contract. replaceState avoids firing the app router so this
+  // gate isolates the bundled contextual service against the same DOM anchors
+  // real team.js renders.
+  await page.evaluate(() => {
+    const host = document.querySelector('main') || document.body;
+    history.replaceState(null, '', '#/team/CAR');
+    host.innerHTML = '<section class="wrap section"><header class="rs-thead"><div><h1>Carolina Hurricanes</h1></div></header><div style="height:240px"></div></section>';
+    window.PBENhlEditorialDepth.apply();
+  });
+  await page.waitForSelector('[data-pbe-context][data-context-kind="team"]', { timeout: 10000 });
+  const teamText = await page.locator('[data-pbe-context]').textContent();
+  if (!/Carolina Hurricanes/.test(teamText || '')) fail(`team context ${width}: club heading missing`);
+  if (!/Goalie deployment is the first market signal/.test(teamText || '')) fail(`team context ${width}: tagged CAR analysis missing`);
+  if (/Training camp pressure points/.test(teamText || '')) fail(`team context ${width}: unrelated DET analysis leaked`);
+  let metrics = await baseMetrics(page, '[data-pbe-context]');
+  if (metrics.overflow) fail(`team context ${width}: horizontal overflow ${metrics.overflow}px`);
+  if (metrics.broken.length) fail(`team context ${width}: broken images`, metrics.broken.join('\n'));
+  const teamSources = await page.locator('[data-pbe-context] a').evaluateAll(links => links.filter(a => /Source:/.test(a.textContent || '')).length);
+  if (teamSources < 1) fail(`team context ${width}: source attribution missing`);
+  const teamShot = `team-context-${width}.png`;
+  await page.screenshot({ path: path.join(outDir, teamShot), fullPage: true });
+
+  // Player research contract. The feed explicitly tags QA Player, so this must
+  // render as direct player context rather than the team-context fallback.
+  await page.evaluate(() => {
+    const host = document.querySelector('main') || document.body;
+    history.replaceState(null, '', '#/player/9999999');
+    host.innerHTML = '<section class="wrap section"><header class="rs-phead"><div class="rs-phead__id"><h1>QA Player</h1></div><p class="rs-phead__team"><a href="#/team/CAR"><b>Carolina Hurricanes</b></a></p></header><div style="height:240px"></div></section>';
+    window.PBENhlEditorialDepth.apply();
+  });
+  await page.waitForSelector('[data-pbe-context][data-context-kind="player"]', { timeout: 10000 });
+  const playerText = await page.locator('[data-pbe-context]').textContent();
+  if (!/Analysis touching QA Player/.test(playerText || '')) fail(`player context ${width}: direct-player heading missing`);
+  if (/Team context around QA Player/.test(playerText || '')) fail(`player context ${width}: incorrectly fell back to team context`);
+  if (!/Goalie deployment is the first market signal/.test(playerText || '')) fail(`player context ${width}: tagged player analysis missing`);
+  await assertPlayerPhoto(page, 'player-context', width);
+  metrics = await baseMetrics(page, '[data-pbe-context]');
+  if (metrics.overflow) fail(`player context ${width}: horizontal overflow ${metrics.overflow}px`);
+  if (metrics.broken.length) fail(`player context ${width}: broken images`, metrics.broken.join('\n'));
+  const playerSources = await page.locator('[data-pbe-context] a').evaluateAll(links => links.filter(a => /Source:/.test(a.textContent || '')).length);
+  if (playerSources < 1) fail(`player context ${width}: source attribution missing`);
+  if (errors.length) fail(`contextual research ${width}: console/page errors`, errors.join('\n'));
+  const playerShot = `player-context-${width}.png`;
+  await page.screenshot({ path: path.join(outDir, playerShot), fullPage: true });
+
+  return { route: '/research-context', width, overflow: metrics.overflow, broken: metrics.broken, pbeCards: 2, sourceLinks: teamSources + playerSources, screenshot: `${teamShot},${playerShot}` };
+}
+
 const browser = await chromium.launch({ headless: true });
 const report = [];
 try {
@@ -167,6 +235,17 @@ try {
       } finally {
         await page.close();
       }
+    }
+    const contextPage = await context.newPage();
+    try {
+      report.push(await assertContextualResearch(contextPage, width));
+    } catch (error) {
+      const filename = `FAILED-context-${width}.png`;
+      await contextPage.screenshot({ path: path.join(outDir, filename), fullPage: true }).catch(() => {});
+      fs.writeFileSync(path.join(outDir, 'failure.txt'), String(error?.stack || error));
+      throw error;
+    } finally {
+      await contextPage.close();
     }
     await context.close();
   }
