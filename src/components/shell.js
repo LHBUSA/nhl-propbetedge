@@ -3,23 +3,27 @@ import { TEAMS } from '../lib/teams.js';
 import { timeET, dayET } from '../lib/format.js';
 import { PBE_NETWORK } from '../lib/network.js';
 
+// Keep the desktop header focused on the four highest-value product surfaces.
+// Everything else stays one click away in More, while mobile keeps News in its
+// persistent bottom navigation.
 export const NAV = [
   { id: 'board', href: '#/', label: 'Ice Board', short: 'Board', icon: 'board' },
   { id: 'cast', href: '#/cast', label: 'PBE Cast', short: 'Cast', icon: 'cast' },
   { id: 'props', href: '#/props', label: 'Props', short: 'Props', icon: 'props' },
-  { id: 'goalies', href: '#/goalies', label: 'Goalies', short: 'Goalies', icon: 'goalie' },
-  { id: 'lines', href: '#/lines', label: 'Lines', short: 'Lines', icon: 'lines' },
-  { id: 'injuries', href: '#/injuries', label: 'Injuries', short: 'Injuries', icon: 'injury' },
-  { id: 'news', href: '#/news', label: 'News', short: 'News', icon: 'news' },
   { id: 'shots', href: '#/shots', label: 'Shot Lab', short: 'Shot Lab', icon: 'shots' }
 ];
 export const MORE = [
+  { id: 'news', href: '#/news', label: 'News', short: 'News', icon: 'news' },
+  { id: 'goalies', href: '#/goalies', label: 'Goalies' },
+  { id: 'lines', href: '#/lines', label: 'Lines' },
+  { id: 'injuries', href: '#/injuries', label: 'Injuries' },
   { id: 'matchup', href: '#/matchup', label: 'Matchups' },
   { id: 'players', href: '#/players', label: 'Players' },
   { id: 'standings', href: '#/standings', label: 'Standings' },
   { id: 'track', href: '#/track-record', label: 'Track Record' },
   { id: 'methodology', href: '#/methodology', label: 'Methodology' }
 ];
+const ALL_NAV = [...NAV, ...MORE];
 const BOTTOM = ['board', 'cast', 'props', 'news'];
 
 const ICONS = {
@@ -86,7 +90,7 @@ export function renderShell(app) {
       </div>
     </footer>
     <nav class="bottomnav" aria-label="Primary (mobile)">
-      ${NAV.filter(item => BOTTOM.includes(item.id)).map(item => `<a href="${item.href}" data-nav="${item.id}">${icon(item.icon)}<span>${esc(item.short)}</span></a>`).join('')}
+      ${ALL_NAV.filter(item => BOTTOM.includes(item.id)).map(item => `<a href="${item.href}" data-nav="${item.id}">${icon(item.icon)}<span>${esc(item.short)}</span></a>`).join('')}
       <button type="button" data-sheet aria-expanded="false" aria-controls="nav-sheet">${icon('more')}<span>More</span></button>
     </nav>
     <div class="sheet" id="nav-sheet" hidden>
@@ -94,7 +98,7 @@ export function renderShell(app) {
       <div class="sheet__panel" role="dialog" aria-modal="true" aria-label="All sections">
         <div class="sheet__head"><span class="eyebrow">All sections</span><button type="button" class="pbe-btn pbe-btn--ghost pbe-btn--sm" data-close-sheet aria-label="Close menu">Close</button></div>
         <div class="sheet__grid">
-          ${[...NAV, ...MORE].map(item => `<a href="${item.href}" data-nav="${item.id}">${esc(item.label)}</a>`).join('')}
+          ${ALL_NAV.map(item => `<a href="${item.href}" data-nav="${item.id}">${esc(item.label)}</a>`).join('')}
         </div>
         <button type="button" class="pbe-btn sheet__search" data-open-search>${icon('search')} Search teams &amp; games</button>
       </div>
@@ -167,7 +171,7 @@ export function bindShell(ctx) {
       const hay = `${t.abbrev} ${t.full} ${t.division}`.toLowerCase();
       if (q && hay.includes(q)) out.push({ group: 'Team', label: `${t.full} (${t.abbrev})`, href: `#/team/${t.abbrev}` });
     }
-    for (const item of [...NAV, ...MORE]) {
+    for (const item of ALL_NAV) {
       if (!q || item.label.toLowerCase().includes(q)) out.push({ group: 'Page', label: item.label, href: item.href });
     }
     return out.slice(0, 40);
