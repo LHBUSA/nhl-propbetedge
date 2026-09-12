@@ -12,30 +12,6 @@ function sportLink(sport, className = 'network-sport') {
   </a>`;
 }
 
-function sportsSwitcher() {
-  return `<details class="sport-switcher" data-sport-switcher>
-    <summary aria-label="Switch PropBetEdge sport">
-      <span class="sport-switcher__eyebrow">NETWORK</span>
-      <span class="sport-switcher__label">Sports</span>
-      <span class="sport-switcher__current">NHL</span>
-      <span class="sport-switcher__chevron" aria-hidden="true">⌄</span>
-    </summary>
-    <div class="sport-switcher__menu">
-      <div class="sport-switcher__head">
-        <span>PropBetEdge Sports</span>
-        <small>Live platforms</small>
-      </div>
-      <div class="sport-switcher__grid">
-        ${PBE_NETWORK.sports.map(sport => sportLink(sport, 'sport-switcher__sport')).join('')}
-      </div>
-      <div class="sport-switcher__foot">
-        <a href="${PBE_NETWORK.hub}">Open PropBetEdge hub <span aria-hidden="true">↗</span></a>
-        <a href="${PBE_NETWORK.news}">Sports News <span aria-hidden="true">↗</span></a>
-      </div>
-    </div>
-  </details>`;
-}
-
 function mobileNetwork() {
   return `<section class="sheet-network" aria-labelledby="sheet-network-title">
     <div class="sheet-network__head">
@@ -139,11 +115,9 @@ function premiumFooter() {
 }
 
 export function upgradeChrome() {
-  const tools = document.querySelector('.topbar__tools');
-  if (tools && !document.querySelector('[data-sport-switcher]')) {
-    tools.insertAdjacentHTML('beforebegin', sportsSwitcher());
-  }
-
+  // Desktop stays product-first: the cross-sport network selector no longer
+  // competes with NHL navigation for header space. Network discovery remains
+  // fully available in the mobile sheet and premium footer.
   const sheetSearch = document.querySelector('.sheet__search');
   if (sheetSearch && !document.querySelector('.sheet-network')) {
     sheetSearch.insertAdjacentHTML('afterend', mobileNetwork());
@@ -153,14 +127,5 @@ export function upgradeChrome() {
   if (footer && !footer.classList.contains('footer--premium')) {
     footer.classList.add('footer--premium');
     footer.innerHTML = premiumFooter();
-  }
-
-  // Native <details> gives keyboard/touch support. Close the desktop sport
-  // switcher when the user clicks elsewhere so it behaves like a polished nav.
-  const switcher = document.querySelector('[data-sport-switcher]');
-  if (switcher) {
-    document.addEventListener('click', event => {
-      if (switcher.open && !event.target.closest('[data-sport-switcher]')) switcher.open = false;
-    });
   }
 }
