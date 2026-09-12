@@ -42,7 +42,8 @@ html.is-locked, html.is-locked body { overflow: hidden; }
 }
 .more { position: relative; }
 .more__menu {
-  position: absolute; right: 0; top: calc(100% + 8px); min-width: 200px; padding: 6px;
+  position: absolute; right: 0; top: calc(100% + 8px); min-width: 210px; padding: 6px;
+  max-height: min(520px, calc(100vh - var(--nhl-topbar-h) - 24px)); overflow-y: auto;
   background: var(--pbe-ink-3); border: 1px solid var(--pbe-line-strong); border-radius: var(--r-md); box-shadow: var(--sh-3);
   display: grid;
 }
@@ -77,9 +78,6 @@ html.is-locked, html.is-locked body { overflow: hidden; }
 @media (max-width: 1100px) {
   .mainnav > a, .more__btn { padding: 0 7px; font-size: 12.5px; }
   .brand__word { font-size: 15px; }
-}
-@media (max-width: 900px) {
-  .mainnav > a[data-nav="lines"], .mainnav > a[data-nav="shots"] { display: none; }
 }
 @media (max-width: 768px) {
   .mainnav { display: none; }
