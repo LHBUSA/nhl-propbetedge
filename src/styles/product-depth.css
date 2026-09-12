@@ -16,6 +16,11 @@
 }
 .pid--lg .pid__img--official,
 .pid--xl .pid__img--official { padding: 2% 5% 0; }
+/* Every remote candidate was exhausted (or the proxy returned its 1x1
+   placeholder): drop the image node's box and keep the branded treatment, so a
+   failed photo can never leave an empty frame. */
+.pid__frame.is-failed .pid__img { display: none; }
+.pid__frame.is-failed .pid__fallback { visibility: visible; }
 
 /* ---------- PBE NHL analysis layer ---------- */
 .pbeo,

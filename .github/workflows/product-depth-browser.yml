@@ -5,13 +5,17 @@ on:
     branches: [main]
     paths:
       - 'src/components/player.js'
+      - 'src/components/score-ticker.js'
+      - 'src/styles/score-ticker.css'
+      - 'src/components/shell.js'
+      - 'tests/e2e/score-ticker.e2e.mjs'
       - 'src/services/editorial-depth.js'
       - 'src/styles/product-depth.css'
       - 'src/main.js'
       - 'tests/e2e/product-depth-browser.mjs'
       - '.github/workflows/product-depth-browser.yml'
   push:
-    branches: [nhl-editorial-photo-depth-v1]
+    branches: [nhl-editorial-photo-depth-v1, nhl-live-scores-photos-v1]
 
 permissions:
   contents: read
@@ -43,6 +47,8 @@ jobs:
           exit 1
       - name: 1440 + 390 product-depth browser gate
         run: node tests/e2e/product-depth-browser.mjs
+      - name: Score-ticker state matrix (live/int/final/OT/SO/scheduled/stale/error/no-games, 1440 + 390)
+        run: node tests/e2e/score-ticker.e2e.mjs
       - name: Upload browser evidence
         if: always()
         uses: actions/upload-artifact@v4

@@ -89,9 +89,13 @@ function monogram(p) {
     id: p.id,
     name: p.full_name || `${p.first_name || ''} ${p.last_name || ''}`,
     team: p.current_team_abbrev,
+    // The profile payload already carries the league's own headshot URL; use
+    // it rather than rebuilding one from the club abbreviation.
+    headshot: p.headshot,
     number: p.sweater_number,
     size: 'xl',
-    credit: true
+    credit: true,
+    priority: true
   });
 }
 
