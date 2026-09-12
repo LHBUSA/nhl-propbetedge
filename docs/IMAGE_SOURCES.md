@@ -58,7 +58,7 @@ Full table (page and file URLs, authors, crop boxes, grade, focal points, 18 rej
 | Players | 6468935 · Tony Schnagl | skater and ice spray (the hero photo, graded darker) |
 | Standings | 6468744 · Tony Schnagl | defocused stands, light through haze |
 
-Shot Lab, Methodology and Track Record use owned generated SVG art (overhead rink, faceoff geometry, terminal grid) — no photo. All nine are Pexels License, no marks, no identifiable faces (two faces of about 20–25 px remain in shadow in `cast` and the `standings` landscape crop). The Ice Board hero (§1) is the only preloaded image; backdrops load only for the current route, AVIF with WebP fallback, sized by viewport × DPR.
+Shot Lab, Methodology and Track Record use owned generated SVG art (overhead rink, faceoff geometry, terminal grid) — no photo. **Since the atmosphere pass (2026-09-12) each plate is used twice on its own route**: as the band at the top and, screen-blended under .3 opacity, as a fixed floor layer at the bottom of the viewport (`.backdrop-floor`). It is the same file and the same request — no new asset and no new licence. The Ice Board, which has a hero instead of a band, carries the `standings` plate (Pexels 6468744) as its floor at the 800px size, requested off the critical path. All nine are Pexels License, no marks, no identifiable faces (two faces of about 20–25 px remain in shadow in `cast` and the `standings` landscape crop). The Ice Board hero (§1) is the only preloaded image; backdrops load only for the current route, AVIF with WebP fallback, sized by viewport × DPR.
 
 ## 6. Player portraits: `public/assets/players/`
 

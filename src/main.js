@@ -10,6 +10,7 @@ import './styles/pages-desk.css';
 import './styles/pages-research.css';
 import './styles/pages-lab.css';
 import './styles/backdrops.css';
+import './styles/atmosphere.css';
 import './styles/mode.css';
 import './styles/identity.css';
 import './styles/product-depth.css';
@@ -126,6 +127,7 @@ mountScoreTicker(scoreTickerSlot, ctx);
 startFreshTicker();
 startWatcher(ctx);
 const backdrop = document.querySelector('#backdrop');
+const backdropFloor = document.querySelector('#backdrop-floor');
 const ribbon = document.querySelector('#mode-ribbon');
 ribbon.innerHTML = modeRibbon(seasonMode());
 createRouter({
@@ -133,7 +135,7 @@ createRouter({
   ctx,
   onRoute: id => {
     setActiveNav(id);
-    applyBackdrop(backdrop, id);
+    applyBackdrop(backdrop, id, backdropFloor);
     ribbon.hidden = id === 'board' || !ribbon.innerHTML;
   }
 }).start();

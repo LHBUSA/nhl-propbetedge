@@ -194,6 +194,64 @@ The backend (`propsports-api-worker`) was **not changed**, so no MLB/NFL regress
 4. `tests/e2e/replay.e2e.mjs` cannot run against a localhost build: the gateway's product-origin CORS rejects `127.0.0.1`. Pre-existing, not a regression from this branch, and not part of CI. `tests/e2e/live-acceptance.mjs` shows the Node-side relay pattern that would fix it if it is ever wanted in CI.
 5. The live rail has **not** been seen against a genuinely in-progress NHL game. The 2026-27 preseason opens 2026-09-19; today is the offseason and `/nhl/board` returns 0 games. LIVE and INTERMISSION are proven against the gateway's real payload shape with the status block set to those states, not against a game actually being played.
 
+## Atmosphere pass — `nhl-atmosphere-v1` (2026-09-12)
+
+Perceived-depth pass, not a redesign. Nav, footer, ticker, player photos, routing, search, alerts and mobile nav are untouched.
+
+**The problem, measured.** The route backdrop was a band `clamp(380px, 64vh, 660px)` tall pinned to the top of the page. Below it the page was `body { background: var(--pbe-ink) }` — literally one flat `#14110d` slab. Sampling the live production Ice Board at scroll 1100 gave `rgb(20,17,13)` at every point outside a panel: the left gutter, the gap between panels and the bottom of the viewport were the same single colour.
+
+**The system now has four layers**, all behind content, all `pointer-events: none`:
+
+| z | Layer | What it is | Cost |
+|---|---|---|---|
+| −3 | `.atmos` | opaque graded field + arena light pools + two light beams + vignette + a 120×120 inline grain tile | 0 requests |
+| −2 | `.backdrop-floor` | the route's own plate, fixed to the bottom of the viewport, masked upward, screen-blended | 0 requests on every route with a band |
+| 0 | `.backdrop-wrap` | the existing top band, now taller with a falloff that resolves to transparent instead of to flat ink | unchanged |
+| 1 | `#main` | content | — |
+
+`body` had to become `background: transparent` (html keeps `--pbe-ink` as the canvas fallback): an in-flow block background paints *above* negative z-index layers, so an opaque body hid the entire field. That one line was why the first attempt rendered no different from production.
+
+**Screen blend is what makes the floor read.** The plates are dark, so at a plain 15% opacity they were invisible. `mix-blend-mode: screen` keeps only what is *lit* in the frame — ice, rig, haze — and can never lay a dark smear across a data surface. Per-route strength is set in `src/lib/backdrops.js`: showcase surfaces carry more (Cast .30, Matchups .28, News/Players .26), dense data surfaces stay quiet (Standings .13, Props .16, Injuries .17).
+
+**Dense data keeps its own ground.** The standings sticky rank/team columns paint an opaque `--pbe-ink` of their own; with the field showing through the rest of the table they seamed against it visibly. `.table-wrap`, `.rs-st-wrap` and `.rs-st` now carry `background: var(--pbe-ink)`, so atmosphere lives *around* the data, not under it.
+
+### Measured results
+
+| Check | Result |
+|---|---|
+| Frames captured | 60 (15 routes × 1440 / 390, at top and mid-scroll) |
+| Horizontal overflow | **0 px** on every frame, both widths |
+| Console / page errors | **0** |
+| Broken or 4xx assets (avif/webp/png/svg/css/js) | **0** |
+| Text contrast, measured from the rendered pixels | **268 / 268 boxes ≥ 5.52:1**; min `.micro` 5.52, `.pbe-table td` 6.39, `h1` 15.54. **0 below 4.5:1** |
+| Flat-slab check, Ice Board at scroll 1100 | was `rgb(20,17,13)` at every sampled point; now 4 distinct values across gutter, panel gap and floor |
+
+Contrast is measured, not asserted: each frame is screenshotted, the dark half of every text element's box is sampled for its true rendered background, and that is compared with the element's computed colour. The pass **raised** the two faintest label roles (`--pbe-faint` `#8a867d → #9b968c`, `--pbe-faint-text` `#8e8a80 → #9c978d`) because the lifted field cost them about 0.8 of contrast; every role now clears WCAG AA with margin, and `.pbe-table td` improved from 5.19:1 to 6.39:1.
+
+### Performance
+
+No new image asset was added to the repository. The whole field is gradients plus one inline noise tile.
+
+| Route | Production (`main`) | This branch |
+|---|---|---|
+| PBE Cast — image bytes / backdrop files | 371 KB / 1 (`cast-2000.avif`) | **371 KB / 1 — byte-identical** |
+| Ice Board — image bytes / backdrop files | 155 KB / 0 | 162 KB / 1 (`standings-800.avif`) |
+| CSS | 176 KB | 179 KB |
+
+The floor re-uses the exact URL the band already requested, so on every route that has a band it is free. The Ice Board is the one route that gains a file — it has a hero instead of a band — and that plate is deliberately the **800 px** variant (the floor is masked, screened and under .3 opacity, so it does not need 2000 px) and is requested from `requestIdleCallback` so it never competes with the hero for bandwidth. Net: **+7 KB, off the critical path, on one route.**
+
+### Imagery
+
+**No new photography was sourced.** The nine existing Pexels-licensed plates (`docs/image-sources/backdrops.md`) already are the art direction — ice-level, cold, cinematic, no league marks, no identifiable faces — and the brief asked for depth without competing background images. Re-using them harder was cheaper, kept the licensing surface unchanged, and avoided a second set of images fighting the first. The one change worth recording: **the Ice Board now carries the `standings` plate** (Pexels 6468744, Tony Schnagl — defocused stands, light through haze) as its floor layer, so the long scroll below the hero has arena presence. Same file, same licence, no new asset.
+
+### Screenshots
+
+`docs/qa/atmosphere-v1/` — 17 WebP: `home-top-1440`, `home-mid-1440`, `home-deep-1440`, `home-top-390`, `home-mid-390`, `cast-1440`, `cast-390`, `props-1440`, `team-1440`, `player-1440`, `player-390`, `standings-1440`, `news-1440`, `goalies-1440`, `lines-1440`, `matchup-1440`, `shotlab-1440`.
+
+### Regressions re-run at this branch
+
+`npm test` PASS · score-ticker state matrix **52/52** · product-depth browser gate PASS at 1440 and 390 · live acceptance against the real gateway and the real image proxy **330/330**, 478/478 avatar images decoded, 0 broken, 0 empty frames.
+
 ## IN PROGRESS
 
 - Live prop tracker (market line vs live stat + TOI pace) — needs posted player props (provider had none 18 days out).

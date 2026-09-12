@@ -40,6 +40,8 @@ const icon = name => `<svg class="ico" viewBox="0 0 24 24" aria-hidden="true" fi
 export function renderShell(app) {
   app.innerHTML = `
     <a class="skip-link" href="#main" data-skip>Skip to content</a>
+    <div class="atmos" aria-hidden="true"><i class="atmos__grain"></i></div>
+    <div class="backdrop-floor" id="backdrop-floor" aria-hidden="true"></div>
     <header class="topbar" id="topbar">
       <div class="topbar__in">
         <a class="brand" href="#/" title="PropBetEdge NHL — Ice Board">
