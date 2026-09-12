@@ -109,3 +109,52 @@ What changed in this pass, measured:
 - Postponed / cancelled: state mapping unit-tested; no real postponed game available.
 - Vercel preview with the v2 data layer (blocked, B1). Social-card unfurl on real platforms needs a public URL (production promotion).
 - Safari / Firefox rendering of the fallback font faces and `image-set()` (Chromium only; `image-set` has a WebP `url()` fallback).
+
+---
+
+## Live scores + player photos pass (2026-09-12) — `nhl-live-scores-photos-v1`
+
+Run against **this branch's build**, served locally, with the production Cloudflare gateway relayed Node-side (the gateway rejects a `127.0.0.1` origin) and the **real, un-intercepted** `propbet-img-proxy.sales-fd3.workers.dev` for every player image. `node tests/e2e/live-acceptance.mjs`.
+
+15 routes × 1440 / 390 = 30 page loads, **330 / 330 checks pass**.
+
+| Measure | Result |
+|---|---|
+| Console / page errors | **0** across all 30 loads |
+| Horizontal overflow, 1440 and 390 | **0 px** on every route |
+| Horizontal overflow, 1024 | **0 px** on every route |
+| Horizontal overflow, 360 | **27 px** on every route — **pre-existing**, identical on a clean build of `main` (`c35edc4`); offender is `.topbar__tools`, untouched by this branch. The deployed production bundle measures 10 px at 360, so the local number also reflects web fonts not loading locally. 360 is outside this pass's acceptance widths |
+| Broken images | **0** (478 avatar images requested, 478 decoded) |
+| Empty identity frames | **0** |
+| Runtime photo misses (`window.__pbePid.misses`) | **0** |
+| Non-200 responses from the image proxy / asset feed | **0** |
+| NHL mug `object-fit` | `contain` on every official headshot; identity frames square to ±0.02 |
+| Gateway calls outside `/nhl/*`, `/readiness`, `/odds` | **0** |
+
+Avatar images loaded per surface at 1440: team EDM 61/61 · goalies 48/48 · lines 36/36 · players 25/25 · injuries 20/20 · news 24/24 · matchup 14/14 · PBE Cast 9/9 · player hero 2/2.
+
+Matchup regression, measured on the live production site before the fix and on this build after: `#/matchup/2025021311` went from **12 player-linked slots with 8 showing no image** to **14 slots, 14 images, 0 lost**.
+
+### Score-rail state matrix
+
+`node tests/e2e/score-ticker.e2e.mjs` — **52 / 52 PASS** at 1440 and 390. States: LIVE, INTERMISSION, FINAL, FINAL/OT, FINAL/SO, SCHEDULED, ordering, gateway `STALE`, refresh failure after a good load, no games today, board 503, reduced motion, mobile manual swipe, NHL-only content and network.
+
+### Screenshots
+
+`docs/qa/live-scores-photos-v1/` — 17 WebP files:
+
+| File | What it shows |
+|---|---|
+| `home-1440.webp`, `home-390.webp` | Ice Board with the rail in today's real state (offseason: "No NHL games today" + the verified next puck drop) |
+| `home-real-slate-1440.webp`, `home-real-slate-390.webp` | the same shell with the rail carrying the **real** 2026-04-13 slate, pulled live from the gateway (2026-09-12 has no games) |
+| `rail-real-slate-1440.webp`, `rail-real-slate-390.webp` | the rail alone against that real slate — real club marks, real scores, FINAL/OT and FINAL/SO |
+| `player-mcdavid-1440.webp`, `player-mcdavid-390.webp` | player page with the real NHL asset-feed headshot, credited |
+| `team-edm-1440.webp`, `players-1440.webp`, `players-390.webp` | roster and league-leader surfaces with many working photos |
+| `matchup-1440.webp` | matchup page (the surface whose avatars were falling back to initials) |
+| `rail-fixture-live-1440.webp`, `rail-fixture-live-390.webp`, `rail-fixture-stale-1440.webp` | rail in LIVE and "scores delayed" states, from the state-matrix gate (stubbed club marks) |
+| `rail-nogames-1440.webp`, `rail-nogames-390.webp` | the zero-games state |
+
+### Not verified in this pass
+
+- **The rail against a genuinely in-progress NHL game.** The 2026-27 preseason opens 2026-09-19; `/nhl/board` returns 0 games today. LIVE and INTERMISSION are proven against the gateway's real payload shape with the status block set to those states, not against a game actually being played.
+- Lighthouse was not re-run for this pass; the rail adds 44 px of reserved chrome and no new network request beyond the board the app already fetched.

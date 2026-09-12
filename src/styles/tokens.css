@@ -60,6 +60,8 @@
   --nhl-gutter: 16px;
   --nhl-max: 1440px;
   --nhl-topbar-h: 60px;
+  --nhl-ticker-h: 44px;
+  --nhl-chrome-h: calc(var(--nhl-topbar-h) + var(--nhl-ticker-h));
   --nhl-bottomnav-h: 60px;
 }
 

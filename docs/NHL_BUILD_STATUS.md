@@ -1,6 +1,6 @@
 # NHL PropBetEdge — build status
 
-Release line: **`main` is production** (Vercel deploys `main`; the Cloudflare `nhl-gateway` serves the browser). `nhl-ufc2-production` was merged and is an ancestor of `main`. Last updated 2026-09-11.
+Release line: **`main` is production** (Vercel deploys `main`; the Cloudflare `nhl-gateway` serves the browser). `nhl-ufc2-production` was merged and is an ancestor of `main`. Last updated 2026-09-12. Current work branch: `nhl-live-scores-photos-v1` (live scores + player photos), not merged.
 
 **Live:** nhl.propbetedge.ai served `2aba93b` (`dpl_BErKyuPQS8qG1iTVY1CYUdRSHDc9`) when this acceptance started and `d119017` (`dpl_Bgh3CLbHGMgK4AFjsN8CCkhE3yeY`, PR #5) by the time it finished. The identity + visual depth pass is **production complete** on both — see "Production acceptance" below. Do not re-promote branch builds or roll back to reach it.
 
@@ -101,6 +101,98 @@ Open items this run surfaced (none of them release-blocking):
 2. **Text below 10 px**: `.pbepro__open` (the `NHL PRO` topbar button) at 9 px, and `.pbeo-mini__source` links ("Source: …") at 9 px. 3–8 such nodes per page on `d119017`, versus 2 on `2aba93b`.
 3. **Ice Board editorial sources** now include The Hockey Writers, ESPN and Daily Faceoff links. Confirm that path stays headline-and-link-only: ESPN and Daily Faceoff terms bar automated collection (`docs/NHL_SOURCE_MATRIX.md`).
 
+
+## Live scores + player photos pass — branch `nhl-live-scores-photos-v1` (2026-09-12)
+
+Two goals only: make player photos actually work in production, and add an NHL-only real-time score rail. `main` untouched; nothing promoted.
+
+### Player photos — what the production chain actually does
+
+The chain was audited live before any code changed. **The image proxy was not broken and the constructed URL shape was not wrong.**
+
+| Layer | Result | Evidence |
+|---|---|---|
+| A · `api-web.nhle.com/v1/player/{id}/landing` | **PROVEN** 15/15 — `playerId`, `currentTeamAbbrev` and an `assets.nhle.com` `headshot` on every one | `scripts/headshot-canary.mjs`, 2026-09-12 |
+| B · the exact headshot URL the NHL payload returned, fetched direct | **PROVEN** 15/15 — HTTP 200, `image/png`, 119–210 KB, decoded 336×336 | same run |
+| C · the SAME url through the **deployed** `propbet-img-proxy.sales-fd3.workers.dev` | **PROVEN** 15/15 — HTTP 200, `image/png`, byte-identical to direct, `cache-control: public, max-age=86400, s-maxage=604800`, `access-control-allow-origin: *`, `x-proxy-source: assets.nhle.com`, upstream 30x resolved by the proxy (no redirect surfaced to the caller), query URL correctly percent-encoded | same run |
+| D · the URL the frontend *constructs* from `{id, team}` | **PROVEN** 15/15 — 200, and identical to the payload headshot for every player | same run |
+
+15 real players, skaters and goalies, 12 clubs: McDavid (EDM), Draisaitl (EDM), Matthews (TOR), MacKinnon (COL), Makar (COL, D), Barkov (FLA), Vasilevskiy (TBL, G), Kucherov (TBL), Eichel (VGK), Hill (VGK, G), Crosby (PIT), Gustavsson (MIN, G), Heiskanen (DAL, D), Shesterkin (NYR, G), Ovechkin (WSH).
+
+**Root cause: frontend wiring, plus two proxy failure semantics the frontend could not see.**
+
+1. `playerIdentity()` already accepted a `headshot` option. **No call site passed it.** Both the player-profile payload (`player.headshot`) and the club-roster payload (`players[].headshot`) carry the league's own URL; the app discarded both and rebuilt a URL from the club abbreviation. Now wired at `src/pages/player.js` and `src/pages/team.js`.
+2. `src/pages/matchup.js` (`scorersPanel`) passed **no club at all**, so no URL could be built and every top-skater avatar fell back to initials. Measured against production `main`: `#/matchup/2025021311` had 12 player-linked slots, **8 with no image**. After the fix: 14 slots, 14 images, 0 lost.
+3. The shared image proxy **never signals failure with a status code**. An unreachable upstream returns **HTTP 200 + a 37-byte 1×1 transparent GIF**; a missing NHL mug (`assets.nhle.com` answers 302) returns **HTTP 200 + the league's own `default-skater.png`, 11,875 bytes, 336×336**. Because both are valid 200 images the component's `onerror` chain could never fire, and `is-loaded` then hid the branded fallback — so a proxy failure left an **empty frame**. `src/components/player.js` now treats a decoded 1×1 as a miss and restores the branded initials (`.pid__frame.is-failed`).
+
+Also in this pass: the hero identity loads `eager` + `fetchpriority="high"` (it was lazy); non-critical avatars stay lazy; photo misses are counted at `window.__pbePid.misses` and log to the console in development only.
+
+Not fixed, deliberately: a Newsroom player chip on an item that names **no single club** still renders branded initials (1 slot of 25 observed). The news payload gives `{id, name}` with no team, there is no team-less NHL mug URL (`assets.nhle.com/mugs/nhl/{season}/{id}.png` → 302), and guessing a club would now render the league silhouette — worse than initials. Resolving it per avatar would mean an API call per rendered avatar, which the brief forbids.
+
+### Live acceptance — this build, real gateway, real image proxy
+
+`node tests/e2e/live-acceptance.mjs` serves the built app locally and relays the production gateway Node-side (the gateway enforces product-origin CORS, so a localhost build cannot call it from the browser). **Images are not intercepted** — they go to the deployed proxy exactly as in production. 15 routes × 1440 / 390 = 30 page loads:
+
+| Check | Result |
+|---|---|
+| Checks passed | **330 / 330** |
+| Identity slots · avatar images | 508 · 478 |
+| Avatar images that loaded | **478 / 478** |
+| NHL asset-feed headshots among them | 416 |
+| Broken images | **0** |
+| Empty identity frames | **0** |
+| Runtime photo misses (`window.__pbePid.misses`) | **0** |
+| Non-200 image responses | **0** |
+| Console / page errors | **0** |
+| Horizontal overflow (1440 and 390) | **0 px** |
+| NHL mugs `object-fit` | `contain` everywhere — no face crop; frames square to ±0.02 |
+| Gateway calls outside `/nhl/*`, `/readiness`, `/odds` | **0** |
+
+Per-surface avatar images loaded (1440): team EDM 61/61, goalies 48/48, lines 36/36, players 25/25, injuries 20/20, news 24/24, matchup 14/14, cast 9/9, player hero 2/2.
+
+Screenshots committed to `docs/qa/live-scores-photos-v1/` (17 WebP, indexed in `docs/NHL_UI_VERIFICATION.md`); raw PNGs land in the gitignored `artifacts/live-acceptance/`: `home-1440.png`, `home-390.png`, `player-mcdavid-1440.png`, `team-edm-1440.png`, `players-1440.png`, `matchup-1440.png`, plus `home-real-slate-{1440,390}.png` and `rail-real-slate-{1440,390}.png` (rail photographed against the real 2026-04-13 slate pulled live from the gateway, because 2026-09-12 is the offseason and has no games).
+
+### NHL score rail
+
+`src/components/score-ticker.js` + `src/styles/score-ticker.css`, mounted once from the shell (`#score-ticker-slot`, directly below the top navigation and above the backdrop, the mode ribbon and page content).
+
+- **Data path:** `ctx.board()` → `https://nhl-api.propbetedge.ai/nhl/board` → propsports-api → NHL. It shares the app's board cache and request de-duplication and opens no client of its own (`tests/score-ticker.test.mjs` asserts there is no `fetch(` in it). NHL only: no other sport is referenced or requested.
+- **Game state** comes from the shared `stateOf()` normalizer, so LIVE / INTERMISSION / FINAL (+ `/OT`, `/SO` from `last_period_type`) / SCHEDULED / PREGAME / POSTPONED are the backend's semantics, never guessed strings. The clock shown is only ever the source clock; nothing is interpolated locally.
+- **Cadence:** 10 s with a live game, 60 s with a slate but none live, 300 s with no games; paused while the tab is hidden, through the existing `createPoller`.
+- **Stale:** a gateway `X-NHL-Semantics: STALE`, or a failed refresh, keeps the last-known scores, labels the rail "Scores delayed · <age>", and turns every live chip into `LIVE · DELAYED` with the pulse stopped. The rail is never blanked, and a live badge never stays bare over stale data.
+- **No games:** "No NHL games today" plus the board's own verified `next_puck_drop` (date, ET time, first matchup, `+N more`). Nothing invented.
+- **Scrolling:** desktop marquee only when content overflows, on pointer-fine viewports ≥ 900 px — one clone, not hundreds of nodes; `translateX(0 → -50%)` so the loop never resets visibly; paused on hover/focus; re-rendered only when a content signature changes, so a 10 s refresh cannot jerk it back. Mobile gets native horizontal scrolling instead. `prefers-reduced-motion` removes the clone and the animation and keeps manual scrolling.
+- **Accessibility:** `aria-live="off"` (scores are not re-announced every 10 s), each game is a labelled link to `#/cast/{gameId}`, the clone is `aria-hidden` with no tab stops, the viewport is keyboard-focusable, rail height 44 px, nothing below the 10 px type floor.
+
+State matrix — `node tests/e2e/score-ticker.e2e.mjs`, **52 / 52 PASS** at 1440 and 390:
+LIVE · INTERMISSION · FINAL · FINAL/OT · FINAL/SO · SCHEDULED · ordering (live first, finals last) · gateway STALE · refresh failure after a good load · no games today · board 503 · reduced motion · mobile manual swipe · NHL-only content and network · 0 overflow · 0 broken images · 0 console errors.
+Fixtures use the gateway's real payload shape; the OT/SO finals are real results (2026-04-13: DET 3 @ TBL 4 OT, CAR 2 @ PHI 3 SO, COL 2 @ EDM 1 SO) and the empty state is the real 2026-09-12 offseason payload.
+
+### Layout
+
+`--nhl-ticker-h: 44px` and `--nhl-chrome-h = topbar + ticker` are now tokens. `#main`'s reserved height and the Ice Board hero's negative pull both use `--nhl-chrome-h`, so the hero art still runs up under the fixed chrome and the rail's height is reserved from first paint (no layout shift).
+
+### Test results at `nhl-live-scores-photos-v1`
+
+| Gate | Result |
+|---|---|
+| `npm test` (frontend checks, product depth, score ticker, identity, alerts, pricing) | **PASS** |
+| `npm run build` | **PASS** — `index` 92.68 kB / 30.46 kB gz, CSS 157.11 kB / 28.72 kB gz |
+| `node scripts/headshot-canary.mjs` (live NHL API + live proxy, nothing mocked) | **PASS 15/15** |
+| `node tests/e2e/score-ticker.e2e.mjs` | **PASS 52/52** |
+| `node tests/e2e/product-depth-browser.mjs` (existing gate) | **PASS** at 1440 and 390 |
+| `node tests/e2e/live-acceptance.mjs` (this build vs real gateway + real proxy) | **PASS 330/330** |
+| Horizontal overflow, 15 routes × 1440 / 1024 / 390 / 360 | **0 px** |
+
+The backend (`propsports-api-worker`) was **not changed**, so no MLB/NFL regression is in scope for this pass. Both payloads the photo fix consumes (`/nhl/player/:id`, `/nhl/team/:abbr/roster`) already returned `headshot`.
+
+### Still open after this pass
+
+1. **The shared image proxy is an open image proxy.** `propbet-img-proxy.sales-fd3.workers.dev` proxied `https://www.google.com/favicon.ico` and an arbitrary Wikimedia URL on request (measured 2026-09-12). There is no host allowlist, and it answers every failure with 200. The master brief §20 says "Never make an open arbitrary-URL proxy." It is a shared network Worker outside this repo and was not changed here. **Owner decision plus a separate change on that Worker.**
+2. A missing NHL mug silently becomes the league's `default-skater.png` (a grey silhouette) rather than the branded PBE treatment, because the proxy resolves the 302 and returns 200. With the authoritative payload URL now wired this can only happen where the **league itself** has no photo. Distinguishing it in the browser would cost a canvas fingerprint per avatar; instead the canary asserts server-side that no tested player resolves to the silhouette.
+3. Newsroom player chips on multi-club items stay as branded initials (above).
+4. `tests/e2e/replay.e2e.mjs` cannot run against a localhost build: the gateway's product-origin CORS rejects `127.0.0.1`. Pre-existing, not a regression from this branch, and not part of CI. `tests/e2e/live-acceptance.mjs` shows the Node-side relay pattern that would fix it if it is ever wanted in CI.
+5. The live rail has **not** been seen against a genuinely in-progress NHL game. The 2026-27 preseason opens 2026-09-19; today is the offseason and `/nhl/board` returns 0 games. LIVE and INTERMISSION are proven against the gateway's real payload shape with the status block set to those states, not against a game actually being played.
 
 ## IN PROGRESS
 

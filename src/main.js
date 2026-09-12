@@ -13,6 +13,7 @@ import './styles/backdrops.css';
 import './styles/mode.css';
 import './styles/identity.css';
 import './styles/product-depth.css';
+import './styles/score-ticker.css';
 import './styles/chrome-upgrade.css';
 
 import { ApiError, dataLayer, nhl } from './lib/api.js';
@@ -22,6 +23,7 @@ import { daysUntil, dateLabel, todayET } from './lib/format.js';
 import { createRouter } from './lib/router.js';
 import { bindShell, renderShell, setActiveNav, setSeasonChip } from './components/shell.js';
 import { upgradeChrome } from './components/chrome-upgrade.js';
+import { mountScoreTicker } from './components/score-ticker.js';
 import { bindAlertsUI } from './components/alerts-ui.js';
 import { startWatcher } from './services/watcher.js';
 import { applyBackdrop } from './lib/backdrops.js';
@@ -30,6 +32,14 @@ import { modeRibbon, seasonMode } from './components/mode.js';
 const app = document.querySelector('#app');
 const main = renderShell(app);
 upgradeChrome();
+
+// Keep the current compact production nav authoritative. The score rail is
+// additive chrome, so create its single mount point immediately after the
+// topbar instead of reverting shell.js to the older crowded navigation.
+const scoreTickerSlot = document.createElement('div');
+scoreTickerSlot.id = 'score-ticker-slot';
+document.querySelector('#topbar')?.insertAdjacentElement('afterend', scoreTickerSlot);
+
 // Purchase UI is additive and presentation-only. Load it after renderShell so
 // it can attach to the existing toolbar without observing or racing the shell.
 import('./lib/pro.js').catch(error => console.error('[nhl-pro] failed to load', error));
@@ -47,10 +57,6 @@ const ctx = {
   async board(date = todayET(), { signal, maxAgeMs = 20000 } = {}) {
     const hit = boardCache.get(date);
     if (hit?.value && Date.now() - hit.at < maxAgeMs) return hit.value;
-    // Concurrent callers (palette warm-up + page) share one request. The
-    // shared request is not bound to any caller's signal: one page leaving
-    // must not cancel what another page is waiting on. A caller whose own
-    // signal aborts simply stops waiting.
     if (hit?.pending) return abortable(hit.pending, signal);
     const pending = loadBoard(date);
     boardCache.set(date, { ...hit, pending });
@@ -85,8 +91,6 @@ async function loadBoard(date, signal) {
     if ((await dataLayer()) === 'legacy') throw Object.assign(new Error('legacy'), { kind: 'legacy' });
     value = await nhl('/nhl/board', { date }, { signal });
   } catch (error) {
-    // Environment without the v2 data layer: limited mode from the legacy
-    // public schedule (labelled as such), never an invented slate.
     if (!['not_deployed', 'legacy'].includes(error?.kind)) throw error;
     value = await legacyBoard(date, { signal });
   }
@@ -118,11 +122,10 @@ function updateSeasonChip(board) {
 
 bindShell(ctx);
 bindAlertsUI();
+mountScoreTicker(scoreTickerSlot, ctx);
 startFreshTicker();
 startWatcher(ctx);
 const backdrop = document.querySelector('#backdrop');
-// Operating-mode ribbon: rendered synchronously from the verified calendar so
-// it never shifts layout; the Ice Board shows the full capability panel instead.
 const ribbon = document.querySelector('#mode-ribbon');
 ribbon.innerHTML = modeRibbon(seasonMode());
 createRouter({
@@ -134,5 +137,4 @@ createRouter({
     ribbon.hidden = id === 'board' || !ribbon.innerHTML;
   }
 }).start();
-// Warm the slate for the palette/season chip without blocking the first page.
 ctx.board().catch(() => {});

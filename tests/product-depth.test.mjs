@@ -62,4 +62,31 @@ assert.match(main, /services\/editorial-depth\.js/, 'PBE editorial layer is boot
 assert.ok(!/Math\.random\s*\(/.test(editorial), 'editorial layer contains no synthetic/random data');
 assert.ok(!/VITE_[A-Z_]*(KEY|SECRET|TOKEN)/.test(editorial), 'editorial layer contains no frontend secret contract');
 
+// --- player photos: the production chain, wired end to end ---------------
+// Audited live on 2026-09-12: the NHL API, the asset feed and the deployed
+// image proxy all answered 200 for 15/15 players. The defects were in the
+// frontend, so these guards are about wiring, not about the proxy.
+const playerPage = fs.readFileSync('src/pages/player.js', 'utf8');
+const teamPage = fs.readFileSync('src/pages/team.js', 'utf8');
+const matchupPage = fs.readFileSync('src/pages/matchup.js', 'utf8');
+
+assert.match(player, /export function playerIdentity\(\{ id, name, team, position = null, number = null, size = 'md', credit = false, href = null, label = false, headshot = null, priority = false \}/, 'identity accepts an authoritative headshot and a hero priority flag');
+assert.match(player, /Authoritative first: the URL the NHL payload itself returned/, 'the authoritative payload URL is documented as first priority');
+assert.match(player, /if \(supplied\) urls\.push\(supplied\);/, 'a payload-provided headshot is pushed ahead of any constructed URL');
+assert.match(playerPage, /headshot: p\.headshot/, 'the player hero uses the profile payload own headshot');
+assert.match(playerPage, /priority: true/, 'the hero identity is not lazy-loaded behind the fold');
+assert.match(teamPage, /headshot: p\.headshot/, 'roster rows use the roster payload own headshot');
+assert.match(matchupPage, /name: `\$\{r\.firstName\?\.default \|\| ''\} \$\{r\.lastName\?\.default \|\| ''\}`, team: t,/, 'matchup skater rows pass the club, or every avatar falls back to initials');
+
+// The shared image proxy returns HTTP 200 for an unreachable upstream (a 1x1
+// transparent GIF), so onerror alone can never catch that failure.
+assert.match(player, /if \(img\.naturalWidth <= SENTINEL_PX \|\| img\.naturalHeight <= SENTINEL_PX\) return runtime\.next\(img\);/, 'a 1x1 proxy placeholder is treated as a miss, not as a photo');
+assert.match(player, /frame\?\.classList\.add\('is-failed'\)/, 'an exhausted candidate list marks the frame failed');
+assert.match(css, /\.pid__frame\.is-failed \.pid__fallback \{ visibility: visible; \}/, 'a failed photo restores the branded fallback instead of an empty frame');
+assert.match(player, /misses: 0/, 'photo misses are countable at runtime');
+assert.match(player, /import\.meta\.env\.DEV/, 'photo misses log in development only, never per-avatar in production');
+assert.match(player, /loading="eager" fetchpriority="high"/, 'priority identities load eagerly');
+assert.match(player, /loading="lazy"/, 'non-critical avatars stay lazy');
+assert.match(css, /object-fit: contain/, 'transparent NHL mugs are contained, never face-cropped');
+
 console.log('NHL product depth: PASS — photos + PBE-first analysis + contextual research + attributed source-wire separation');

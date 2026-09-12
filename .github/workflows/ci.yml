@@ -2,7 +2,7 @@ name: NHL Frontend CI
 
 on:
   push:
-    branches: [main, nhl-product-v1, nhl-ufc2-production]
+    branches: [main, nhl-product-v1, nhl-ufc2-production, nhl-live-scores-photos-v1]
   pull_request:
     branches: [main, nhl-ufc2-production]
 
@@ -23,10 +23,14 @@ jobs:
         run: node tests/frontend-checks.mjs
       - name: NHL product depth — player photos + PBE-first editorial
         run: node tests/product-depth.test.mjs
+      - name: Score ticker contract — NHL-only, normalized semantics, stale honesty
+        run: node tests/score-ticker.test.mjs
       - name: Identity / metadata
         run: node tests/identity-checks.mjs
       - name: Alert rules
         run: node tests/alerts.test.mjs
       - name: Founding Season pricing contract
         run: node tests/pro-pricing.test.mjs
+      - name: Live NHL headshot canary (real NHL API + real image proxy, nothing mocked)
+        run: node scripts/headshot-canary.mjs
       - run: npm run build
