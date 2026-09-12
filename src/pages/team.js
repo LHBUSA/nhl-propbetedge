@@ -203,7 +203,7 @@ function rosterSection(s, group = 'all') {
     return `<tr class="rs-grp rs-grp--2"><td colspan="7"><span class="rs-grp__in">${label} <span class="rs-grp__sub">${list.length}</span></span></td></tr>
       ${list.map(p => `<tr>
         <td class="num">${p.sweater_number ? esc(p.sweater_number) : '<span class="faint">—</span>'}</td>
-        <td><a class="rs-pl" href="#/player/${esc(p.id)}">${playerIdentity({ id: p.id, name: `${p.first_name || ''} ${p.last_name || ''}`, team: s?.data?.team, number: p.sweater_number, size: 'xs' })}${esc(p.first_name)} <b>${esc(p.last_name)}</b></a></td>
+        <td><a class="rs-pl" href="#/player/${esc(p.id)}">${playerIdentity({ id: p.id, name: `${p.first_name || ''} ${p.last_name || ''}`, team: s?.data?.team, headshot: p.headshot, number: p.sweater_number, size: 'xs' })}${esc(p.first_name)} <b>${esc(p.last_name)}</b></a></td>
         <td>${esc(p.position || '')}</td>
         <td>${esc(p.shoots_catches || '—')}</td>
         <td class="num">${esc(ageOn(p.birth_date, today) ?? '—')}</td>

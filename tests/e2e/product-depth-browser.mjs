@@ -218,7 +218,7 @@ async function assertContextualResearch(page, width) {
   return { route: '/research-context', width, overflow: metrics.overflow, broken: metrics.broken, pbeCards: 2, sourceLinks: teamSources + playerSources, screenshot: `${teamShot},${playerShot}` };
 }
 
-const browser = await chromium.launch({ headless: true });
+const browser = await chromium.launch({ headless: true, ...(process.env.PW_CHANNEL ? { channel: process.env.PW_CHANNEL } : {}) });
 const report = [];
 try {
   for (const width of widths) {
