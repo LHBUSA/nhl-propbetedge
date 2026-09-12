@@ -13,6 +13,7 @@ import './styles/backdrops.css';
 import './styles/mode.css';
 import './styles/identity.css';
 import './styles/product-depth.css';
+import './styles/score-ticker.css';
 
 import { ApiError, dataLayer, nhl } from './lib/api.js';
 import { legacyBoard } from './lib/legacy.js';
@@ -24,6 +25,7 @@ import { bindAlertsUI } from './components/alerts-ui.js';
 import { startWatcher } from './services/watcher.js';
 import { applyBackdrop } from './lib/backdrops.js';
 import { modeRibbon, seasonMode } from './components/mode.js';
+import { mountScoreTicker } from './components/score-ticker.js';
 
 const app = document.querySelector('#app');
 const main = renderShell(app);
@@ -115,6 +117,8 @@ function updateSeasonChip(board) {
 
 bindShell(ctx);
 bindAlertsUI();
+// NHL score rail: same gateway board as every other surface, shared cache.
+mountScoreTicker(document.querySelector('#score-ticker-slot'), ctx);
 startFreshTicker();
 startWatcher(ctx);
 const backdrop = document.querySelector('#backdrop');

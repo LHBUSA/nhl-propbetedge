@@ -67,6 +67,7 @@ export function renderShell(app) {
         </div>
       </div>
     </header>
+    <div id="score-ticker-slot"></div>
     <div class="backdrop-wrap" id="backdrop" aria-hidden="true" hidden><div class="backdrop"></div></div>
     <div id="mode-ribbon"></div>
     <main id="main" tabindex="-1"></main>

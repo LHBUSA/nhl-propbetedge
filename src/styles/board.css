@@ -2,8 +2,8 @@
 .hero {
   position: relative;
   isolation: isolate;
-  margin-top: calc(-1 * var(--nhl-topbar-h));
-  padding-top: calc(var(--nhl-topbar-h) + var(--s-7));
+  margin-top: calc(-1 * var(--nhl-chrome-h));
+  padding-top: calc(var(--nhl-chrome-h) + var(--s-7));
   min-height: min(88vh, 780px);
   /* Top-anchored: the What-changed rail below the headline resolves to four
      cards, one "unavailable" line or an empty note depending on the
@@ -112,7 +112,7 @@
 @media (max-width: 640px) { #changes { min-height: 72px; } .changes__skel { height: 44px; } }
 
 @media (max-width: 960px) {
-  .hero { min-height: 0; padding-top: calc(var(--nhl-topbar-h) + var(--s-6)); }
+  .hero { min-height: 0; padding-top: calc(var(--nhl-chrome-h) + var(--s-6)); }
   .hero__in { grid-template-columns: 1fr; gap: var(--s-5); }
   .hero__media img { object-position: 46% 30%; }
   .hero__scrim {

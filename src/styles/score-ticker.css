@@ -1,0 +1,137 @@
+/* NHL score rail — a broadcast/data strip directly under the top navigation.
+   Dark ground, restrained gold, crimson reserved for genuinely live states. */
+
+.stk {
+  position: relative;
+  z-index: 3;
+  height: var(--nhl-ticker-h);
+  border-bottom: 1px solid var(--pbe-line-faint);
+  background:
+    linear-gradient(90deg, rgba(212,175,55,.10), rgba(13,11,8,.94) 22%, rgba(13,11,8,.94) 78%, rgba(150,200,235,.05)),
+    var(--pbe-ink-4);
+  -webkit-backdrop-filter: saturate(130%) blur(10px);
+  backdrop-filter: saturate(130%) blur(10px);
+  overflow: hidden;
+}
+.stk::after {
+  /* Hairline under the rail, brighter while a game is live. */
+  content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 1px;
+  background: linear-gradient(90deg, transparent, var(--pbe-gold-soft) 30%, var(--pbe-gold-soft) 70%, transparent);
+}
+.stk[data-live="1"]::after { background: linear-gradient(90deg, transparent, rgba(230,57,70,.4) 30%, rgba(230,57,70,.4) 70%, transparent); }
+
+.stk__in {
+  height: 100%;
+  max-width: var(--nhl-max);
+  margin-inline: auto;
+  padding-inline: var(--nhl-gutter);
+  display: flex; align-items: stretch; gap: var(--s-3);
+  min-width: 0;
+}
+
+/* ---------- left identity block */
+.stk__brand {
+  flex: none; display: flex; align-items: center; gap: 8px;
+  padding-right: var(--s-3);
+  border-right: 1px solid var(--pbe-line-faint);
+  font: 700 var(--fs-micro)/1 var(--pbe-font-data);
+  letter-spacing: var(--ls-label); text-transform: uppercase;
+  color: var(--pbe-faint-text);
+  white-space: nowrap;
+}
+.stk__brand > b {
+  padding: 3px 6px; border-radius: var(--r-xs);
+  background: var(--pbe-gold-soft); color: var(--pbe-gold-bright);
+  font: 800 var(--fs-micro)/1 var(--pbe-font-data); letter-spacing: .14em;
+}
+.stk__status { font-size: var(--fs-label); color: var(--pbe-dim); letter-spacing: .1em; }
+.stk[data-live="1"] .stk__status { color: var(--pbe-crimson-text); }
+.stk[data-fresh="STALE"] .stk__status,
+.stk[data-fresh="UNAVAILABLE"] .stk__status { color: var(--pbe-gold-bright); }
+
+/* ---------- rail */
+.stk__viewport {
+  flex: 1 1 auto; min-width: 0;
+  overflow-x: auto; overflow-y: hidden;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+}
+.stk__viewport::-webkit-scrollbar { display: none; }
+.stk__viewport.is-locked { overflow-x: hidden; }
+.stk__viewport:focus-visible { outline: 2px solid var(--pbe-gold); outline-offset: -2px; }
+
+.stk__track { display: flex; width: max-content; height: 100%; }
+.stk__run { display: flex; align-items: stretch; height: 100%; }
+.stk__track.is-marquee { animation: stk-scroll var(--stk-dur, 40s) linear infinite; will-change: transform; }
+.stk__viewport:hover .stk__track.is-marquee,
+.stk__viewport:focus-within .stk__track.is-marquee { animation-play-state: paused; }
+@keyframes stk-scroll { from { transform: translate3d(0, 0, 0); } to { transform: translate3d(-50%, 0, 0); } }
+
+/* ---------- one game */
+.stk-g {
+  display: flex; align-items: center; gap: 7px;
+  min-height: 100%; padding: 0 14px;
+  border-right: 1px solid var(--pbe-line-faint);
+  color: var(--pbe-dim); white-space: nowrap;
+  transition: background var(--t-fast), color var(--t-fast);
+}
+.stk-g:hover, .stk-g:focus-visible { background: rgba(255,245,220,.045); color: var(--pbe-paper); }
+.stk-g:focus-visible { outline: 2px solid var(--pbe-gold); outline-offset: -2px; }
+.stk-g__side { display: inline-flex; align-items: center; gap: 5px; }
+.stk-g__logo { width: 18px; height: 18px; object-fit: contain; flex: none; }
+.stk-g__side b { font: 700 var(--fs-sm)/1 var(--pbe-font-data); letter-spacing: .05em; color: var(--pbe-paper-2); }
+.stk-g__side i {
+  font: 800 var(--fs-data)/1 var(--pbe-font-data); font-style: normal;
+  color: var(--pbe-paper); font-variant-numeric: tabular-nums;
+}
+.stk-g__vs { font: 600 var(--fs-label)/1 var(--pbe-font-data); color: var(--pbe-faint); }
+.stk-g__st {
+  margin-left: 3px;
+  font: 600 var(--fs-label)/1 var(--pbe-font-data);
+  letter-spacing: .06em; color: var(--pbe-faint-text);
+  font-variant-numeric: tabular-nums;
+}
+.stk-g__chip {
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 3px 7px; border-radius: var(--r-pill);
+  border: 1px solid rgba(230,57,70,.45); background: rgba(230,57,70,.12);
+  font: 800 var(--fs-micro)/1 var(--pbe-font-data); letter-spacing: .14em;
+  color: var(--pbe-crimson-text);
+}
+.stk-g__chip::before {
+  content: ""; width: 6px; height: 6px; border-radius: 50%;
+  background: var(--pbe-live); animation: stk-pulse 1.8s ease-in-out infinite;
+}
+@keyframes stk-pulse { 0%, 100% { opacity: 1; } 50% { opacity: .25; } }
+
+.stk-g[data-state="FINAL"] .stk-g__st { color: var(--pbe-dim); }
+.stk-g[data-state="INTERMISSION"] .stk-g__chip { border-color: var(--pbe-gold-soft); background: rgba(212,175,55,.12); color: var(--pbe-gold-bright); }
+.stk-g[data-state="INTERMISSION"] .stk-g__chip::before { background: var(--pbe-gold); }
+/* A delayed rail must not keep a steady LIVE pulse. */
+.stk[data-fresh="STALE"] .stk-g__chip { border-color: var(--pbe-gold-soft); background: rgba(212,175,55,.1); color: var(--pbe-gold-bright); }
+.stk[data-fresh="STALE"] .stk-g__chip::before { background: var(--pbe-gold); animation: none; }
+
+/* ---------- no games / unavailable */
+.stk-empty {
+  display: inline-flex; align-items: center; gap: 10px;
+  min-height: 100%; padding: 0 2px;
+  font: 600 var(--fs-label)/1.2 var(--pbe-font-data); letter-spacing: .08em;
+  color: var(--pbe-faint-text); white-space: nowrap;
+}
+.stk-empty b { color: var(--pbe-paper-2); font-weight: 700; letter-spacing: .1em; text-transform: uppercase; }
+.stk-empty span { color: var(--pbe-dim); }
+
+@media (max-width: 640px) {
+  .stk__brand { padding-right: 10px; gap: 6px; }
+  .stk__status { display: none; }
+  .stk-g { padding: 0 11px; gap: 6px; }
+  .stk-empty { font-size: var(--fs-micro); gap: 8px; white-space: normal; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* Automatic movement off; the rail stays scrollable by hand. */
+  .stk__track.is-marquee { animation: none !important; transform: none !important; }
+  .stk__viewport.is-locked { overflow-x: auto; }
+  .stk-g__chip::before { animation: none !important; }
+}
