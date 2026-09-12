@@ -4,7 +4,10 @@ html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; background: var(-
 body {
   margin: 0;
   min-height: 100vh;
-  background: var(--pbe-ink);
+  /* Transparent on purpose: an in-flow block background paints ABOVE negative
+     z-index layers, so an opaque body would hide the whole .atmos field.
+     html keeps --pbe-ink as the canvas fallback before CSS/JS resolve. */
+  background: transparent;
   color: var(--pbe-paper);
   font: 400 var(--fs-body)/1.5 var(--pbe-font-ui);
   -webkit-font-smoothing: antialiased;

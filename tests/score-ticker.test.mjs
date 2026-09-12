@@ -5,12 +5,14 @@
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
 
-const ticker = fs.readFileSync('src/components/score-ticker.js', 'utf8');
+// Read line-ending agnostic: a CRLF checkout must not change the contract.
+const read = f => fs.readFileSync(f, 'utf8').split('\r\n').join('\n');
+const ticker = read('src/components/score-ticker.js');
 // Comments are allowed to name the data path; code is not allowed to re-declare it.
 const tickerCode = ticker.replace(/^\s*\/\/.*$/gm, '');
-const css = fs.readFileSync('src/styles/score-ticker.css', 'utf8');
-const main = fs.readFileSync('src/main.js', 'utf8');
-const tokens = fs.readFileSync('src/styles/tokens.css', 'utf8');
+const css = read('src/styles/score-ticker.css');
+const main = read('src/main.js');
+const tokens = read('src/styles/tokens.css');
 
 // --- one data path, the existing one -----------------------------------
 assert.match(ticker, /ctx\.board\(date, \{ signal, maxAgeMs/, 'the rail reads the shared board cache, not its own client');

@@ -42,7 +42,7 @@
   background:
     radial-gradient(50% 60% at 78% 18%, var(--nhl-ice-wash), transparent 70%),
     linear-gradient(90deg, rgba(20,17,13,.70) 0%, rgba(20,17,13,.18) 55%, rgba(20,17,13,.40) 100%),
-    linear-gradient(180deg, rgba(20,17,13,.10) 0%, rgba(20,17,13,.14) 30%, rgba(20,17,13,.80) 70%, var(--pbe-ink) 100%);
+    linear-gradient(180deg, rgba(20,17,13,.10) 0%, rgba(20,17,13,.14) 32%, rgba(20,17,13,.62) 64%, rgba(20,17,13,.90) 86%, transparent 100%);
 }
 @media (max-width: 700px) {
   .backdrop--photo { opacity: .82; }
