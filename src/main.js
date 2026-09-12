@@ -13,6 +13,7 @@ import './styles/backdrops.css';
 import './styles/mode.css';
 import './styles/identity.css';
 import './styles/product-depth.css';
+import './styles/chrome-upgrade.css';
 
 import { ApiError, dataLayer, nhl } from './lib/api.js';
 import { legacyBoard } from './lib/legacy.js';
@@ -20,6 +21,7 @@ import { startFreshTicker } from './lib/freshness.js';
 import { daysUntil, dateLabel, todayET } from './lib/format.js';
 import { createRouter } from './lib/router.js';
 import { bindShell, renderShell, setActiveNav, setSeasonChip } from './components/shell.js';
+import { upgradeChrome } from './components/chrome-upgrade.js';
 import { bindAlertsUI } from './components/alerts-ui.js';
 import { startWatcher } from './services/watcher.js';
 import { applyBackdrop } from './lib/backdrops.js';
@@ -27,6 +29,7 @@ import { modeRibbon, seasonMode } from './components/mode.js';
 
 const app = document.querySelector('#app');
 const main = renderShell(app);
+upgradeChrome();
 // Purchase UI is additive and presentation-only. Load it after renderShell so
 // it can attach to the existing toolbar without observing or racing the shell.
 import('./lib/pro.js').catch(error => console.error('[nhl-pro] failed to load', error));
