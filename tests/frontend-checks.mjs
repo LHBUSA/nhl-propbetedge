@@ -10,7 +10,14 @@ import path from 'node:path';
 assert.ok(!fs.existsSync('api'), 'no Vercel API functions: NHL data runs on Cloudflare');
 const apiSource = fs.readFileSync('src/lib/api.js', 'utf8');
 assert.match(apiSource, /'https:\/\/nhl-api\.propbetedge\.ai'/, 'production gateway is the default data origin');
-assert.match(apiSource, /credentials: 'omit'/, 'gateway requests never carry cookies');
+assert.match(apiSource, /credentials: 'omit'/, 'public data requests never carry cookies');
+assert.doesNotMatch(apiSource, /credentials: 'include'/, 'api.js (public data) never sends credentials');
+// Credentials go to the gateway only from account.js, and only to /auth or /pro.
+{
+  const account = fs.readFileSync('src/lib/account.js', 'utf8');
+  assert.match(account, /if \(!\/\^\\\/\(auth\|pro\)\\\/\/\.test\(path\)\) throw/, 'account.js refuses non-auth paths');
+  assert.doesNotMatch(account, /localStorage|sessionStorage|document\.cookie/, 'account state is never stored or read in the browser');
+}
 
 // 2. Truth rules: no randomness or stale launch copy in shipped source.
 const files = [];
@@ -23,6 +30,18 @@ const walk = dir => {
 };
 walk('src');
 files.push('index.html', 'vite.config.js');
+for (const dir of ['src']) {
+  const walkInclude = d => {
+    for (const entry of fs.readdirSync(d, { withFileTypes: true })) {
+      const p = path.join(d, entry.name);
+      if (entry.isDirectory()) walkInclude(p);
+      else if (/\.js$/.test(entry.name) && !p.endsWith(path.join('lib', 'account.js'))) {
+        assert.ok(!/credentials:\s*'include'/.test(fs.readFileSync(p, 'utf8')), `credentialed fetch outside account.js: ${p}`);
+      }
+    }
+  };
+  walkInclude(dir);
+}
 const banned = [
   [/Math\.random\s*\(/, 'Math.random in shipped code'],
   [/Launching Oct/i, 'stale launch copy'],

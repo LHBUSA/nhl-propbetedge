@@ -4,11 +4,11 @@ Read `docs/NHL_UFC2_CLAUDE_CODE_MASTER_BRIEF.md` completely before making produc
 
 ## Working scope
 
-Frontend repo: `LHBUSA/nhl-propbetedge`
-Frontend branch: `nhl-ufc2-production`
+Frontend repo: `LHBUSA/nhl-propbetedge` — branch `main` only (main is production; Vercel auto-deploys it).
+Backend repo: `LHBUSA/propsports-api-worker` — branch `main` only (Workers deploy via wrangler from a clean export of main).
+Shared billing: `LHBUSA/propbetedge-workers` — `main` only.
 
-Backend repo: `LHBUSA/propsports-api-worker`
-Backend branch: `nhl-intelligence-v1`
+No feature/preview branches, forks or PRs. No new GitHub Actions.
 
 Quality references only (inspect, do not blindly copy):
 - `LHBUSA/UFC`
@@ -17,8 +17,8 @@ Quality references only (inspect, do not blindly copy):
 
 ## Absolute guardrails
 
-- Do not work directly on `main`.
-- Do not merge to `main` or promote the production NHL Cloudflare Worker without explicit approval after verification.
+- Test before every push to `main` (it is production). Do not deploy production Cloudflare Workers without verification and the owner's standing approval.
+- NHL Pro access is decided only by nhl-gateway (server-side session + billing ledger). Paid values are never serialized to a free client.
 - Cloudflare Workers remain the API/runtime/scheduler architecture. GitHub Actions are CI/deploy helpers only, never the recurring production runtime.
 - Do not replace the stack or restart from a new framework. Build on the existing Vite/Vercel frontend branch.
 - Never fabricate a sports value. No randomized shot coordinates, fake injuries, guessed goalie confirmations, fake odds, demo books, invented line combinations, or pretend model probabilities in production paths.

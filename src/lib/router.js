@@ -19,7 +19,8 @@ const ROUTES = [
   { pattern: /^\/team\/([A-Z]{2,4})$/, id: 'standings', keys: ['team'], load: () => import('../pages/team.js') },
   { pattern: /^\/standings$/, id: 'standings', load: () => import('../pages/standings.js') },
   { pattern: /^\/track-record$/, id: 'track', load: () => import('../pages/track.js') },
-  { pattern: /^\/methodology$/, id: 'methodology', load: () => import('../pages/methodology.js') }
+  { pattern: /^\/methodology$/, id: 'methodology', load: () => import('../pages/methodology.js') },
+  { pattern: /^\/auth\/verify$/, id: 'auth', load: () => import('../pages/auth-verify.js') }
 ];
 
 export function parseHash(hash = location.hash) {

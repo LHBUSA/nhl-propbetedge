@@ -21,3 +21,23 @@ html.pbepro-lock{overflow:hidden}
 @media(max-width:920px){.pbepro{padding:12px}.pbepro__dialog{width:min(760px,calc(100vw - 24px));max-height:calc(100dvh - 24px);grid-template-columns:1fr}.pbepro__story{padding:40px 28px 28px;border-right:0;border-bottom:1px solid rgba(255,255,255,.075)}.pbepro__story h2{font-size:clamp(44px,11vw,66px)}.pbepro__purchase{padding:30px 28px 32px}.pbepro__features{grid-template-columns:1fr 1fr}.pbepro__open{min-height:32px;padding:0 9px;font-size:9px}}
 @media(max-width:620px){.pbepro{padding:0;place-items:stretch}.pbepro__dialog{width:100vw;max-height:100dvh;border-radius:0;border-left:0;border-right:0}.pbepro__story{padding:66px 20px 22px}.pbepro__story h2{margin-top:14px;font-size:clamp(42px,13vw,58px)}.pbepro__lede{font-size:13px}.pbepro__features{grid-template-columns:1fr;gap:7px;margin-top:20px}.pbepro__feature{padding:11px}.pbepro__feature p{font-size:11px}.pbepro__purchase{padding:24px 18px calc(28px + env(safe-area-inset-bottom))}.pbepro__plans{grid-template-columns:1fr 1fr}.pbepro__plan{padding:14px 12px}.pbepro__price strong{font-size:32px}.pbepro__plan small{min-height:44px}.pbepro__close{top:12px;right:12px}}
 @media(max-width:430px){.pbepro__plans{grid-template-columns:1fr}.pbepro__plan small{min-height:0}.pbepro__story h2 br{display:none}}
+
+.pbepro__signin,.pbepro__account{margin-top:18px;padding-top:16px;border-top:1px solid rgba(255,255,255,.075)}
+.pbepro__signin[hidden],.pbepro__account[hidden]{display:none!important}
+.pbepro__signin-head span,.pbepro__account span{font:800 10px/1 'JetBrains Mono',monospace;letter-spacing:.12em;color:#d4af37}
+.pbepro__signin-head p{margin:6px 0 0;color:#8f8a82;font-size:11.5px;line-height:1.45}
+.pbepro__signin-form{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;margin-top:10px}
+.pbepro__signin-form input{box-sizing:border-box;min-width:0;height:44px;padding:0 12px;border:1px solid rgba(255,255,255,.11);border-radius:10px;background:#0e0e0d;color:#fff;font:600 13px/1 Inter,sans-serif;outline:none}
+.pbepro__signin-form input:focus{border-color:rgba(212,175,55,.6)}
+.pbepro__signin-btn,.pbepro__signout{height:44px;padding:0 14px;border:1px solid rgba(212,175,55,.45);border-radius:10px;background:rgba(212,175,55,.08);color:#e8c452;font:800 10.5px/1 'JetBrains Mono',monospace;letter-spacing:.05em;text-transform:uppercase;cursor:pointer;white-space:nowrap}
+.pbepro__signin-btn:hover,.pbepro__signout:hover{background:rgba(212,175,55,.16)}
+.pbepro__account strong{display:block;margin-top:8px;color:#fff;font-size:15px}
+.pbepro__account p{margin:4px 0 12px;color:#8f8a82;font-size:11.5px}
+.pbepro__open.is-pro{background:rgba(212,175,55,.18);border-color:rgba(212,175,55,.6)}
+@media(max-width:430px){.pbepro__signin-form{grid-template-columns:1fr}}
+.auth-verify{display:grid;place-items:center;min-height:60vh}
+.auth-card{max-width:520px;width:100%;padding:32px;text-align:left}
+.auth-card__title{margin:10px 0 8px;font-family:var(--pbe-font-display);font-size:clamp(24px,3vw,32px);line-height:1.12}
+.auth-card__copy{color:var(--pbe-dim);font-size:14px;line-height:1.6;margin:0 0 18px}
+.auth-card__cta{min-height:46px}
+.auth-card__msg{margin-top:14px;color:var(--pbe-dim);font-size:13px}

@@ -1,4 +1,5 @@
 import '../styles/pro.css';
+import { onAccount, refreshAccount, requestSignIn, signInAvailable, signOut } from './account.js';
 
 /**
  * PropBetEdge NHL Pro — Founding Season purchase UI.
@@ -105,6 +106,20 @@ function markup() {
           <div class="pbepro__charge">Charged today · No free trial · Cancel anytime</div>
           <div class="pbepro__message" id="nhl-pro-message" aria-live="polite"></div>
           <div class="pbepro__secure">◆ Secure checkout by Stripe · Access controlled by PropBetEdge</div>
+          <div class="pbepro__signin" id="nhl-pro-signin" hidden>
+            <div class="pbepro__signin-head"><span>ALREADY NHL PRO?</span><p>Sign in with the email you used at checkout. We email a one-time link.</p></div>
+            <form class="pbepro__signin-form" id="nhl-pro-signin-form" novalidate>
+              <input id="nhl-pro-signin-email" type="email" autocomplete="email" inputmode="email" placeholder="checkout email" aria-label="Checkout email" />
+              <button type="submit" class="pbepro__signin-btn">Email me a link</button>
+            </form>
+            <div class="pbepro__message" id="nhl-pro-signin-message" aria-live="polite"></div>
+          </div>
+          <div class="pbepro__account" id="nhl-pro-account" hidden>
+            <span>NHL PRO · ACTIVE</span>
+            <strong id="nhl-pro-account-email"></strong>
+            <p id="nhl-pro-account-plan"></p>
+            <button type="button" class="pbepro__signout" data-pro-signout>Sign out</button>
+          </div>
         </div>
       </section>
     </div>`;
@@ -161,6 +176,52 @@ function startCheckout() {
   window.location.assign(checkoutUrl(NHL_PRO_PLANS[selected], email));
 }
 
+function renderAccount(account) {
+  const button = document.querySelector('[data-open-nhl-pro].pbepro__open');
+  const pro = account.state === 'pro';
+  if (button) {
+    button.classList.toggle('is-pro', pro);
+    button.innerHTML = pro ? '<span>NHL</span> PRO ✓' : '<span>NHL</span> PRO';
+    button.setAttribute('aria-label', pro ? 'NHL Pro account' : 'Open NHL Pro Founding Season pricing');
+  }
+  const panel = document.getElementById('nhl-pro-account');
+  if (panel) {
+    panel.hidden = !pro;
+    if (pro) {
+      document.getElementById('nhl-pro-account-email').textContent = account.email || '';
+      const s = account.subscription || {};
+      const end = s.current_period_end ? new Date(s.current_period_end).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '';
+      document.getElementById('nhl-pro-account-plan').textContent = s.plan
+        ? `${s.plan === 'weekly' ? 'Weekly' : 'Monthly'} · ${s.cancel_at_period_end ? `ends ${end}` : `renews ${end}`}`
+        : '';
+    }
+  }
+  const signin = document.getElementById('nhl-pro-signin');
+  if (signin && pro) signin.hidden = true;
+}
+
+async function wireAccount() {
+  onAccount(renderAccount);
+  document.addEventListener('click', event => {
+    if (event.target.closest('[data-pro-signout]')) signOut();
+  });
+  if (!(await signInAvailable())) return; // auth not live in this environment
+  const signin = document.getElementById('nhl-pro-signin');
+  if (signin) signin.hidden = false;
+  document.getElementById('nhl-pro-signin-form')?.addEventListener('submit', async event => {
+    event.preventDefault();
+    const input = document.getElementById('nhl-pro-signin-email');
+    const out = document.getElementById('nhl-pro-signin-message');
+    const email = String(input?.value || '').trim().toLowerCase();
+    if (!validEmail(email)) { out.textContent = 'Enter the email you used at checkout.'; out.dataset.tone = 'error'; return; }
+    out.textContent = 'Sending…'; out.dataset.tone = '';
+    const result = await requestSignIn(email);
+    out.textContent = result.message;
+    out.dataset.tone = result.ok ? 'success' : 'error';
+  });
+  refreshAccount();
+}
+
 function install() {
   if (document.getElementById('nhl-pro-modal')) return;
   document.body.insertAdjacentHTML('beforeend', markup());
@@ -194,8 +255,10 @@ function install() {
   if (new URLSearchParams(location.search).get('checkout') === 'success') {
     // Success is informational only. Query params never grant entitlement.
     open();
-    message('Payment received. NHL Pro access will appear only after the verified entitlement service confirms it.', 'success');
+    message('Payment received. Sign in below with the same email you used at checkout — access appears once Stripe confirms your subscription.', 'success');
   }
+
+  wireAccount();
 
   window.PBENHLPro = { open, close, plans: NHL_PRO_PLANS, purchaseOpen: OPEN_FOR_PURCHASE };
 }
