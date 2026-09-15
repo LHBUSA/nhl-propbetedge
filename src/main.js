@@ -133,9 +133,10 @@ ribbon.innerHTML = modeRibbon(seasonMode());
 createRouter({
   root: main,
   ctx,
-  onRoute: id => {
+  onRoute: (id, path = '') => {
     setActiveNav(id);
-    applyBackdrop(backdrop, id, backdropFloor);
+    // Team pages share the Standings nav item but carry their own plate.
+    applyBackdrop(backdrop, id === 'standings' && path.startsWith('/team/') ? 'team' : id, backdropFloor);
     ribbon.hidden = id === 'board' || !ribbon.innerHTML;
   }
 }).start();

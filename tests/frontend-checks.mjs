@@ -42,4 +42,21 @@ for (const file of files) {
     }
   });
 }
+// 3. Page/background artwork is raster only (WebP/AVIF/JPG, locally hosted).
+// Brand marks and inline data-viz SVG elements are out of scope; a CSS
+// background painted from an SVG is not. The one allowed exception is the
+// 72px empty-state glyph (an icon, not artwork).
+for (const file of files.filter(f => f.endsWith('.css'))) {
+  const text = fs.readFileSync(file, 'utf8');
+  text.split('\n').forEach((line, i) => {
+    if (!/url\(\s*["']?(data:image\/svg|[^)"']*\.svg)/i.test(line)) return;
+    const allowed = /^\.pbe-empty::before|^\.pid__pbe|^\.pbeo-media__fallback i/.test(line.trim());
+    assert.ok(allowed, `decorative SVG background at ${file}:${i + 1}`);
+  });
+}
+const backdropsLib = fs.readFileSync('src/lib/backdrops.js', 'utf8');
+assert.match(backdropsLib, /const GENERATED = \{\};/, 'no generated (SVG) route art');
+assert.match(fs.readFileSync('src/styles/atmosphere.css', 'utf8'), /\/assets\/nhl\/grain-128\.webp/, 'grain is the raster tile');
+assert.ok(fs.statSync('public/assets/nhl/grain-128.webp').size < 8000, 'grain tile stays tiny');
+
 console.log(`frontend checks: PASS (${files.length} files)`);

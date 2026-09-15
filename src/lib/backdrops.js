@@ -31,11 +31,18 @@ export const PHOTO_BACKDROPS = {
   news:      { pos: '65% 70%', mpos: '60% 58%', floor: .26, fpos: '60% 28%' },  // taped blades, locker-room floor
   matchups:  { pos: '58% 25%', mpos: '60% 45%', floor: .28, fpos: '55% 72%' },  // faceoff, crossed sticks
   players:   { pos: '50% 55%', mpos: '55% 45%', floor: .26, fpos: '50% 24%' },  // skater, ice spray
-  standings: { pos: '50% 40%', mpos: '50% 45%', floor: .13, fpos: '50% 22%' }   // stands, light through haze
+  standings: { pos: '50% 40%', mpos: '50% 45%', floor: .13, fpos: '50% 22%' },  // stands, light through haze
+  // Routes that used to carry generated SVG art (and the team + PBE Picks pages)
+  // re-use one of the nine licensed plates above: `file` names the plate.
+  team:        { file: 'players',   pos: '50% 50%', mpos: '55% 45%', floor: .22, fpos: '50% 70%' },
+  shotlab:     { file: 'props',     pos: '50% 48%', mpos: '45% 45%', floor: .18, fpos: '50% 30%' },
+  track:       { file: 'standings', pos: '50% 34%', mpos: '50% 40%', floor: .22, fpos: '50% 60%' },
+  methodology: { file: 'injuries',  pos: '50% 50%', mpos: '50% 50%', opacity: .55, floor: .16, fpos: '50% 30%' },
+  picks:       { file: 'cast',      pos: '52% 40%', mpos: '50% 30%', floor: .26, fpos: '50% 70%' }
 };
 
-// Owned generated art (no network): overhead rink geometry, data terminal.
-const GENERATED = { shotlab: 'rink', methodology: 'rink-lines', track: 'terminal' };
+// Generated SVG route art is retired: every backdrop is a licensed raster plate.
+const GENERATED = {};
 
 // The Ice Board has its own full-bleed hero, so it takes no top band — but it
 // still gets a floor, from the arena/stands plate, so the long scroll below the
@@ -44,7 +51,8 @@ const FLOOR_ONLY = { board: { key: 'standings', floor: .22, fpos: '50% 26%' } };
 
 const ROUTE_KEY = {
   cast: 'cast', props: 'props', goalies: 'goalies', lines: 'lines', injuries: 'injuries', news: 'news',
-  matchup: 'matchups', players: 'players', standings: 'standings', shots: 'shotlab', track: 'track', methodology: 'methodology'
+  matchup: 'matchups', players: 'players', standings: 'standings', shots: 'shotlab', track: 'track', methodology: 'methodology',
+  team: 'team', picks: 'picks'
 };
 
 let supportsImageSet = null;
@@ -56,6 +64,7 @@ function imageSetOK() {
 }
 
 export function backdropUrl(key, viewportWidth = window.innerWidth, dpr = window.devicePixelRatio || 1) {
+  key = PHOTO_BACKDROPS[key]?.file || key;
   const mobile = viewportWidth <= 700;
   const need = Math.min(viewportWidth * dpr, 2000);
   const size = mobile ? 'm-700' : need <= 800 ? '800' : need <= 1400 ? '1400' : '2000';

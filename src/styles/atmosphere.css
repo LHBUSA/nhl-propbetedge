@@ -6,8 +6,8 @@
    layers keep arena light, ice texture and depth present all the way down.
 
    Network cost: zero. Every layer here is a gradient or one 120x120 inline
-   noise tile; the floor layer re-uses the route backdrop the page has already
-   downloaded. No new image is requested for any of it.
+   raster grain tile (4.9 KB WebP, owned); the floor layer re-uses the route
+   backdrop the page has already downloaded. No SVG artwork anywhere in the field.
 
    Stacking inside #app (all pointer-events: none, all behind content):
      -3  .atmos           opaque base + arena light + grain   (fixed)
@@ -44,8 +44,12 @@
     radial-gradient(52% 44% at -2% 2%, rgba(132,180,222,.17), transparent 66%),
     /* the sheet itself, catching light through the middle of the frame */
     radial-gradient(58% 44% at 50% 26%, rgba(170,212,242,.11), transparent 72%),
-    /* warm house pool on the far floor — the one place gold belongs here */
-    radial-gradient(90% 46% at 50% 112%, rgba(212,175,55,.12), transparent 64%),
+    /* warm house pool on the far floor, and one restrained gold key high left:
+       the PropBetEdge light, felt through the room rather than painted on it */
+    radial-gradient(90% 46% at 50% 112%, rgba(212,175,55,.14), transparent 64%),
+    radial-gradient(38% 30% at 12% 8%, rgba(233,199,90,.075), transparent 70%),
+    /* cold depth pooled under the sheet mid-page, so long scrolls never flatten */
+    radial-gradient(70% 36% at 64% 62%, rgba(120,170,210,.07), transparent 72%),
     /* two soft beams, the way house light falls across an ice sheet */
     linear-gradient(104deg, transparent 14%, rgba(185,218,242,.075) 24%, transparent 36%),
     linear-gradient(97deg, transparent 56%, rgba(185,218,242,.05) 65%, transparent 75%);
@@ -64,13 +68,13 @@
 
 /* Fine grain, on its own layer so it stays faint while the vignette does not.
    Kills gradient banding on large dark fields and reads as film rather than as
-   a flat vector wash. One 120x120 inline tile — no request. */
+   a flat vector wash. One 128x128 raster WebP (owned, generated), cached. */
 .atmos__grain {
   position: absolute;
   inset: 0;
   opacity: .06;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)'/%3E%3C/svg%3E");
-  background-size: 120px 120px;
+  background-image: url("/assets/nhl/grain-128.webp");
+  background-size: 128px 128px;
 }
 
 @keyframes atmos-drift {
@@ -87,14 +91,16 @@
   left: 0;
   right: 0;
   bottom: 0;
-  height: 62vh;
+  height: 100vh;
   z-index: -2;
   pointer-events: none;
   opacity: 0;
   transition: opacity .5s ease;
-  /* fades out upward, so it never reaches the reading band of a data table */
-  -webkit-mask-image: linear-gradient(to top, #000 0%, rgba(0,0,0,.62) 38%, transparent 96%);
-  mask-image: linear-gradient(to top, #000 0%, rgba(0,0,0,.62) 38%, transparent 96%);
+  /* Strongest at the floor and thinning upward, but never to zero: there is no
+     flat band between the route photo and the floor at any scroll position.
+     Tables keep their own opaque ground (4b), so data contrast is unaffected. */
+  -webkit-mask-image: linear-gradient(to top, #000 0%, rgba(0,0,0,.78) 34%, rgba(0,0,0,.52) 66%, rgba(0,0,0,.36) 100%);
+  mask-image: linear-gradient(to top, #000 0%, rgba(0,0,0,.78) 34%, rgba(0,0,0,.52) 66%, rgba(0,0,0,.36) 100%);
 }
 .backdrop-floor.is-on { opacity: 1; }
 .backdrop-floor::before {
@@ -105,11 +111,12 @@
   background-size: cover;
   background-position: var(--bdf-pos, 50% 30%);
   background-image: var(--bdf-img, none);
-  /* per-route strength: dense data surfaces get much less (see backdrops.js) */
-  opacity: var(--bdf-o, .16);
+  /* per-route strength: dense data surfaces get much less (see backdrops.js).
+     The gain lifts every plate together; tables sit on their own ground. */
+  opacity: min(.72, calc(var(--bdf-o, .16) * var(--bdf-gain, 2.1)));
   /* Screen keeps only what is lit in the frame; the plate's darks add nothing. */
   mix-blend-mode: screen;
-  filter: saturate(.8) contrast(1.05);
+  filter: saturate(.78) contrast(1.08) brightness(1.12);
 }
 /* Protective scrim above the photo: contrast is never negotiable. */
 .backdrop-floor::after {
@@ -141,10 +148,12 @@
 /* ---------- 4. panels lift off the field instead of sitting flat on it */
 .pbe-panel {
   background:
-    linear-gradient(168deg, rgba(32,27,20,.90), rgba(18,15,11,.94));
+    radial-gradient(120% 70% at 0% 0%, rgba(233,199,90,.035), transparent 60%),
+    linear-gradient(168deg, rgba(34,29,22,.80), rgba(16,13,10,.88));
   box-shadow:
-    inset 0 1px rgba(255,245,220,.05),
-    0 18px 44px rgba(0,0,0,.30);
+    inset 0 1px rgba(255,245,220,.07),
+    inset 0 0 0 1px rgba(170,215,245,.025),
+    0 22px 52px rgba(0,0,0,.34);
 }
 .pbe-panel--rule { box-shadow: inset 0 -1px rgba(255,245,220,.03), 0 18px 44px rgba(0,0,0,.30); }
 
@@ -182,8 +191,8 @@
 @media (max-width: 700px) {
   /* Phones: the field stays, the photo floor gets quieter and shorter so it
      never competes with a one-column reading surface. */
-  .backdrop-floor { height: 40vh; }
-  .backdrop-floor::before { opacity: calc(var(--bdf-o, .16) * .62); }
+  .backdrop-floor { height: 100vh; }
+  .backdrop-floor::before { opacity: min(.5, calc(var(--bdf-o, .16) * 1.35)); }
   .atmos::before { inset: -6% -2%; }
   .section::before { height: 180px; }
 }
