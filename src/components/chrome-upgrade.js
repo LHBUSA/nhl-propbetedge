@@ -89,6 +89,8 @@ function premiumFooter() {
             <a href="${PBE_NETWORK.news}">Sports News <span>↗</span></a>
             <a href="${PBE_NETWORK.learn}">Learn PropBetEdge <span>↗</span></a>
             <a href="${PBE_NETWORK.store}">PBE Store <span>↗</span></a>
+            <a href="https://billing.stripe.com/p/login/cNi3cv2vY7em3lr4oj7wA00" target="_blank" rel="noopener noreferrer">Manage billing <span>↗</span></a>
+            <a href="mailto:sales@proptechusa.ai">Contact us <span>→</span></a>
             <a href="${PBE_NETWORK.discord}" target="_blank" rel="noopener">Discord Community <span>↗</span></a>
           </div>
         </section>
