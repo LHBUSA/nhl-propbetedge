@@ -149,10 +149,10 @@ const SECTIONS = [
     lede: 'Three truth levels that are never collapsed into one.',
     body: `${table(['Status', 'When it is used'], [
       [tag('Confirmed', 'confirmed'), 'Only from the NHL box score starter flag, at or after puck drop. It marks the goalie who started, even if he was later pulled.'],
-      [tag('Projected / Reported', 'reported'), 'Only from a licensed source that projects or reports starters. No such source is licensed today, so this status is not in use.'],
-      [tag('Unknown', 'unknown'), 'Everything else, which today includes every game before puck drop.']
+      [tag('Projected / Reported', 'reported'), 'From NHL.com’s daily projected-lineups report, linked and timestamped. This is an editorial projection, never an official confirmation.'],
+      [tag('Unknown', 'unknown'), 'Used when NHL.com has not published a projection for the matchup, the source check is unavailable, or the box score has not yet confirmed a starter.']
     ])}
-    <p>The prior-season goalie comparison in the NHL game centre lists the two goalies with the most games played last season. It is not a starter signal and is never shown as one.</p>
+    <p>The prior-season goalie comparison in the NHL game centre lists the two goalies with the most games played last season. It is not a starter signal and is never shown as one. A projected starter automatically yields to the NHL box-score starter flag at puck drop.</p>
     <p class="dim">GSAx (goals saved above expected) is not available until a validated xG model is released.</p>`
   },
   {
