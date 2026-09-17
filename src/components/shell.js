@@ -85,7 +85,7 @@ export function renderShell(app) {
         </div>
         <div class="footer__cols">
           <div><span class="micro">Data</span><p>Game, play-by-play and player data: NHL (api-web.nhle.com) via PropSports API. Every volatile panel shows its source and age.</p></div>
-          <div><span class="micro">PropBetEdge</span><p><a href="${PBE_NETWORK.news}">Sports News</a><br><a href="${PBE_NETWORK.store}">Store</a><br><a href="${PBE_NETWORK.discord}" target="_blank" rel="noopener">Discord ↗</a><br>${PBE_NETWORK.sports.map(s => `<a href="${s.href}">${s.label}</a>`).join(' · ')}</p></div>
+          <div><span class="micro">PropBetEdge</span><p><a href="${PBE_NETWORK.news}">Sports News</a><br><a href="${PBE_NETWORK.store}">Store</a><br><a href="https://billing.stripe.com/p/login/cNi3cv2vY7em3lr4oj7wA00" target="_blank" rel="noopener noreferrer">Manage billing ↗</a><br><a href="mailto:sales@proptechusa.ai">Contact us</a><br><a href="${PBE_NETWORK.discord}" target="_blank" rel="noopener">Discord ↗</a><br>${PBE_NETWORK.sports.map(s => `<a href="${s.href}">${s.label}</a>`).join(' · ')}</p></div>
           <div><span class="micro">Rules</span><p><a href="#/methodology">Methodology &amp; data truth rules</a><br><a href="#/track-record">Track record</a></p></div>
           <div><span class="micro">Imagery</span><p>Photography via Pexels; player portraits via Wikimedia Commons, each credited. <a href="#/methodology?section=credits">Image credits</a></p></div>
         </div>
