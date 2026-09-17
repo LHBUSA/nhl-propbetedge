@@ -1,7 +1,7 @@
 // Goalie Center. Who is starting, how rested, how they have been working.
 // Truth levels are never collapsed: CONFIRMED / PROJECTED·REPORTED / UNKNOWN.
-// The backend emits CONFIRMED (boxscore starter flag, at/after puck drop) or
-// UNKNOWN today; nothing on this page projects a starter.
+// The backend emits PROJECTED only from the NHL.com daily lineup report and
+// CONFIRMED from the boxscore starter flag at/after puck drop.
 import { $, esc, on, safeUrl } from '../lib/dom.js';
 import { dataLayer, describeError, nhl } from '../lib/api.js';
 import { freshStamp } from '../lib/freshness.js';
@@ -74,8 +74,8 @@ function starterBlock(t, big) {
   const name = g?.name || s.name;
   const src = safeUrl(s.source_url);
   const who = lv === 'UNKNOWN'
-    ? `<div class="dk-starter__who">${playerIdentity({ team: t.team, size: big ? 'lg' : 'md' })}<div><b>Starter not confirmed</b><span class="micro">No defensible source yet</span></div></div>`
-    : `<div class="dk-starter__who">${playerIdentity({ id: s.goalie_id, name, team: t.team, size: big ? 'lg' : 'md' })}<div>${s.goalie_id ? `<a href="#/player/${esc(s.goalie_id)}"><b>${esc(name || 'Unnamed')}</b></a>` : `<b>${esc(name || 'Unnamed')}</b>`}<span class="micro">${lv === 'CONFIRMED' ? 'Started · on record' : 'Reported starter · not official'}</span></div></div>`;
+    ? `<div class="dk-starter__who">${playerIdentity({ team: t.team, size: big ? 'lg' : 'md' })}<div><b>Starter not confirmed</b><span class="micro">Official lineup report not published yet</span></div></div>`
+    : `<div class="dk-starter__who">${playerIdentity({ id: s.goalie_id, name, team: t.team, size: big ? 'lg' : 'md' })}<div>${s.goalie_id ? `<a href="#/player/${esc(s.goalie_id)}"><b>${esc(name || 'Unnamed')}</b></a>` : `<b>${esc(name || 'Unnamed')}</b>`}<span class="micro">${lv === 'CONFIRMED' ? 'Started · on record' : 'Projected starter · not official'}</span></div></div>`;
   return `<div class="dk-starter dk-starter--${lv.toLowerCase()}${big ? ' dk-starter--big' : ''}">
     ${ladder(lv)}
     ${who}
