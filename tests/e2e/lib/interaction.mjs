@@ -37,6 +37,11 @@ export async function launchBrowser() {
   return chromium.launch({ headless: true, executablePath: CHROME_PATH });
 }
 
+// Every relay transport failure in the run, across every page the gate opens.
+// The gate reports this, so scaffolding trouble is never mistaken for a
+// product defect and never silently swallowed either.
+export const relayLedger = [];
+
 // Requests whose completion changes what is on screen. Anything else (beacons,
 // fonts) must not hold the gate open.
 const RENDERING_REQUEST = /nhl-api\.propbetedge\.ai|propbet-news-api|propbet-img-proxy|\/assets\//;
@@ -70,35 +75,51 @@ export async function makePage(context, { relay = true } = {}) {
   // fast the gateway answers. Zero unless a run asks for it.
   const slowMs = Number(process.env.PBE_E2E_SLOW || 0);
 
+  // The relay is scaffolding: it exists only because production CORS blocks
+  // localhost, so a browser on 127.0.0.1 cannot call the gateway directly. A
+  // single dropped connection inside it is NOT a product defect, but aborting
+  // the route made the page log a network error and the gate blamed whichever
+  // control happened to be under test. So each call is retried, and every
+  // transport failure is recorded where a reader can see it: a genuine outage
+  // still fails the run, loudly, instead of hiding behind a retry.
+  const relayFailures = relayLedger;
+
   if (relay) {
     const proxy = async route => {
       const url = route.request().url();
       if (slowMs) await new Promise(r => setTimeout(r, slowMs));
-      try {
-        const upstream = await fetch(url, {
-          headers: { Accept: 'application/json', Origin: PRODUCT_ORIGIN, Referer: `${PRODUCT_ORIGIN}/` }
-        });
-        const body = await upstream.text();
-        const semantics = upstream.headers.get('X-NHL-Semantics');
-        return route.fulfill({
-          status: upstream.status,
-          contentType: upstream.headers.get('content-type') || 'application/json',
-          headers: {
-            'Access-Control-Allow-Origin': '*',
-            'Access-Control-Expose-Headers': 'X-NHL-Semantics',
-            ...(semantics ? { 'X-NHL-Semantics': semantics } : {})
-          },
-          body
-        });
-      } catch {
-        return route.abort();
+      let lastError = null;
+      for (let attempt = 1; attempt <= 3; attempt++) {
+        try {
+          const upstream = await fetch(url, {
+            headers: { Accept: 'application/json', Origin: PRODUCT_ORIGIN, Referer: `${PRODUCT_ORIGIN}/` }
+          });
+          const body = await upstream.text();
+          const semantics = upstream.headers.get('X-NHL-Semantics');
+          if (attempt > 1) relayFailures.push(`recovered after ${attempt} attempts: ${url.slice(0, 80)}`);
+          return route.fulfill({
+            status: upstream.status,
+            contentType: upstream.headers.get('content-type') || 'application/json',
+            headers: {
+              'Access-Control-Allow-Origin': '*',
+              'Access-Control-Expose-Headers': 'X-NHL-Semantics',
+              ...(semantics ? { 'X-NHL-Semantics': semantics } : {})
+            },
+            body
+          });
+        } catch (error) {
+          lastError = error;
+          await new Promise(r => setTimeout(r, 150 * attempt));
+        }
       }
+      relayFailures.push(`UNREACHABLE after 3 attempts: ${url.slice(0, 80)} (${String(lastError?.message || lastError).slice(0, 60)})`);
+      return route.abort();
     };
     await page.route(`${GATEWAY}/**`, proxy);
     await page.route(`${NEWS_API}/**`, proxy);
   }
 
-  return { page, errors, reset: () => { errors.length = 0; } };
+  return { page, errors, relayFailures, reset: () => { errors.length = 0; } };
 }
 
 /** Load a hash route and wait for the shell + a settled (non-skeleton) main. */

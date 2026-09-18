@@ -39,7 +39,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
-  clickControl, clickPath, discover, fixtureViolation, gotoHash, isMounted, launchBrowser, settle,
+  clickControl, clickPath, discover, fixtureViolation, gotoHash, isMounted, launchBrowser, relayLedger, settle,
   makePage, mountState, norm, pick, PRODUCT_ORIGIN, viewportMetrics, waitForMount
 } from './lib/interaction.mjs';
 
@@ -1329,6 +1329,17 @@ if (!QUICK) {
 }
 
 await browser.close();
+
+// ── the harness's own health ────────────────────────────────────────────────
+// The localhost relay is scaffolding, not product. Say plainly whether it held
+// up, so a dropped connection inside it is never read as a broken control.
+{
+  const unreachable = relayLedger.filter(l => l.startsWith('UNREACHABLE'));
+  const recovered = relayLedger.filter(l => l.startsWith('recovered'));
+  if (unreachable.length) FAIL('Harness · gateway relay', `${unreachable.length} call(s) never reached the gateway: ${unreachable.slice(0, 2).join(' | ')}`);
+  else if (recovered.length) PASS('Harness · gateway relay', `${recovered.length} transient failure(s), all recovered on retry`);
+  else PASS('Harness · gateway relay', 'every relayed call succeeded first time');
+}
 
 // ── report ───────────────────────────────────────────────────────────────────
 const totals = report();
