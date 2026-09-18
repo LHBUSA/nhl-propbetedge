@@ -172,6 +172,9 @@
 
 /* ---------- command center */
 .cc-tools { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: var(--s-4); }
+.cc-tools #cc-jump { display: inline-flex; gap: 8px; flex-wrap: wrap; }
+.cc-note { color: var(--pbe-dim); line-height: 1.5; margin: calc(-1 * var(--s-3)) 0 var(--s-4); }
+.cc-replay { margin-top: var(--s-4); display: grid; gap: 8px; justify-items: center; }
 .cc-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: var(--s-3); }
 .ctile { display: grid; gap: 10px; padding: var(--s-3) var(--s-4); background: var(--pbe-ink-2); border: 1px solid var(--pbe-line); border-radius: var(--r-md); position: relative; min-width: 0; }
 .ctile::before { content: ""; position: absolute; inset: 0 auto 0 0; width: 3px; border-radius: var(--r-md) 0 0 var(--r-md); background: linear-gradient(180deg, var(--away) 0 50%, var(--home) 50% 100%); }

@@ -7,6 +7,7 @@ import { describeError, nhl } from '../lib/api.js';
 import { freshStamp } from '../lib/freshness.js';
 import { dateLabel, periodLabel, share, pct, todayET } from '../lib/format.js';
 import { createPoller } from '../lib/poll.js';
+import { resolveRecentCompleted } from '../lib/recent-games.js';
 import { teamAccent } from '../lib/teams.js';
 import { stateBadge, stateOf, teamMark } from '../components/game.js';
 import { watchButton } from '../components/alerts-ui.js';
@@ -67,26 +68,53 @@ function scout(games, casts) {
 }
 
 export function mountCenter(root, params, ctx) {
-  const state = { date: /^\d{4}-\d{2}-\d{2}$/.test(params.date || '') ? params.date : todayET(), board: null, meta: null, failed: false, error: null, casts: new Map() };
+  // The replay-browser entry (#/cast?view=all with no date) opens on a REAL
+  // slate: today when today has games, otherwise the most recent completed
+  // slate the schedule actually carries. No date is written into this file.
+  const explicitDate = /^\d{4}-\d{2}-\d{2}$/.test(params.date || '');
+  const state = {
+    date: explicitDate ? params.date : todayET(),
+    board: null, meta: null, failed: false, error: null, casts: new Map(),
+    resolving: !explicitDate, resolution: null
+  };
   root.innerHTML = `<section class="wrap section cast" data-fresh-scope>
     <div class="section-head"><div><span class="eyebrow">PBE Cast · Command center</span><h2 id="cc-title">Every game, one screen</h2></div>
       <p>Score, shots, manpower and the latest event for the whole slate. Open any game for the full broadcast.</p></div>
     <div class="cc-tools"><a class="pbe-btn pbe-btn--sm" href="#/cast">Single game</a>
-      <label class="micro" for="cc-date">Slate date</label><input id="cc-date" class="datenav__input" type="date" value="${esc(state.date)}"><span id="cc-fresh"></span></div>
+      <label class="micro" for="cc-date">Slate date</label><input id="cc-date" class="datenav__input" type="date" value="${esc(state.date)}"><span id="cc-jump"></span><span id="cc-fresh"></span></div>
+    <p class="micro cc-note" id="cc-note" hidden></p>
     <div id="cc-scout"></div>
     <div id="cc-grid" class="cc-grid"></div>
   </section>`;
 
+  // Real completed games to replay, straight from the resolved schedule.
+  const replayChoices = () => {
+    const games = (state.resolution?.games || []).filter(g => stateOf(g).key === 'FINAL');
+    if (!games.length) return '';
+    return `<div class="cc-replay"><span class="micro">Replay a completed game</span>
+      <div class="row">${games.slice(0, 6).map(g => `<a class="pbe-btn pbe-btn--sm" href="#/cast/${esc(g.id)}">${esc(g.teams.away.abbrev)} ${esc(g.teams.away.score ?? '')}–${esc(g.teams.home.score ?? '')} ${esc(g.teams.home.abbrev)} <span class="faint">${esc(dateLabel(g.date))}</span></a>`).join('')}</div></div>`;
+  };
+
   const render = () => {
     $('#cc-title', root).textContent = `${dateLabel(state.date, { long: true })}`;
     $('#cc-fresh', root).innerHTML = state.board ? freshStamp(state.meta, { failed: state.failed }) : '';
+    const today = todayET();
+    const next = state.board?.next_puck_drop?.date || null;
+    $('#cc-jump', root).innerHTML = [
+      state.date !== today ? `<button type="button" class="pbe-btn pbe-btn--sm pbe-btn--ghost" data-cc-date="${esc(today)}">Today</button>` : '',
+      next && next !== state.date ? `<button type="button" class="pbe-btn pbe-btn--sm pbe-btn--ghost" data-cc-date="${esc(next)}">Next slate</button>` : ''
+    ].join('');
+    const note = $('#cc-note', root);
+    const showNote = !explicitDate && state.resolution?.date && state.date === state.resolution.date && state.date !== today;
+    note.hidden = !showNote;
+    note.textContent = showNote ? `No NHL games today. Opened on the most recent completed slate the schedule carries — ${dateLabel(state.date, { long: true })}.` : '';
     const games = state.board?.games || [];
     $('#cc-scout', root).innerHTML = scout(games, state.casts);
     $('#cc-grid', root).innerHTML = state.error && !state.board
       ? `<div class="pbe-error"><strong>${esc(describeError(state.error).title)}</strong>${esc(describeError(state.error).body)}</div>`
-      : !state.board ? '<div class="pbe-skeleton" style="height:180px"></div>'.repeat(4)
+      : state.resolving || !state.board ? '<div class="pbe-skeleton" style="height:180px"></div>'.repeat(4)
         : games.length ? games.map(g => tile(g, state.casts.get(String(g.id)))).join('')
-          : `<div class="pbe-empty"><h3>No games on ${esc(dateLabel(state.date, { long: true }))}.</h3><p>${state.board.next_puck_drop ? `Next slate: ${esc(dateLabel(state.board.next_puck_drop.date, { long: true }))}. <button class="pbe-btn pbe-btn--sm" data-cc-date="${esc(state.board.next_puck_drop.date)}">Open it</button>` : ''}</p></div>`;
+          : `<div class="pbe-empty"><h3>No games on ${esc(dateLabel(state.date, { long: true }))}.</h3><p>${state.board.next_puck_drop ? `Next slate: ${esc(dateLabel(state.board.next_puck_drop.date, { long: true }))}. <button class="pbe-btn pbe-btn--sm" data-cc-date="${esc(state.board.next_puck_drop.date)}">Open it</button>` : 'Nothing is shown for a date the schedule has no games for.'}</p>${replayChoices()}</div>`;
   };
 
   const loadedFinals = new Set();
@@ -115,12 +143,34 @@ export function mountCenter(root, params, ctx) {
     }
   });
   render();
-  poller.start();
+
+  // Entry resolution. Today wins whenever today's schedule has games at all;
+  // only an empty day falls back to the most recent completed slate.
+  let disposed = false;
+  (async () => {
+    if (explicitDate) { poller.start(); return; }
+    try {
+      const today = await ctx.board(todayET());
+      if (!(today.data.games || []).length) {
+        const hit = await resolveRecentCompleted(ctx.board, {});
+        state.resolution = hit;
+        if (hit?.date && hit.date !== state.date) {
+          state.date = hit.date;
+          $('#cc-date', root).value = hit.date;
+          history.replaceState(null, '', `#/cast?view=all&date=${hit.date}`);
+        }
+      }
+    } catch { /* the poller reports the real failure */ }
+    if (disposed) return;
+    state.resolving = false;
+    render();
+    poller.start();
+  })();
 
   const setDate = d => { state.date = d; state.board = null; state.casts = new Map(); loadedFinals.clear(); history.replaceState(null, '', `#/cast?view=all&date=${d}`); render(); poller.refresh(); };
   const disposers = [
     on(root, 'change', '#cc-date', (_, i) => { if (/^\d{4}-\d{2}-\d{2}$/.test(i.value)) setDate(i.value); }),
     on(root, 'click', '[data-cc-date]', (_, b) => setDate(b.dataset.ccDate))
   ];
-  return () => { poller.stop(); disposers.forEach(d => d()); };
+  return () => { disposed = true; poller.stop(); disposers.forEach(d => d()); };
 }

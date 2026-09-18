@@ -2,6 +2,7 @@ import { $, $$, esc, on } from '../lib/dom.js';
 import { TEAMS } from '../lib/teams.js';
 import { timeET, dayET } from '../lib/format.js';
 import { PBE_NETWORK } from '../lib/network.js';
+import { onAccount, refreshAccount, signInAvailable } from '../lib/account.js';
 
 // Keep the desktop header focused on the five highest-value product surfaces,
 // with PBE Picks — the flagship — directly after the Ice Board. Everything else
@@ -58,12 +59,16 @@ export function renderShell(app) {
           <div class="more">
             <button class="more__btn" type="button" aria-expanded="false" aria-controls="more-menu" data-more>More <span aria-hidden="true">▾</span></button>
             <div class="more__menu" id="more-menu" role="menu" hidden>
-              ${MORE.map(item => `<a role="menuitem" href="${item.href}" data-nav="${item.id}">${esc(item.label)}</a>`).join('')}
+              ${MORE.map(item => `<a role="menuitem" tabindex="-1" href="${item.href}" data-nav="${item.id}">${esc(item.label)}</a>`).join('')}
             </div>
           </div>
         </nav>
         <div class="topbar__tools">
-          <span class="season-chip" id="season-chip" aria-live="polite"></span>
+          <!-- NHL Pro. Hidden until lib/account.js confirms the gateway can
+               actually sign someone in: chrome never renders a control whose
+               only outcome is a dead end. -->
+          <button class="pbepro__open" type="button" id="nhl-pro-btn" data-open-nhl-pro data-account="unknown" aria-label="Open NHL Pro" hidden><span>NHL</span> PRO</button>
+          <span class="season-chip" id="season-chip" data-tone="" hidden><i class="season-chip__dot" aria-hidden="true"></i><span class="season-chip__text" id="season-chip-text" aria-live="polite"></span></span>
           <div class="alerts-wrap">
             <button class="bell-btn" type="button" data-alerts aria-expanded="false" aria-controls="alert-center" aria-label="Alerts">${icon('bell')}<span class="bell-count" id="alert-count" hidden></span></button>
             <div class="alert-center" id="alert-center" hidden>
@@ -102,7 +107,7 @@ export function renderShell(app) {
     <div class="sheet" id="nav-sheet" hidden>
       <div class="sheet__scrim" data-close-sheet></div>
       <div class="sheet__panel" role="dialog" aria-modal="true" aria-label="All sections">
-        <div class="sheet__head"><span class="eyebrow">All sections</span><button type="button" class="pbe-btn pbe-btn--ghost pbe-btn--sm" data-close-sheet aria-label="Close menu">Close</button></div>
+        <div class="sheet__head"><span class="eyebrow">All sections</span><span class="sheet__season micro" id="sheet-season" hidden></span><button type="button" class="pbe-btn pbe-btn--ghost pbe-btn--sm" data-close-sheet aria-label="Close menu">Close</button></div>
         <div class="sheet__grid">
           ${ALL_NAV.map(item => `<a href="${item.href}" data-nav="${item.id}"${item.pro ? ' data-pro="1"' : ''}>${esc(item.label)}</a>`).join('')}
         </div>
@@ -133,11 +138,23 @@ export function setActiveNav(id) {
   $('[data-more]')?.classList.toggle('is-active', moreActive);
 }
 
+// Season state is product chrome, not a debug badge: it stays on one quiet
+// line, never borrows the gold the navigation uses for "you are here", and is
+// mirrored into the mobile sheet where the topbar has no room for it.
 export function setSeasonChip(text, tone = '') {
   const chip = $('#season-chip');
-  if (!chip) return;
-  chip.textContent = text || '';
+  const label = $('#season-chip-text');
+  if (!chip || !label) return;
+  label.textContent = text || '';
   chip.dataset.tone = tone;
+  chip.hidden = !text;
+  chip.setAttribute('title', text ? `NHL season state — ${text}` : '');
+  const sheet = $('#sheet-season');
+  if (sheet) {
+    sheet.textContent = text || '';
+    sheet.dataset.tone = tone;
+    sheet.hidden = !text;
+  }
 }
 
 export function bindShell(ctx) {
@@ -153,7 +170,18 @@ export function bindShell(ctx) {
   let active = 0;
   let items = [];
 
-  const closeMore = () => { moreMenu.hidden = true; moreBtn.setAttribute('aria-expanded', 'false'); };
+  const moreItems = () => $$('a', moreMenu);
+  const openMore = () => {
+    moreMenu.hidden = false;
+    moreBtn.setAttribute('aria-expanded', 'true');
+    moreItems()[0]?.focus();
+  };
+  const closeMore = ({ restoreFocus = false } = {}) => {
+    if (moreMenu.hidden) return;
+    moreMenu.hidden = true;
+    moreBtn.setAttribute('aria-expanded', 'false');
+    if (restoreFocus) moreBtn.focus();
+  };
   const closeSheet = () => { sheet.hidden = true; sheetBtn.setAttribute('aria-expanded', 'false'); document.documentElement.classList.remove('is-locked'); };
   const closePalette = () => {
     if (palette.hidden) return;
@@ -204,10 +232,29 @@ export function bindShell(ctx) {
   };
 
   disposers.push(on(document, 'click', '[data-more]', () => {
-    const open = moreMenu.hidden;
-    moreMenu.hidden = !open;
-    moreBtn.setAttribute('aria-expanded', String(open));
+    if (moreMenu.hidden) openMore(); else closeMore();
   }));
+  // Menu pattern: the items are not in the tab order; the button opens the menu
+  // and the arrows walk it. Tab or Escape leaves, Escape returns focus.
+  const onMoreKey = event => {
+    const items = moreItems();
+    if (!items.length) return;
+    if (event.key === 'Tab') { closeMore(); return; }
+    const i = items.indexOf(document.activeElement);
+    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
+      event.preventDefault();
+      const next = (i + (event.key === 'ArrowDown' ? 1 : -1) + items.length) % items.length;
+      items[i < 0 ? 0 : next].focus();
+    } else if (event.key === 'Home') { event.preventDefault(); items[0].focus(); }
+    else if (event.key === 'End') { event.preventDefault(); items[items.length - 1].focus(); }
+  };
+  moreMenu.addEventListener('keydown', onMoreKey);
+  disposers.push(() => moreMenu.removeEventListener('keydown', onMoreKey));
+  const onMoreBtnKey = event => {
+    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') { event.preventDefault(); openMore(); }
+  };
+  moreBtn.addEventListener('keydown', onMoreBtnKey);
+  disposers.push(() => moreBtn.removeEventListener('keydown', onMoreBtnKey));
   disposers.push(on(document, 'click', '[data-sheet]', () => {
     sheet.hidden = false;
     sheetBtn.setAttribute('aria-expanded', 'true');
@@ -235,7 +282,11 @@ export function bindShell(ctx) {
       openPalette();
       return;
     }
-    if (event.key === 'Escape') { closePalette(); closeSheet(); closeMore(); }
+    if (event.key === 'Escape') {
+      if (!moreMenu.hidden) { closeMore({ restoreFocus: true }); return; }
+      closePalette();
+      closeSheet();
+    }
     if (!palette.hidden && (event.key === 'ArrowDown' || event.key === 'ArrowUp')) {
       event.preventDefault();
       active = (active + (event.key === 'ArrowDown' ? 1 : -1) + items.length) % Math.max(1, items.length);
@@ -256,5 +307,52 @@ export function bindShell(ctx) {
   window.addEventListener('hashchange', onHash);
   disposers.push(() => window.removeEventListener('hashchange', onHash));
 
+  disposers.push(bindProButton());
+
   return () => disposers.forEach(d => d());
+}
+
+// NHL Pro: exactly one real action per account state, and nothing at all when
+// this environment cannot sign anyone in.
+//
+//   auth not configured -> the button never appears (a dead control is worse
+//                          than no control);
+//   signed out          -> opens the sign-in / Founding Season surface;
+//   pro                 -> opens the same surface on the account panel, which
+//                          carries the live subscription state.
+//
+// Account state comes only from lib/account.js, which asks the gateway. Chrome
+// never calls a /pro/* route and never infers access from the browser.
+export function bindProButton({ timeoutMs = 6000 } = {}) {
+  const button = $('#nhl-pro-btn');
+  let stop = null;
+  let disposed = false;
+  if (!button) return () => {};
+
+  const paint = account => {
+    const state = account?.state || 'unknown';
+    button.dataset.account = state;
+    const pro = state === 'pro';
+    button.classList.toggle('is-pro', pro);
+    button.innerHTML = pro ? '<span>NHL</span> PRO ✓' : '<span>NHL</span> PRO';
+    button.setAttribute('aria-label', pro ? 'NHL Pro account and subscription' : 'Sign in to NHL Pro or see Founding Season access');
+  };
+
+  (async () => {
+    // Sign-in has to exist server-side before the control does.
+    if (!(await signInAvailable()) || disposed) return;
+    // The surface itself is lazily loaded; wait for it rather than shipping a
+    // button that opens nothing.
+    const deadline = Date.now() + timeoutMs;
+    while (!document.getElementById('nhl-pro-modal') && Date.now() < deadline) {
+      await new Promise(resolve => setTimeout(resolve, 60));
+      if (disposed) return;
+    }
+    if (disposed || !document.getElementById('nhl-pro-modal')) return;
+    stop = onAccount(paint);
+    button.hidden = false;
+    refreshAccount();
+  })();
+
+  return () => { disposed = true; stop?.(); };
 }

@@ -226,8 +226,11 @@ function install() {
   if (document.getElementById('nhl-pro-modal')) return;
   document.body.insertAdjacentHTML('beforeend', markup());
 
+  // The shell renders the NHL Pro control itself so chrome can decide whether
+  // it should exist at all (see bindProButton in components/shell.js). Only
+  // create one here if the shell did not.
   const tools = document.querySelector('.topbar__tools');
-  if (tools) {
+  if (tools && !tools.querySelector('[data-open-nhl-pro]')) {
     const button = document.createElement('button');
     button.type = 'button';
     button.className = 'pbepro__open';

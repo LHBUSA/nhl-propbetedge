@@ -9,11 +9,17 @@ const listeners = new Set();
 let current = { state: 'unknown' };
 let inflight = null;
 
-async function readiness() {
-  try {
-    const r = await fetch(`${GATEWAY_URL}/readiness`, { mode: 'cors', credentials: 'omit', headers: { Accept: 'application/json' } });
-    return r.ok ? r.json() : null;
-  } catch { return null; }
+// Readiness is environment configuration, not account state. Resolve it once
+// per page load so every caller that asks "can anyone sign in here?" shares a
+// single gateway read.
+let readinessPromise = null;
+function readiness() {
+  if (!readinessPromise) {
+    readinessPromise = fetch(`${GATEWAY_URL}/readiness`, { mode: 'cors', credentials: 'omit', headers: { Accept: 'application/json' } })
+      .then(r => (r.ok ? r.json() : null))
+      .catch(() => null);
+  }
+  return readinessPromise;
 }
 
 // Sign-in exists in this environment only when the gateway reports every auth

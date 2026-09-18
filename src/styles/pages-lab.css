@@ -9,6 +9,8 @@
 .lab-pickbar { display: flex; align-items: center; justify-content: space-between; gap: 8px 16px; flex-wrap: wrap; margin-bottom: var(--s-3); }
 .lab-pickbar__date { display: inline-flex; align-items: center; gap: 10px; }
 .lab-pickbar__label { color: var(--pbe-dim); }
+.lab-pickbar__jump { gap: 8px; }
+.lab-pickbar__note { color: var(--pbe-dim); margin: -4px 0 var(--s-3); line-height: 1.5; }
 .lab-date {
   min-height: 36px; padding: 0 10px; border-radius: var(--r-sm);
   border: 1px solid var(--pbe-line-strong); background: var(--pbe-ink-2); color: var(--pbe-paper);

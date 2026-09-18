@@ -64,13 +64,28 @@ html.is-locked, html.is-locked body { overflow: hidden; }
 .more__menu a:hover, .more__menu a.is-active { background: var(--pbe-ink-2); color: var(--pbe-gold-bright); }
 
 .topbar__tools { display: flex; align-items: center; gap: var(--s-3); flex: none; }
+/* Season state is a status read-out, not a call to action. It keeps the
+   product's quiet type and a small state dot, and deliberately does NOT use the
+   gold the navigation reserves for "you are here" / PBE Picks — so it stops
+   competing with the nav and reads as chrome rather than a debug badge. */
 .season-chip {
-  font: 700 var(--fs-micro)/1 var(--pbe-font-data); letter-spacing: .12em; text-transform: uppercase;
-  color: var(--pbe-gold); padding: 6px 8px; border: 1px solid var(--pbe-line-strong); border-radius: var(--r-xs);
-  white-space: nowrap;
+  display: inline-flex; align-items: center; gap: 7px;
+  font: 700 var(--fs-micro)/1 var(--pbe-font-data); letter-spacing: .1em; text-transform: uppercase;
+  color: var(--pbe-dim); padding: 6px 9px; border: 1px solid var(--pbe-line); border-radius: var(--r-pill);
+  background: rgba(13,11,8,.42); white-space: nowrap;
 }
-.season-chip:empty { display: none; }
-.season-chip[data-tone="live"] { color: var(--pbe-crimson-bright); border-color: currentColor; }
+.season-chip:empty, .season-chip[hidden] { display: none; }
+.season-chip__dot { width: 5px; height: 5px; flex: none; border-radius: 50%; background: var(--pbe-gold); opacity: .8; }
+.season-chip[data-tone="live"] { color: var(--pbe-crimson-text); border-color: rgba(230,57,70,.42); }
+.season-chip[data-tone="live"] .season-chip__dot { background: var(--pbe-crimson-bright); opacity: 1; }
+@media (prefers-reduced-motion: no-preference) {
+  .season-chip[data-tone="live"] .season-chip__dot { animation: season-pulse 2.4s ease-in-out infinite; }
+}
+@keyframes season-pulse { 0%, 100% { opacity: 1; } 50% { opacity: .35; } }
+/* Season state has no room in the compact topbar, so the mobile sheet carries
+   it instead of the product simply losing the information. */
+.sheet__season { color: var(--pbe-dim); letter-spacing: .1em; text-transform: uppercase; margin-left: auto; margin-right: 10px; }
+.sheet__season[data-tone="live"] { color: var(--pbe-crimson-text); }
 .search-btn {
   display: inline-flex; align-items: center; gap: 8px; min-height: 36px; padding: 0 10px;
   border: 1px solid var(--pbe-line-strong); border-radius: var(--r-sm); background: rgba(13,11,8,.5);
@@ -82,6 +97,9 @@ html.is-locked, html.is-locked body { overflow: hidden; }
   border-radius: var(--r-xs); color: var(--pbe-faint);
 }
 .ico { width: 20px; height: 20px; flex: none; }
+/* pro.css sets display:inline-flex, which beats the UA rule for [hidden]. The
+   chrome decides whether NHL Pro exists at all, so make hidden mean hidden. */
+.pbepro__open[hidden] { display: none !important; }
 
 @media (max-width: 1240px) {
   .season-chip { display: none; }

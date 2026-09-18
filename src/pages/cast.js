@@ -6,6 +6,7 @@ import { playerIdentity } from '../components/player.js';
 import { freshStamp } from '../lib/freshness.js';
 import { countdownParts, dateLabel, dayET, gameTypeLabel, num, pct, periodLabel, share, svPct, timeET, titleCase, todayET } from '../lib/format.js';
 import { createPoller } from '../lib/poll.js';
+import { resolveRecentCompleted } from '../lib/recent-games.js';
 import { teamAccent } from '../lib/teams.js';
 import { stateBadge, stateOf, teamMark } from '../components/game.js';
 import { LAYERS, renderRink, rinkLegend, shotLabel } from '../components/rink.js';
@@ -280,7 +281,7 @@ export function mount(root, params, ctx) {
     feed: 'all', selected: null,
     tab: 'feed',
     replayDate: params.date || null,
-    pickGames: [], pickLabel: '',
+    pickGames: [], pickLabel: '', recentCompleted: null,
     // Replay: cursor is an index into cast.plays (null = full/live view).
     cursor: null, playing: false, speed: 'normal', startSort: /^\d+$/.test(params.t || '') ? Number(params.t) : null
   };
@@ -295,9 +296,17 @@ export function mount(root, params, ctx) {
   const body = $('#cast-body', root);
   const picker = $('#cast-picker', root);
 
+  // The most recent completed game, resolved from the schedule, so "replay" is
+  // one real click away on a day with nothing to broadcast. No fixture id.
+  const replayShortcut = () => {
+    const g = state.recentCompleted;
+    if (!g || String(g.id) === String(state.gameId)) return '';
+    return `<a class="pbe-btn pbe-btn--sm" href="#/cast/${esc(g.id)}">Replay ${esc(g.teams.away.abbrev)} @ ${esc(g.teams.home.abbrev)} · ${esc(dateLabel(g.date))}</a>`;
+  };
+
   const renderPicker = () => {
     picker.innerHTML = `${pickerMarkup(state.pickGames, state.gameId, state.pickLabel)}
-      <div class="cast-replay"><a class="pbe-btn pbe-btn--sm" href="#/cast?view=all${state.replayDate ? `&date=${esc(state.replayDate)}` : ''}">Command center</a><label class="micro" for="replay-date">Replay a date</label>
+      <div class="cast-replay"><a class="pbe-btn pbe-btn--sm" href="#/cast?view=all${state.replayDate ? `&date=${esc(state.replayDate)}` : ''}">Command center</a>${replayShortcut()}<label class="micro" for="replay-date">Replay a date</label>
         <input id="replay-date" class="datenav__input" type="date" value="${esc(state.replayDate || '')}" max="${todayET()}">
         ${state.pickLabel ? `<span class="micro">${esc(state.pickLabel)}</span>` : ''}</div>`;
   };
@@ -308,7 +317,9 @@ export function mount(root, params, ctx) {
       let res = await ctx.board(date);
       let games = res.data.games || [];
       let label = date === todayET() ? 'Today' : dateLabel(date, { long: true });
+      let emptyToday = false;
       if (!games.length && !state.replayDate) {
+        emptyToday = true;
         const next = res.data.next_puck_drop;
         if (next) {
           res = await ctx.board(next.date);
@@ -318,9 +329,16 @@ export function mount(root, params, ctx) {
       }
       state.pickGames = games;
       state.pickLabel = label;
+      // Nothing today: surface the real last completed game as a replay entry.
+      if (emptyToday) {
+        const hit = await resolveRecentCompleted(ctx.board, {}).catch(() => null);
+        state.recentCompleted = hit?.games?.[0] || null;
+      }
       if (!state.gameId && games.length) {
-        const live = games.find(g => ['LIVE', 'INTERMISSION'].includes(stateOf(g).key));
-        location.replace(`#/cast/${(live || games[0]).id}`);
+        const st = g => stateOf(g).key;
+        const live = games.find(g => ['LIVE', 'INTERMISSION'].includes(st(g)));
+        const finals = games.filter(g => st(g) === 'FINAL');
+        location.replace(`#/cast/${(live || finals[finals.length - 1] || games[0]).id}`);
         return;
       }
     } catch (error) {

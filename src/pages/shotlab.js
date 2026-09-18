@@ -3,6 +3,7 @@ import { describeError, nhl } from '../lib/api.js';
 import { freshStamp } from '../lib/freshness.js';
 import { countdownParts, dateLabel, dayET, gameTypeLabel, periodLabel, timeET, titleCase, todayET } from '../lib/format.js';
 import { createPoller } from '../lib/poll.js';
+import { cachedRecentCompleted, nextCompletedAfter, resolveRecentCompleted } from '../lib/recent-games.js';
 import { teamAccent } from '../lib/teams.js';
 import { stateBadge, stateOf, teamMark } from '../components/game.js';
 import { LAYERS, layerMatch, renderRink, rinkLegend, shotLabel } from '../components/rink.js';
@@ -425,7 +426,9 @@ export function mount(root, params, ctx) {
     layer: 'all', team: 'both', period: 'all', normalize: true,
     selected: null, sort: { key: 'order', dir: 1 }, showAll: false,
     pickDate: params.date && /^\d{4}-\d{2}-\d{2}$/.test(params.date) ? params.date : null,
-    pickGames: [], pickLabel: '', pickLoading: true, pickRequested: false
+    pickGames: [], pickLabel: '', pickLoading: true, pickRequested: false,
+    // Landing resolution for #/shots with no game id: never a fixture id.
+    resolving: false, resolution: null, resolveError: null
   };
   const aborter = new AbortController();
 
@@ -438,17 +441,40 @@ export function mount(root, params, ctx) {
   const picker = $('#lab-picker', root);
   const body = $('#lab-body', root);
 
+  // Real dates only: "today" and the next scheduled slate both come from the
+  // board this session already read. Nothing is written into this file.
+  function jumpMarkup() {
+    const today = todayET();
+    const next = ctx.latestBoard?.data?.next_puck_drop?.date || null;
+    const out = [];
+    if (state.pickDate && state.pickDate !== today) out.push(`<button type="button" class="pbe-btn pbe-btn--sm pbe-btn--ghost" data-pick-date="${esc(today)}">Today</button>`);
+    if (next && next !== state.pickDate) out.push(`<button type="button" class="pbe-btn pbe-btn--sm pbe-btn--ghost" data-pick-date="${esc(next)}">Next slate · ${esc(dateLabel(next))}</button>`);
+    return out.length ? `<div class="row lab-pickbar__jump">${out.join('')}</div>` : '';
+  }
+
+  // Why a June game is on screen in September. Only shown when this game is
+  // the one the landing resolver picked and it is not from today's slate.
+  function landingNote() {
+    const hit = cachedRecentCompleted();
+    const top = hit?.games?.[0];
+    if (!top || !state.gameId || String(top.id) !== String(state.gameId)) return '';
+    if (!hit.date || hit.date === todayET()) return '';
+    return `<p class="micro lab-pickbar__note">No NHL games today. Showing the most recent completed game on the schedule — ${esc(dateLabel(hit.date, { long: true }))}.</p>`;
+  }
+
   function renderPicker() {
     picker.innerHTML = `<div class="lab-pickbar">
         <label class="lab-pickbar__date"><span class="micro">Slate</span>
           <input id="lab-date" class="lab-date mono" type="date" value="${esc(state.pickDate || '')}" aria-label="Choose a date to load its games"></label>
         <span class="lab-pickbar__label micro">${state.pickLoading ? 'Loading slate…' : esc(state.pickLabel)}</span>
+        ${jumpMarkup()}
       </div>
+      ${landingNote()}
       ${pickerMarkup(state.pickGames, state.gameId)}`;
   }
 
   let pickToken = 0;
-  async function loadPicker(date, { explicit = false } = {}) {
+  async function loadPicker(date) {
     const mine = ++pickToken;
     state.pickLoading = true;
     renderPicker();
@@ -468,12 +494,6 @@ export function mount(root, params, ctx) {
       state.pickGames = games;
       state.pickDate = shown;
       state.pickLabel = games.length ? `${label} · ${plural(games.length, 'game')}` : `No NHL games · ${label}`;
-      if (!state.gameId && !explicit) {
-        const live = games.find(g => ['LIVE', 'INTERMISSION'].includes(stateOf(g).key));
-        const finals = games.filter(g => stateOf(g).key === 'FINAL');
-        const pick = live || finals[finals.length - 1];
-        if (pick) { location.replace(`#/shots/${pick.id}`); return; }
-      }
     } catch (error) {
       if (error?.kind === 'aborted' || mine !== pickToken) return;
       state.pickGames = [];
@@ -525,8 +545,18 @@ export function mount(root, params, ctx) {
 
   function renderBody() {
     if (!state.gameId) {
+      if (state.resolving) {
+        body.innerHTML = '<div class="pbe-skeleton" style="height:96px;margin-bottom:16px"></div><div class="pbe-skeleton" style="height:460px"></div>';
+        return;
+      }
+      const searched = state.resolution?.searchedFrom && state.resolution?.searchedTo
+        ? ` Searched every NHL date from ${dateLabel(state.resolution.searchedFrom, { long: true })} to ${dateLabel(state.resolution.searchedTo, { long: true })}${state.resolution.date ? '' : ' and the last completed playoff window'}.`
+        : '';
+      const text = state.resolveError
+        ? `${describeError(state.resolveError).title}. Pick a date above to load its games — nothing is shown from memory.`
+        : `No completed game with recorded shot coordinates could be resolved from the schedule.${searched} Choose a game above, or pick any date to load its shot map.`;
       body.innerHTML = `<section class="pbe-panel lab-card lab-rink lab-rink--solo">
-          ${emptyRink('Pick a game.', 'Choose a game above, or pick any date to load its shot map. Completed games replay every recorded attempt.')}
+          ${emptyRink(state.resolveError ? 'Schedule unavailable.' : 'Pick a game.', text)}
           ${rinkLegend()}
         </section>
         ${definitions()}`;
@@ -549,7 +579,11 @@ export function mount(root, params, ctx) {
       const halted = ['POSTPONED', 'SUSPENDED', 'CANCELLED'].includes(st.key);
       const title = halted ? `Game ${st.key.toLowerCase()}.` : 'No attempts recorded yet.';
       const text = halted ? 'The source lists this game as not completed. No shot data exists for it yet.' : 'Shot locations populate from the first recorded attempt.';
+      // A completed game with no recorded attempt is a source gap, not an empty
+      // game. Offer the next real completed game instead of inventing one.
+      const fallback = st.key === 'FINAL' ? nextCompletedAfter(state.gameId) : null;
       body.innerHTML = `${gameHeader(data, state.meta, state.failed)}${errorNote}
+        ${fallback ? `<div class="pbe-note lab-note"><b>The source recorded no attempt for this completed game.</b> Nothing is estimated. <a class="gold link-u" href="#/shots/${esc(fallback.id)}">Open the previous completed game (${esc(fallback.teams.away.abbrev)} @ ${esc(fallback.teams.home.abbrev)}, ${esc(dateLabel(fallback.date, { long: true }))})</a>.</div>` : ''}
         <div class="lab-grid">
           <section class="pbe-panel lab-card lab-rink">
             <div class="panel-head"><h3>Shot map</h3><span class="micro">0 plotted</span></div>
@@ -605,7 +639,7 @@ export function mount(root, params, ctx) {
     state.data = res.data; state.meta = res.meta; state.failed = false; state.error = null;
     if (!state.pickRequested) {
       state.pickRequested = true;
-      loadPicker(state.pickDate || res.data.game?.date || null, { explicit: true });
+      loadPicker(state.pickDate || res.data.game?.date || null);
     }
     renderBody();
     const key = stateOf(res.data.game).key;
@@ -620,18 +654,41 @@ export function mount(root, params, ctx) {
       state.failed = Boolean(state.data);
       if (!state.pickRequested) {
         state.pickRequested = true;
-        loadPicker(state.pickDate, { explicit: true });
+        loadPicker(state.pickDate);
       }
       renderBody();
       return error.kind === 'not_deployed' || error.kind === 'legacy' ? null : 5000;
     }
   }) : null;
 
+  // #/shots with no game id. The landing game is resolved from the live
+  // schedule — the most recent live game, else the most recent completed one —
+  // and never from an id written into this file. When the schedule genuinely
+  // has no completed game to show, the page says so and offers the selector.
+  async function landing() {
+    state.resolving = true;
+    renderBody();
+    let hit = null;
+    try {
+      hit = await resolveRecentCompleted(ctx.board, { signal: aborter.signal });
+    } catch (error) {
+      if (error?.kind === 'aborted' || aborter.signal.aborted) return;
+      state.resolveError = error;
+    }
+    if (aborter.signal.aborted) return;
+    state.resolution = hit;
+    state.resolving = false;
+    if (hit?.games?.length) { location.replace(`#/shots/${hit.games[0].id}`); return; }
+    renderBody();
+    loadPicker(null);
+  }
+
   renderPicker();
   renderBody();
   if (!state.gameId) {
     state.pickRequested = true;
-    loadPicker(state.pickDate, { explicit: Boolean(state.pickDate) });
+    if (state.pickDate) loadPicker(state.pickDate);
+    else landing();
   }
   poller?.start();
 
@@ -663,7 +720,11 @@ export function mount(root, params, ctx) {
     on(root, 'change', '#lab-date', (_, input) => {
       if (!/^\d{4}-\d{2}-\d{2}$/.test(input.value)) return;
       state.pickGames = [];
-      loadPicker(input.value, { explicit: true });
+      loadPicker(input.value);
+    }),
+    on(root, 'click', '[data-pick-date]', (_, b) => {
+      state.pickGames = [];
+      loadPicker(b.dataset.pickDate);
     })
   ];
 
