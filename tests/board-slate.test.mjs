@@ -236,25 +236,25 @@ assert.equal(facts.pipelineActive, true, 'a completed ok shadow run is the evide
 assert.equal(facts.publishedPicks, 0, '0 published picks is a real 0');
 
 const picks = picksBlock(zeroState());
-assert.match(picks, /No official model — so no pick is published/);
-assert.match(picks, /Saturday, September 19 · 7 scheduled/);
-assert.match(picks, /T-45/);
-assert.match(picks, /45 minutes before puck drop · lock-policy-v1\.1-1/);
-assert.match(picks, /<dd class="mono">None<\/dd>/, 'official model: none');
-assert.match(picks, /<dd class="mono">Active<\/dd>/, 'prospective pipeline: active');
+assert.match(picks, /PBE is running the next slate/);
+assert.match(picks, /Saturday, September 19 · 7 games/);
+assert.match(picks, /MODEL RUNNING/);
+assert.match(picks, /model rehearsals for this slate/i);
 assert.match(picks, /href="#\/pbe-picks\?date=2026-09-19"/, 'and it links to the real PBE Picks slate');
+assert.match(picks, /How picks are tracked/, 'methodology stays available without exposing internal operations');
 // No pick, probability, edge or shadow value may appear here.
 assert.ok(!/\d{1,3}(?:\.\d+)?\s*%/.test(picks), 'no percentage in the PBE Picks block');
 assert.ok(!/(?<![\w.-])0\.\d+/.test(picks), 'no probability literal in the PBE Picks block');
-assert.ok(!/pbe-badge--model/.test(picks), 'no model/pick badge while nothing is published');
+assert.ok(!/pbe-badge--model/.test(picks), 'no official model/pick badge while nothing is published');
 assert.ok(!/\bPBE PICK\b/.test(picks), 'the block never shows a selection');
 assert.ok(!/shadow_candidate|internal_shadow/.test(picks), 'shadow values never reach the page');
+assert.ok(!/Lock target|Prospective pipeline|Published picks|lock-policy|champion/i.test(picks), 'the consumer homepage does not expose model-governance internals');
 // Pipeline absent: every field blanks out, nothing is assumed.
 const down = { ...zeroState(), picks: { date: '2026-09-19', health: null, slate: null, healthError: { kind: 'pipeline_unavailable' }, slateError: null, locks: new Map() } };
 const downHtml = picksBlock(down);
-assert.match(downHtml, /PIPELINE UNAVAILABLE/);
-assert.equal((downHtml.match(/<dd class="mono">—<\/dd>/g) || []).length, 4, 'every fact the picks API owns renders as an em dash, never as a zero');
-assert.match(downHtml, /<dd class="mono">Saturday, September 19<\/dd>/, 'the slate DATE is still known — it comes from the board, and it carries no game count it cannot source');
+assert.match(downHtml, /UNAVAILABLE/);
+assert.match(downHtml, /temporarily unavailable/i);
+assert.ok(!/Lock target|Prospective pipeline|Published picks|lock-policy/i.test(downHtml), 'pipeline failure does not fall back to an internal status console');
 // An official model must populate the same block without a redesign.
 const official = { ...zeroState() };
 const OFFICIAL_STATUS = { ...MODEL_STATUS, status: 'champion', publishable: true, official_model: 'pbe-nhl-model-v2.0' };
@@ -264,9 +264,10 @@ official.picks = {
   slate: { ...PICKS_SLATE, model_status: OFFICIAL_STATUS }
 };
 const officialHtml = picksBlock(official);
-assert.match(officialHtml, /OFFICIAL MODEL LIVE/);
-assert.match(officialHtml, /<dd class="mono">pbe-nhl-model-v2\.0<\/dd>/);
-assert.match(officialHtml, /<dd class="mono">7<\/dd>/, 'published picks populate in place');
+assert.match(officialHtml, /Official PBE Picks are live/);
+assert.match(officialHtml, /PICKS LIVE/);
+assert.match(officialHtml, /7 locked picks published for this slate/);
+assert.ok(!/pbe-nhl-model-v2\.0|lock-policy/i.test(officialHtml), 'homepage stays consumer-facing even after an official model goes live');
 assert.equal(picksSlateDate(zeroState()), '2026-09-19', 'an empty today asks the next slate');
 assert.equal(picksSlateDate(gameDayState()), '2026-09-19', 'a populated date asks for itself');
 
