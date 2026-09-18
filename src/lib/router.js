@@ -6,6 +6,7 @@ import * as boardPage from '../pages/board.js';
 // does not wait on a second chunk. Everything else loads on demand.
 const ROUTES = [
   { pattern: /^\/?$/, id: 'board', load: async () => boardPage },
+  { pattern: /^\/pbe-picks$/, id: 'picks', load: () => import('../pages/pbe-picks.js') },
   { pattern: /^\/cast(?:\/(\d{10}))?$/, id: 'cast', keys: ['gameId'], load: () => import('../pages/cast.js') },
   { pattern: /^\/props$/, id: 'props', load: () => import('../pages/props.js') },
   { pattern: /^\/goalies(?:\/(\d{10}))?$/, id: 'goalies', keys: ['gameId'], load: () => import('../pages/goalies.js') },

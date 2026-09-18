@@ -40,6 +40,19 @@ html.is-locked, html.is-locked body { overflow: hidden; }
 .mainnav > a.is-active::after, .more__btn.is-active::after {
   content: ""; position: absolute; left: 10px; right: 10px; bottom: 4px; height: 2px; background: var(--pbe-gold);
 }
+/* PBE Picks is the flagship. It is marked with the product gold the chrome
+   already uses (season chip, active underline) plus a 3px dot that rides in the
+   existing flex gap — not a new accent, not a glow, no layout shift. */
+.mainnav > a[data-pro] { color: var(--pbe-gold); }
+.mainnav > a[data-pro]:hover, .mainnav > a[data-pro].is-active { color: var(--pbe-gold-bright); }
+.mainnav > a[data-pro]::before {
+  content: ""; width: 3px; height: 3px; flex: none; border-radius: 50%;
+  background: currentColor; opacity: .75;
+}
+.sheet__grid a[data-pro] { color: var(--pbe-gold); border-color: rgba(212,175,55,.3); }
+/* Muted in the bottom bar so the full-gold active state still reads. */
+.bottomnav a[data-pro] { color: rgba(212,175,55,.78); }
+
 .more { position: relative; }
 .more__menu {
   position: absolute; right: 0; top: calc(100% + 8px); min-width: 210px; padding: 6px;
@@ -84,6 +97,15 @@ html.is-locked, html.is-locked body { overflow: hidden; }
   .topbar__tools { margin-left: auto; }
   .search-btn { width: 44px; height: 44px; }
 }
+/* 360px: brand + NHL Pro + bell + search were 10px wider than the gutter box,
+   which pushed the whole document sideways. Tighten the chrome instead of
+   dropping a control. */
+@media (max-width: 400px) {
+  .topbar__in { gap: var(--s-2); }
+  .brand { gap: 6px; }
+  .brand__word { font-size: 14px; }
+  .topbar__tools { gap: var(--s-2); }
+}
 
 /* ---------- mobile bottom nav */
 .bottomnav { display: none; }
@@ -91,7 +113,7 @@ html.is-locked, html.is-locked body { overflow: hidden; }
   body { padding-bottom: calc(var(--nhl-bottomnav-h) + env(safe-area-inset-bottom)); }
   .bottomnav {
     position: fixed; left: 0; right: 0; bottom: 0; z-index: 60;
-    display: grid; grid-template-columns: repeat(5, 1fr);
+    display: grid; grid-template-columns: repeat(5, minmax(0, 1fr));
     height: calc(var(--nhl-bottomnav-h) + env(safe-area-inset-bottom));
     padding-bottom: env(safe-area-inset-bottom);
     background: rgba(20,17,13,.94);
@@ -103,8 +125,15 @@ html.is-locked, html.is-locked body { overflow: hidden; }
     min-height: 44px; border: 0; background: none; color: var(--pbe-faint);
     font: 700 var(--fs-micro)/1 var(--pbe-font-data); letter-spacing: .08em; text-transform: uppercase;
   }
+  /* Five labels including "PBE Picks" have to survive a 360px viewport: the
+     track can shrink below its content and the label clips rather than pushing
+     the document wider. */
+  .bottomnav a > span, .bottomnav button > span { max-width: 100%; white-space: nowrap; overflow: hidden; }
   .bottomnav a.is-active { color: var(--pbe-gold); }
   .bottomnav a.is-active .ico { stroke: var(--pbe-gold); }
+  @media (max-width: 380px) {
+    .bottomnav a, .bottomnav button { letter-spacing: .04em; padding-inline: 2px; }
+  }
 }
 
 /* ---------- sheet */

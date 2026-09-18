@@ -252,6 +252,28 @@ The floor re-uses the exact URL the band already requested, so on every route th
 
 `npm test` PASS · score-ticker state matrix **52/52** · product-depth browser gate PASS at 1440 and 390 · live acceptance against the real gateway and the real image proxy **330/330**, 478/478 avatar images decoded, 0 broken, 0 empty frames.
 
+## PBE Picks flagship surface + live Track Record (2026-09-18)
+
+New route `#/pbe-picks` (`src/pages/pbe-picks.js`, lazy chunk 21.3 KB / 7.6 KB gz) and a rewritten
+`src/pages/track.js` that reads the picks ledger instead of stating a dated fact. Both consume
+`nhl-picks-read-v1` through `src/lib/api.js` (`picksHealth` / `picksSlate` / `picksTrackRecord` /
+`picksLedger`, `credentials: 'omit'`). Navigation: desktop **Ice Board · PBE Picks · PBE Cast · Props ·
+Shot Lab**, mobile bottom **Board · PBE Picks · Cast · Props · More** (News moved into More).
+
+| Item | Status | Evidence |
+|---|---|---|
+| Picks read API carries the routes | **PROVEN** | The gateway answered 400 `Unsupported path` at 11:35Z and 200 `nhl-picks-read-v1` at 12:00Z on 2026-09-18. Both paths are handled and both were exercised by the browser QA. |
+| Nothing is published as a pick | **PROVEN** | `model_status` = `pbe-nhl-model-v1.1` / `shadow_candidate` / `publishable:false`, `publish_gate` = `{open:false, reason:"no_official_model"}`. All 7 games on 2026-09-19 render `prediction_state: NONE`, 0 pick badges, 0 percentages anywhere on the page (asserted in the browser). |
+| Free session never touches Pro | **PROVEN** | 0 `/pro/*` requests across 12 route/width runs; `loadPicksData` unit-asserted for `signed_out`, `unknown`, `not_entitled`, `free`. |
+| Official-pick render needs no redesign | **PROVEN** | `tests/pbe-picks.test.mjs` renders the same components from a Pro payload: pick team, both probabilities, model version + artifact + snapshot id, lock stamps, PRICED market with `captured_at`/age labelled "not a live price", goalie block labelled NOT A MODEL INPUT. |
+| Track Record is a live read | **PROVEN** | `lifetime: null`, `models: []` ⇒ every metric renders `—` with "NO AGGREGATE RETURNED"; the empty state prints the API's own `detail` sentence and quotes its `reason` code `no_official_model`. |
+| Browser QA | **PROVEN** | `node tests/e2e/pbe-picks-qa.mjs`: 12 route/width combinations (1440/390/360 × picks, picks-with-slate, track-record, home), **0 failing checks**, 0 console/page errors, 0 horizontal overflow. Screenshots in `artifacts/pbe-picks-qa/`. |
+| 360px chrome overflow | **FIXED** | Pre-existing: brand + NHL Pro + bell + search were 10px wider than the gutter box on `#/` as well. Tightened in `shell.css` under 400px; `scrollWidth === clientWidth === 360` on all three routes. |
+
+Contract items still to pin with the backend: ROI/CLV units are printed as the raw signed number the API
+returns (no unit is assumed); `predictions.expected/created/rejected` are `null` today and render as em
+dashes while `grading_backlog: 0` renders as `0`.
+
 ## IN PROGRESS
 
 - Live prop tracker (market line vs live stat + TOI pace) — needs posted player props (provider had none 18 days out).

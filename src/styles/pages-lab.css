@@ -218,6 +218,8 @@
 .trk-metric__v { font-size: var(--fs-data-xl); font-weight: 500; line-height: 1.1; color: var(--pbe-faint); }
 .trk-metric__n { color: var(--pbe-faint); }
 .trk-metric__help { font-size: 12px; color: var(--pbe-dim); line-height: 1.45; margin-top: 4px; }
+/* Ten declared ledger metrics fill two clean rows on a wide screen. */
+@media (min-width: 1200px) { .trk-metrics { grid-template-columns: repeat(5, minmax(0, 1fr)); } }
 
 .trk-ledger th { white-space: nowrap; }
 .trk-ledger__empty td { padding: 0; }

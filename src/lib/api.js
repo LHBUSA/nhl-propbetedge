@@ -123,6 +123,36 @@ export async function news(params = {}, options = {}) {
   return nhl('/nhl/news', params, options);
 }
 
+// ---------------------------------------------------------------- PBE Picks
+// Public (free) read API — see propsports-api-worker/docs/NHL_PBE_PICKS_API_CONTRACT.md.
+// These routes are origin-gated and carry no credentials: a free response never
+// contains a pick value. The gateway does not necessarily carry them yet, and
+// answers an unknown path with 400 "Unsupported path"; 404/501/503 are the other
+// ways this pipeline can be absent. All of them become kind
+// 'pipeline_unavailable' so the page can say the pipeline is not available here
+// instead of inventing a prediction state.
+const PIPELINE_ABSENT = [400, 404, 501, 503];
+
+export async function picks(path, params = {}, options = {}) {
+  try {
+    // The picks Worker is read-through of persisted rows; it is not required to
+    // carry the NHL intelligence provenance envelope, so schema is not demanded.
+    return await nhl(path, params, { requireSchema: false, ...options });
+  } catch (error) {
+    if (!(error instanceof ApiError)) throw error;
+    if (error.kind === 'aborted' || error.kind === 'timeout') throw error;
+    if (PIPELINE_ABSENT.includes(error.status) || ['not_deployed', 'legacy', 'unavailable'].includes(error.kind)) {
+      throw new ApiError(error.message, { status: error.status, kind: 'pipeline_unavailable', payload: error.payload });
+    }
+    throw error;
+  }
+}
+
+export const picksHealth = (options = {}) => picks('/nhl/picks/health', {}, options);
+export const picksSlate = (date, options = {}) => picks('/nhl/picks/slate', { date }, options);
+export const picksTrackRecord = (params = {}, options = {}) => picks('/nhl/picks/track-record', params, options);
+export const picksLedger = (params = {}, options = {}) => picks('/nhl/picks/track-record/ledger', params, options);
+
 export function describeError(error) {
   if (!(error instanceof ApiError)) return { title: 'Unexpected error', body: String(error?.message || error) };
   switch (error.kind) {
@@ -131,6 +161,11 @@ export function describeError(error) {
       return {
         title: 'Data layer not deployed here',
         body: 'This environment points at a PropSports API that does not yet serve the NHL intelligence v2 routes. Nothing is shown rather than something invented.'
+      };
+    case 'pipeline_unavailable':
+      return {
+        title: 'PBE Picks pipeline not available here',
+        body: 'The gateway this build points at does not serve the PBE Picks read API yet. No prediction state, pick or record is shown rather than an invented one.'
       };
     case 'timeout':
       return { title: 'Source timed out', body: 'The NHL source did not answer in time. Retrying automatically.' };

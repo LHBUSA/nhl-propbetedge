@@ -27,6 +27,16 @@ export function timeET(iso) {
   return d ? `${fmt('tET', { timeZone: ET, hour: 'numeric', minute: '2-digit' }).format(d)} ET` : 'TBD';
 }
 
+// The viewer's own clock, only when it actually differs from the ET wall time
+// the rest of the app publishes. Never a substitute for the ET stamp.
+export function timeLocal(iso) {
+  const d = valid(iso);
+  if (!d) return null;
+  const local = fmt('tLocal', { hour: 'numeric', minute: '2-digit' }).format(d);
+  const et = fmt('tET', { timeZone: ET, hour: 'numeric', minute: '2-digit' }).format(d);
+  return local === et ? null : `${local} local`;
+}
+
 export function clockET(iso) {
   const d = valid(iso);
   return d ? `${fmt('cET', { timeZone: ET, hour: 'numeric', minute: '2-digit', second: '2-digit' }).format(d)} ET` : '—';

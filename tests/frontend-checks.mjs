@@ -19,6 +19,28 @@ assert.doesNotMatch(apiSource, /credentials: 'include'/, 'api.js (public data) n
   assert.doesNotMatch(account, /localStorage|sessionStorage|document\.cookie/, 'account state is never stored or read in the browser');
 }
 
+// 1b. PBE Picks is a first-class surface: desktop primary nav AND the mobile
+// bottom nav, with a registered route and a page that invents nothing.
+{
+  const shell = fs.readFileSync('src/components/shell.js', 'utf8');
+  assert.match(shell, /id: 'picks', href: '#\/pbe-picks', label: 'PBE Picks'/, 'PBE Picks is in the desktop NAV');
+  const navBlock = shell.match(/export const NAV = \[([\s\S]*?)\];/)[1];
+  assert.ok(navBlock.includes("id: 'picks'"), 'PBE Picks sits in NAV, not in More');
+  const bottom = shell.match(/const BOTTOM = \[([^\]]*)\]/)[1];
+  assert.ok(/'picks'/.test(bottom), 'PBE Picks is in the mobile bottom nav');
+  assert.ok(!/'news'/.test(bottom), 'News moved out of the mobile bottom nav into More');
+  assert.match(fs.readFileSync('src/lib/router.js', 'utf8'), /id: 'picks'/, '#/pbe-picks is routed');
+
+  // No pick, probability or price may be hardcoded into the prediction pages.
+  for (const page of ['src/pages/pbe-picks.js', 'src/pages/track.js']) {
+    const text = fs.readFileSync(page, 'utf8');
+    assert.ok(!/\d{1,3}(?:\.\d+)?\s*%/.test(text), `hardcoded percentage in ${page}`);
+    assert.ok(!/(?<![\w.])0\.\d+/.test(text), `hardcoded probability literal in ${page}`);
+    assert.ok(!/pick_team\s*[:=]\s*['"]/.test(text), `hardcoded pick in ${page}`);
+    assert.ok(!/fetch\s*\(/.test(text), `${page} must read through lib/api.js and lib/account.js`);
+  }
+}
+
 // 2. Truth rules: no randomness or stale launch copy in shipped source.
 const files = [];
 const walk = dir => {
