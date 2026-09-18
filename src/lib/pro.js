@@ -97,7 +97,7 @@ function markup() {
                 <div class="pbepro__select">Choose ${plan.label.toLowerCase()}</div>
               </button>`).join('')}
           </div>
-          <label class="pbepro__email">
+          <label class="pbepro__email" id="nhl-pro-email-label"${OPEN_FOR_PURCHASE ? '' : ' hidden'}>
             <span>Access email</span>
             <small>This email will become your NHL Pro identity.</small>
             <input id="nhl-pro-email" type="email" autocomplete="email" inputmode="email" placeholder="you@example.com" />
@@ -106,6 +106,10 @@ function markup() {
           <div class="pbepro__charge">Charged today · No free trial · Cancel anytime</div>
           <div class="pbepro__message" id="nhl-pro-message" aria-live="polite"></div>
           <div class="pbepro__secure">◆ Secure checkout by Stripe · Access controlled by PropBetEdge</div>
+          <div class="pbepro__note" id="nhl-pro-signin-unavailable" hidden>
+            <span>ACCOUNT SIGN-IN</span>
+            <p>Member sign-in is not available yet. Everything above is what NHL Pro includes; nothing is charged and no account is created here today.</p>
+          </div>
           <div class="pbepro__signin" id="nhl-pro-signin" hidden>
             <div class="pbepro__signin-head"><span>ALREADY NHL PRO?</span><p>Sign in with the email you used at checkout. We email a one-time link.</p></div>
             <form class="pbepro__signin-form" id="nhl-pro-signin-form" novalidate>
@@ -137,6 +141,12 @@ function paintSelection() {
   });
   const plan = NHL_PRO_PLANS[selected];
   const cta = document.getElementById('nhl-pro-checkout');
+  // Purchase closed: the CTA states the truth and cannot be actioned, and the
+  // access-email field is not rendered at all, so nothing implies checkout is open.
+  if (cta && !OPEN_FOR_PURCHASE) {
+    cta.disabled = true;
+    cta.setAttribute('aria-disabled', 'true');
+  }
   if (cta) cta.textContent = OPEN_FOR_PURCHASE
     ? `Continue to Stripe · ${plan.price}${selected === 'monthly' ? '/mo' : '/wk'}`
     : 'Founding Season checkout coming online';
@@ -205,7 +215,14 @@ async function wireAccount() {
   document.addEventListener('click', event => {
     if (event.target.closest('[data-pro-signout]')) signOut();
   });
-  if (!(await signInAvailable())) return; // auth not live in this environment
+  const available = await signInAvailable().catch(() => false);
+  if (!available) {
+    // Say so, rather than leaving the reader guessing at a missing form. The
+    // explainer above is the real content; no dead sign-in action is rendered.
+    const note = document.getElementById('nhl-pro-signin-unavailable');
+    if (note) note.hidden = false;
+    return;
+  }
   const signin = document.getElementById('nhl-pro-signin');
   if (signin) signin.hidden = false;
   document.getElementById('nhl-pro-signin-form')?.addEventListener('submit', async event => {

@@ -41,3 +41,8 @@ html.pbepro-lock{overflow:hidden}
 .auth-card__copy{color:var(--pbe-dim);font-size:14px;line-height:1.6;margin:0 0 18px}
 .auth-card__cta{min-height:46px}
 .auth-card__msg{margin-top:14px;color:var(--pbe-dim);font-size:13px}
+
+.pbepro__note{margin-top:18px;padding-top:16px;border-top:1px solid rgba(255,255,255,.075)}
+.pbepro__note[hidden]{display:none!important}
+.pbepro__note span{font:800 10px/1 'JetBrains Mono',monospace;letter-spacing:.12em;color:#d4af37}
+.pbepro__note p{margin:6px 0 0;color:#8f8a82;font-size:11.5px;line-height:1.5}

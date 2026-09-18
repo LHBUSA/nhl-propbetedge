@@ -94,20 +94,58 @@ test('cast deep-link behaviour is untouched', () => {
 
 // ----------------------------------------------------------- NHL Pro
 
-test('NHL Pro is chrome-owned and hidden until sign-in actually exists', () => {
-  assert.match(shell, /id="nhl-pro-btn"[^>]*hidden/, 'the Pro control ships hidden');
+// Owner decision 2026-09-18: the premium product does not disappear because one
+// authentication dependency is down. The control is ALWAYS in the topbar; what
+// it opens adapts to readiness and account state.
+test('NHL Pro is always present, including when auth readiness is false', () => {
+  const btn = shell.match(/<button class="pbepro__open"[^>]*>/)[0];
+  assert.ok(!/\shidden[\s>]/.test(btn), 'the Pro control is never withheld from the topbar');
   assert.match(shell, /export function bindProButton/);
-  assert.match(shell, /if \(!\(await signInAvailable\(\)\) \|\| disposed\) return;/,
-    'no sign-in in this environment means no button at all');
-  assert.match(shellCss, /\.pbepro__open\[hidden\] \{ display: none !important; \}/,
-    'pro.css sets display:inline-flex, so [hidden] needs to win');
+  assert.ok(!/if \(!\(await signInAvailable\(\)\)[^\n]*\) return;/.test(shell),
+    'readiness must not gate whether the control exists');
+  assert.match(shell, /if \(authReady\) refreshAccount\(\);/,
+    'the gateway is only asked who is signed in when sign-in exists');
+  assert.match(shell, /while \(!document\.getElementById\('nhl-pro-modal'\)/,
+    'it still waits for the surface, so it can never open nothing');
 });
 
-test('NHL Pro has one real action per account state', () => {
-  assert.match(shell, /state === 'pro'/);
-  assert.match(shell, /NHL Pro account and subscription/);
-  assert.match(shell, /Sign in to NHL Pro or see Founding Season access/);
-  assert.match(shell, /button\.dataset\.account = state/, 'the state is observable for QA');
+test('with readiness false the explainer is real content and carries no dead sign-in', () => {
+  // The explainer itself is unconditional: features, pricing truth, no trial.
+  assert.match(pro, /const FEATURES = \[/);
+  assert.match(pro, /No free trial\. No fake urgency\. Cancel anytime\./);
+  // The sign-in FORM stays hidden and is replaced by a plain statement.
+  assert.match(pro, /id="nhl-pro-signin" hidden/);
+  assert.match(pro, /id="nhl-pro-signin-unavailable" hidden/);
+  assert.match(pro, /Member sign-in is not available yet/);
+  const wire = pro.match(/async function wireAccount\(\)[\s\S]*?\n\}/)[0];
+  assert.match(wire, /if \(!available\) \{[\s\S]*?note\.hidden = false;[\s\S]*?return;/,
+    'unavailable readiness reveals the note and returns before wiring any form');
+  const submitIndex = wire.indexOf("getElementById('nhl-pro-signin-form')");
+  const returnIndex = wire.indexOf('return;');
+  assert.ok(returnIndex !== -1 && submitIndex !== -1 && returnIndex < submitIndex,
+    'no submit handler is bound when sign-in does not exist');
+});
+
+test('OPEN_FOR_PURCHASE false never exposes checkout', () => {
+  assert.match(pro, /const OPEN_FOR_PURCHASE = false/);
+  assert.match(pro, /Founding Season checkout coming online/);
+  const start = pro.match(/function startCheckout\(\)[\s\S]*?\n\}/)[0];
+  assert.match(start, /if \(!OPEN_FOR_PURCHASE\) \{[\s\S]*?return message\(/,
+    'the CTA refuses before it can ever reach a Stripe URL');
+  const assignIndex = start.indexOf('location.assign');
+  const guardIndex = start.indexOf('!OPEN_FOR_PURCHASE');
+  assert.ok(guardIndex !== -1 && guardIndex < assignIndex, 'the purchase guard precedes any navigation');
+});
+
+test('when readiness is true the legitimate sign-in path returns', () => {
+  const wire = pro.match(/async function wireAccount\(\)[\s\S]*?\n\}/)[0];
+  assert.match(wire, /const available = await signInAvailable\(\)/);
+  assert.match(wire, /signin\.hidden = false/, 'the real form appears only when sign-in exists');
+  assert.match(wire, /requestSignIn\(email\)/, 'and it posts through the one credentialed module');
+  assert.match(shell, /Sign in to NHL Pro or see Founding Season access/,
+    'the control relabels itself for the signed-out, auth-ready state');
+  assert.match(shell, /See what NHL Pro includes/,
+    'and reads as an explainer when sign-in does not exist');
 });
 
 test('chrome never carries credentials itself', () => {

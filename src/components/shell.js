@@ -64,10 +64,10 @@ export function renderShell(app) {
           </div>
         </nav>
         <div class="topbar__tools">
-          <!-- NHL Pro. Hidden until lib/account.js confirms the gateway can
-               actually sign someone in: chrome never renders a control whose
-               only outcome is a dead end. -->
-          <button class="pbepro__open" type="button" id="nhl-pro-btn" data-open-nhl-pro data-account="unknown" aria-label="Open NHL Pro" hidden><span>NHL</span> PRO</button>
+          <!-- NHL Pro is ALWAYS present: the premium product does not vanish
+               because one auth dependency is down. What it OPENS adapts -
+               explainer, sign-in, or the member panel (see bindProButton). -->
+          <button class="pbepro__open" type="button" id="nhl-pro-btn" data-open-nhl-pro data-account="unknown" aria-label="See what NHL Pro includes"><span>NHL</span> PRO</button>
           <span class="season-chip" id="season-chip" data-tone="" hidden><i class="season-chip__dot" aria-hidden="true"></i><span class="season-chip__text" id="season-chip-text" aria-live="polite"></span></span>
           <div class="alerts-wrap">
             <button class="bell-btn" type="button" data-alerts aria-expanded="false" aria-controls="alert-center" aria-label="Alerts">${icon('bell')}<span class="bell-count" id="alert-count" hidden></span></button>
@@ -329,29 +329,36 @@ export function bindProButton({ timeoutMs = 6000 } = {}) {
   let disposed = false;
   if (!button) return () => {};
 
+  let authReady = false;
   const paint = account => {
     const state = account?.state || 'unknown';
     button.dataset.account = state;
     const pro = state === 'pro';
     button.classList.toggle('is-pro', pro);
     button.innerHTML = pro ? '<span>NHL</span> PRO ✓' : '<span>NHL</span> PRO';
-    button.setAttribute('aria-label', pro ? 'NHL Pro account and subscription' : 'Sign in to NHL Pro or see Founding Season access');
+    button.setAttribute('aria-label', pro
+      ? 'NHL Pro account and subscription'
+      : authReady
+        ? 'Sign in to NHL Pro or see Founding Season access'
+        : 'See what NHL Pro includes');
   };
+  paint(null);
 
   (async () => {
-    // Sign-in has to exist server-side before the control does.
-    if (!(await signInAvailable()) || disposed) return;
-    // The surface itself is lazily loaded; wait for it rather than shipping a
-    // button that opens nothing.
+    // The premium product does not disappear because one dependency is down.
+    // The control is always present; what it OPENS adapts. It still waits for
+    // the surface to exist, so it can never be a button that opens nothing.
     const deadline = Date.now() + timeoutMs;
     while (!document.getElementById('nhl-pro-modal') && Date.now() < deadline) {
       await new Promise(resolve => setTimeout(resolve, 60));
       if (disposed) return;
     }
     if (disposed || !document.getElementById('nhl-pro-modal')) return;
+    authReady = await signInAvailable().catch(() => false);
+    if (disposed) return;
     stop = onAccount(paint);
-    button.hidden = false;
-    refreshAccount();
+    // Only ask the gateway who is signed in when sign-in exists at all.
+    if (authReady) refreshAccount();
   })();
 
   return () => { disposed = true; stop?.(); };
