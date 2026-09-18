@@ -39,7 +39,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
-  clickControl, clickPath, discover, fixtureViolation, gotoHash, isMounted, launchBrowser,
+  clickControl, clickPath, discover, fixtureViolation, gotoHash, isMounted, launchBrowser, settle,
   makePage, mountState, norm, pick, PRODUCT_ORIGIN, viewportMetrics, waitForMount
 } from './lib/interaction.mjs';
 
@@ -72,6 +72,27 @@ const record = (name, status, detail = '', extra = {}) => {
 const PASS = (n, d = '', e = {}) => record(n, 'PASS', d, e);
 const FAIL = (n, d = '', e = {}) => record(n, 'FAIL', d, e);
 const MISSING = (n, d = '', e = {}) => record(n, 'MISSING', d, e);
+
+// One reporter, used both at the end of a clean run and by the crash handler,
+// so a run that dies still prints everything it proved before it died.
+let inventory = null;
+let reported = false;
+function report() {
+  reported = true;
+  const pad = Math.min(62, Math.max(...results.map(r => r.name.length), 10) + 1);
+  console.log(`\n── ICE BOARD INTERACTION REPORT · ${LABEL} · ${BASE} ──\n`);
+  for (const r of results) {
+    console.log(`${r.name.padEnd(pad)} — ${r.status}${r.status === 'PASS' ? '' : `  [${r.detail}]`}`);
+  }
+  const totals = results.reduce((a, r) => { a[r.status] = (a[r.status] || 0) + 1; return a; }, {});
+  console.log(`\nTOTALS  PASS ${totals.PASS || 0} · FAIL ${totals.FAIL || 0} · MISSING ${totals.MISSING || 0} · controls discovered ${inventory?.controls?.length ?? 0}`);
+  console.log(`screenshots: ${path.resolve(REPO, OUT_DIR)}`);
+  if (JSON_OUT) {
+    fs.writeFileSync(path.resolve(REPO, JSON_OUT), JSON.stringify({ label: LABEL, base: BASE, at: new Date().toISOString(), totals, results, inventory }, null, 2));
+    console.log(`json: ${JSON_OUT}`);
+  }
+  return totals;
+}
 
 // ── current-season reference, used to spot pinned QA fixtures ────────────────
 const now = new Date();
@@ -178,7 +199,7 @@ async function openDisclosures(page) {
     for (const d of document.querySelectorAll('#main details:not([open])')) { d.open = true; n += 1; }
     return n;
   });
-  if (opened) await page.waitForTimeout(350);
+  if (opened) await settle(page);
   return opened;
 }
 
@@ -248,6 +269,15 @@ async function findGamesDate(page) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+const crash = err => {
+  if (reported) return;
+  record('Interaction gate runs to completion', 'FAIL', `harness crashed: ${String(err?.stack || err).replace(/\s+/g, ' ').slice(0, 220)}`);
+  report();
+  process.exit(1);
+};
+process.on('uncaughtException', crash);
+process.on('unhandledRejection', crash);
+
 const browser = await launchBrowser();
 const context = await browser.newContext({ viewport: { width: 1440, height: 1000 } });
 const bag = await makePage(context, { relay: RELAY });
@@ -262,7 +292,7 @@ else PASS('Ice Board boots', `${boot.children} blocks · ${boot.textLen} chars`)
 if (bag.errors.length) FAIL('Ice Board boot is error-free', bag.errors.slice(0, 3).join(' | '));
 else PASS('Ice Board boot is error-free');
 
-const inventory = await discover(page);
+inventory = await discover(page);
 
 // ── 1. named chrome checks ───────────────────────────────────────────────────
 async function named(name, spec, opts = {}) {
@@ -288,7 +318,7 @@ async function namedNav(name, spec, expect, opts = {}) {
   else {
     bag.reset();
     await page.evaluate(p => document.querySelector(p)?.click(), skip.path);
-    await page.waitForTimeout(400);
+    await settle(page);
     const focused = await page.evaluate(() => document.activeElement?.id || document.activeElement?.tagName);
     focused === 'main' || focused === 'MAIN'
       ? PASS('Skip to content', 'moves focus to #main')
@@ -366,25 +396,25 @@ if (!moreBtn) {
   });
 
   await clickControl(page, moreBtn);
-  await page.waitForTimeout(350);
+  await settle(page);
   const opened = await menuOpen();
   opened ? PASS('More · opens', 'menu became visible') : FAIL('More · opens', 'menu never became visible');
 
   if (opened) {
     await clickControl(page, moreBtn);
-    await page.waitForTimeout(300);
+    await settle(page);
     (await menuOpen()) ? FAIL('More · closes on second click', 'still open') : PASS('More · closes on second click');
 
     await clickControl(page, moreBtn);
-    await page.waitForTimeout(300);
+    await settle(page);
     await page.mouse.click(700, 620);
-    await page.waitForTimeout(300);
+    await settle(page);
     (await menuOpen()) ? FAIL('More · closes on outside click', 'still open') : PASS('More · closes on outside click');
 
     await clickControl(page, moreBtn);
-    await page.waitForTimeout(300);
+    await settle(page);
     await page.keyboard.press('Escape');
-    await page.waitForTimeout(300);
+    await settle(page);
     (await menuOpen()) ? FAIL('More · closes on Escape', 'still open') : PASS('More · closes on Escape');
   } else {
     FAIL('More · closes on second click', 'menu never opened');
@@ -395,7 +425,7 @@ if (!moreBtn) {
   // Every item inside More, each a real click, plus the after-navigation close.
   await ensureBoard(page, bag);
   await clickPath(page, (await discover(page)).controls.find(c => norm(c.name).startsWith('more') && c.tag === 'button' && c.region === 'chrome')?.path || moreBtn.path);
-  await page.waitForTimeout(350);
+  await settle(page);
   const menuItems = (await discover(page)).controls.filter(c => c.region === 'more-menu' && c.tag === 'a' && c.visible);
   if (!menuItems.length) MISSING('More · items', 'menu exposed no items');
   let firstItemChecked = false;
@@ -407,7 +437,7 @@ if (!moreBtn) {
     await page.keyboard.press('Escape');
     await page.waitForTimeout(150);
     const btn = (await discover(page)).controls.find(c => c.region === 'chrome' && c.tag === 'button' && norm(c.name).startsWith('more'));
-    if (btn) { await clickControl(page, btn); await page.waitForTimeout(300); }
+    if (btn) { await clickControl(page, btn); await settle(page); }
     const live = (await discover(page)).controls.find(c => c.region === 'more-menu' && norm(c.name) === norm(item.name));
     if (!live) { MISSING(`More item · ${label}`, 'item vanished between discovery and click'); continue; }
     const r = await act(page, bag, live);
@@ -437,15 +467,15 @@ if (!searchBtn) {
     .forEach(n => MISSING(n, 'no Search control in the header'));
 } else {
   await clickControl(page, searchBtn);
-  await page.waitForTimeout(400);
+  await settle(page);
   (await paletteOpen()) ? PASS('Search · click opens') : FAIL('Search · click opens', 'palette never became visible');
 
   await page.keyboard.press('Escape');
-  await page.waitForTimeout(300);
+  await settle(page);
   (await paletteOpen()) ? FAIL('Search · Escape closes', 'palette still visible') : PASS('Search · Escape closes');
 
   await page.keyboard.press('Control+K');
-  await page.waitForTimeout(400);
+  await settle(page);
   const viaKey = await paletteOpen();
   viaKey ? PASS('Search · Ctrl-K opens') : FAIL('Search · Ctrl-K opens', 'Ctrl-K did not open the palette');
   if (viaKey) { await page.keyboard.press('Escape'); await page.waitForTimeout(250); }
@@ -456,7 +486,7 @@ if (!searchBtn) {
     const b = (await discover(page)).controls.find(c => c.region === 'chrome' && c.tag === 'button' && norm(c.name).includes('search'));
     if (!b) return false;
     await clickControl(page, b);
-    await page.waitForTimeout(400);
+    await settle(page);
     return paletteOpen();
   };
 
@@ -466,7 +496,7 @@ if (!searchBtn) {
     bag.reset();
     await paletteInput().fill('');
     await paletteInput().type(query, { delay: 25 });
-    await page.waitForTimeout(600);
+    await settle(page);
     const hit = await page.evaluate(m => {
       const links = [...document.querySelectorAll('.palette a, #palette-results a, [role="dialog"] [role="option"] a, [role="dialog"] li a')];
       const idx = links.findIndex(a => new RegExp(m, 'i').test(a.getAttribute('href') || ''));
@@ -500,7 +530,7 @@ if (!searchBtn) {
     bag.reset();
     await paletteInput().fill('');
     await paletteInput().type('Methodology', { delay: 25 });
-    await page.waitForTimeout(500);
+    await settle(page);
     const target = await page.evaluate(() => {
       const opts = [...document.querySelectorAll('.palette [role="option"], #palette-results li')];
       const hi = opts.find(o => o.getAttribute('aria-selected') === 'true') || opts[0];
@@ -533,15 +563,15 @@ else {
     return !p.hidden && r.width > 0 && r.height > 0;
   });
   await clickControl(page, bell);
-  await page.waitForTimeout(450);
+  await settle(page);
   const open = await panelVisible();
   if (!open) FAIL('Alerts bell · opens panel', 'bell click produced no visible panel — NO REAL ACTION');
   else if (bag.errors.length) FAIL('Alerts bell · opens panel', bag.errors.slice(0, 2).join(' | '));
   else PASS('Alerts bell · opens panel');
   if (open) {
     const closer = (await discover(page)).controls.find(c => c.region === 'alerts' && c.tag === 'button' && /close/i.test(c.name));
-    if (closer) { await clickControl(page, closer); await page.waitForTimeout(350); }
-    else { await page.keyboard.press('Escape'); await page.waitForTimeout(350); }
+    if (closer) { await clickControl(page, closer); await settle(page); }
+    else { await page.keyboard.press('Escape'); await settle(page); }
     (await panelVisible()) ? FAIL('Alerts bell · closes', 'panel stayed open') : PASS('Alerts bell · closes');
   } else FAIL('Alerts bell · closes', 'panel never opened');
 }
@@ -583,18 +613,18 @@ if (!pro) {
     return !d.closest('[hidden]') && !d.hasAttribute('hidden') && r.width > 0 && r.height > 0 && /pro|pricing|founding/i.test((d.getAttribute('aria-labelledby') ? document.getElementById(d.getAttribute('aria-labelledby'))?.innerText || '' : '') + ' ' + (d.className || '') + ' ' + (d.id || ''));
   }));
   await clickControl(page, pro);
-  await page.waitForTimeout(700);
+  await settle(page);
   const open = await dlg();
   if (!open) FAIL('NHL Pro · opens pricing', 'button produced no pricing dialog — NO REAL ACTION');
   else if (bag.errors.length) FAIL('NHL Pro · opens pricing', bag.errors.slice(0, 2).join(' | '));
   else PASS('NHL Pro · opens pricing');
   if (open) {
     await page.keyboard.press('Escape');
-    await page.waitForTimeout(400);
+    await settle(page);
     let still = await dlg();
     if (still) {
       const x = (await discover(page)).controls.find(c => c.region === 'pro-modal' && /close/i.test(c.name));
-      if (x) { await clickControl(page, x); await page.waitForTimeout(400); still = await dlg(); }
+      if (x) { await clickControl(page, x); await settle(page); still = await dlg(); }
     }
     still ? FAIL('NHL Pro · closes', 'dialog would not close') : PASS('NHL Pro · closes');
   } else FAIL('NHL Pro · closes', 'dialog never opened');
@@ -621,7 +651,7 @@ await ensureBoard(page, bag);
   else {
     const before = (await mountState(page)).hash;
     await page.evaluate(() => document.querySelector('#season-chip, .season-chip')?.click());
-    await page.waitForTimeout(700);
+    await settle(page);
     const after = await mountState(page);
     if (after.hash !== before || after.openPanels.length) PASS('Season chip', `interactive, ${before} → ${after.hash}`);
     else FAIL('Season chip', `looks clickable (cursor:${chip.cursor}) but the click does nothing — DEAD UI`);
@@ -638,7 +668,7 @@ await ensureBoard(page, bag);
   else {
     const before = (await mountState(page)).hash;
     await clickControl(page, ribbon);
-    await page.waitForTimeout(2200);
+    await settle(page);
     await waitForMount(page, { settle: 1500 });
     const after = await mountState(page);
     const panel = await page.evaluate(() => {
@@ -668,7 +698,7 @@ for (const [name, spec] of [
   const h0 = await boardHeading(page);
   const hash0 = (await mountState(page)).hash;
   await clickControl(page, c);
-  await page.waitForTimeout(2200);
+  await settle(page);
   const h1 = await boardHeading(page);
   const hash1 = (await mountState(page)).hash;
   if (h1 === h0 && hash1 === hash0) FAIL(name, 'neither the URL nor the board date changed — NO REAL ACTION');
@@ -700,7 +730,7 @@ for (const label of ['Today', 'Tomorrow', 'Next slate']) {
   bag.reset();
   const before = await boardHeading(page);
   await clickControl(page, c);
-  await page.waitForTimeout(2400);
+  await settle(page);
   const after = await boardHeading(page);
   const m = await mountState(page);
   const hash = m.hash;
@@ -725,14 +755,14 @@ await ensureBoard(page, bag);
   else {
     // Move off today first so the control has something to do.
     const shift = pick((await discover(page)).controls, { region: 'board', names: ['next day', 'next'], tag: 'button' });
-    if (shift) { await clickControl(page, shift); await page.waitForTimeout(2000); }
+    if (shift) { await clickControl(page, shift); await settle(page); }
     bag.reset();
     const before = await boardHeading(page);
     const live = pick((await discover(page)).controls, { region: 'board', names: ['today'], tag: 'button' });
     if (!live) MISSING('Board · Today', 'control vanished after a date shift');
     else {
       await clickControl(page, live);
-      await page.waitForTimeout(2200);
+      await settle(page);
       const after = await boardHeading(page);
       const hash = (await mountState(page)).hash;
       if (after === before) FAIL('Board · Today', 'board did not return to today');
@@ -753,7 +783,7 @@ await ensureBoard(page, bag);
     const target = new Date(Date.now() + 3 * 86400000).toISOString().slice(0, 10);
     await page.locator(c.path).first().fill(target);
     await page.locator(c.path).first().dispatchEvent('change');
-    await page.waitForTimeout(2300);
+    await settle(page);
     const after = await boardHeading(page);
     const hash = (await mountState(page)).hash;
     if (after === before && !hash.includes(target)) FAIL('Board · Date input', `setting ${target} changed nothing — NO REAL ACTION`);
@@ -803,7 +833,7 @@ await ensureBoard(page, bag);
   } else {
     bag.reset();
     await clickControl(page, summary);
-    await page.waitForTimeout(450);
+    await settle(page);
     const after = await page.evaluate(() => [...document.querySelectorAll('#main [data-filter]')]
       .filter(c => { const r = c.getBoundingClientRect(); return r.width > 0 && r.height > 0; }).length);
     if (after < 4) FAIL('Filters · quiet disclosure opens', `opened but only ${after} chips became visible`);
@@ -832,7 +862,7 @@ if (!gamesDate) {
       body: (document.querySelector('#ice-board, .board')?.innerText || '').slice(0, 2500)
     }), CARD_SEL);
     await clickControl(page, c);
-    await page.waitForTimeout(1100);
+    await settle(page);
     const state = await page.evaluate(p => document.querySelector(p)?.getAttribute('aria-pressed'), c.path);
     const after = await page.evaluate(sel => ({
       cards: document.querySelectorAll(sel).length,
@@ -907,7 +937,7 @@ inv = await discover(page);
     const before = await mountState(page);
     const beforeBoard = await boardHeading(page);
     await clickPath(page, cta.path);
-    await page.waitForTimeout(1800);
+    await settle(page);
     await waitForMount(page, { settle: 1400 });
     const after = await mountState(page);
     const y = await page.evaluate(() => window.scrollY);
@@ -973,8 +1003,12 @@ await namedNav('What Changed · Newsroom link', { regions: ['changes', 'hero'], 
     if (links.length > 1) {
       await ensureBoard(page, bag);
       const again = (await discover(page)).controls.filter(c => c.region === 'hero' && c.tag === 'a' && /^#\/(cast|matchup)\//.test(c.href));
-      const r2 = await act(page, bag, again[again.length - 1], { settle: 2600 });
-      assertNav(`Next puck drop · matchup link (${again[again.length - 1].name.slice(0, 24)})`, r2, { hashRe: /^#\/(cast|matchup)\/\d{10}/ });
+      const last = again[again.length - 1];
+      if (!last) MISSING('Next puck drop · matchup link (last)', 'the hero re-rendered without its matchup links');
+      else {
+        const r2 = await act(page, bag, last, { settle: 2600 });
+        assertNav(`Next puck drop · matchup link (${last.name.slice(0, 24)})`, r2, { hashRe: /^#\/(cast|matchup)\/\d{10}/ });
+      }
     }
   }
 }
@@ -988,7 +1022,7 @@ await namedNav('What Changed · Newsroom link', { regions: ['changes', 'hero'], 
     bag.reset();
     const before = await boardHeading(page);
     await clickControl(page, c);
-    await page.waitForTimeout(2400);
+    await settle(page);
     const after = await boardHeading(page);
     const hash = (await mountState(page)).hash;
     if (after === before) FAIL('Board · Next Slate', 'board did not move to the next slate — NO REAL ACTION');
@@ -1021,7 +1055,7 @@ await namedNav('What Changed · Newsroom link', { regions: ['changes', 'hero'], 
     }, detailSummary.name);
     await page.waitForTimeout(250);
     await clickControl(page, detailSummary);
-    await page.waitForTimeout(500);
+    await settle(page);
     const after = await page.evaluate(n => {
       const d = [...document.querySelectorAll('#main details')].find(x => (x.querySelector('summary')?.innerText || '').trim() === n);
       return d ? { open: d.open, visible: [...d.querySelectorAll('li')].filter(li => li.checkVisibility?.({ checkVisibilityCSS: true, contentVisibilityAuto: true }) ?? true).length } : null;
@@ -1197,7 +1231,7 @@ if (!QUICK) {
         await new Promise(r => setTimeout(r, 1600));
         window.scrollTo(0, 0);
       });
-      await rb.page.waitForTimeout(2200);
+      await settle(rb.page);
       const m = await viewportMetrics(rb.page);
       const shot = path.resolve(REPO, OUT_DIR, `${LABEL}-board-${width}.png`);
       await rb.page.screenshot({ path: shot, fullPage: false });
@@ -1247,7 +1281,7 @@ if (!QUICK) {
         // it passes by staying mounted and marked current.
         const sameRoute = (b.href || '').replace(/^#/, '') === (before.hash || '#/').replace(/^#/, '');
         await clickControl(mb.page, b);
-        await mb.page.waitForTimeout(1800);
+        await settle(mb.page);
         await waitForMount(mb.page, { settle: 1200 });
         const after = await mountState(mb.page);
         const moved = sameRoute ? after.hash === before.hash : after.hash !== before.hash;
@@ -1264,7 +1298,7 @@ if (!QUICK) {
     else {
       mb.reset();
       await clickControl(mb.page, sheetBtn);
-      await mb.page.waitForTimeout(600);
+      await settle(mb.page);
       const items = (await discover(mb.page)).controls.filter(c => c.region === 'sheet' && c.visible && c.tag === 'a' && /^#/.test(c.href));
       if (!items.length) FAIL('Mobile · More sheet', 'sheet opened no navigable items — NO REAL ACTION');
       else {
@@ -1274,7 +1308,7 @@ if (!QUICK) {
         const here = (before.hash || '#/').replace(/^#/, '') || '/';
         const target = items.find(i => (i.href || '').replace(/^#/, '') !== here) || items[0];
         await clickControl(mb.page, target);
-        await mb.page.waitForTimeout(1800);
+        await settle(mb.page);
         await waitForMount(mb.page, { settle: 1200 });
         const after = await mountState(mb.page);
         const sheetClosed = await mb.page.evaluate(() => {
@@ -1297,19 +1331,7 @@ if (!QUICK) {
 await browser.close();
 
 // ── report ───────────────────────────────────────────────────────────────────
-const pad = Math.min(62, Math.max(...results.map(r => r.name.length)) + 1);
-console.log(`\n── ICE BOARD INTERACTION REPORT · ${LABEL} · ${BASE} ──\n`);
-for (const r of results) {
-  console.log(`${r.name.padEnd(pad)} — ${r.status}${r.status === 'PASS' ? '' : `  [${r.detail}]`}`);
-}
-const totals = results.reduce((a, r) => { a[r.status] = (a[r.status] || 0) + 1; return a; }, {});
-console.log(`\nTOTALS  PASS ${totals.PASS || 0} · FAIL ${totals.FAIL || 0} · MISSING ${totals.MISSING || 0} · controls discovered ${inventory.controls.length}`);
-console.log(`screenshots: ${path.resolve(REPO, OUT_DIR)}`);
-
-if (JSON_OUT) {
-  fs.writeFileSync(path.resolve(REPO, JSON_OUT), JSON.stringify({ label: LABEL, base: BASE, at: new Date().toISOString(), totals, results, inventory }, null, 2));
-  console.log(`json: ${JSON_OUT}`);
-}
+const totals = report();
 
 const bad = (totals.FAIL || 0) + (totals.MISSING || 0);
 if (bad) {

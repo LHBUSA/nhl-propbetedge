@@ -137,6 +137,24 @@ test('OPEN_FOR_PURCHASE false never exposes checkout', () => {
   assert.ok(guardIndex !== -1 && guardIndex < assignIndex, 'the purchase guard precedes any navigation');
 });
 
+// A browser proof (scratch harness, three states + five failure modes) showed
+// the sign-in form stuck on "Sending…" forever when the gateway could not be
+// reached: fetch rejected, nothing caught it, and the reader was left mid-
+// action with an unhandled TypeError in the console. The contract below is
+// what stops that coming back.
+test('a call that never reaches the gateway is reported, not swallowed', () => {
+  const account = read('src/lib/account.js');
+  const call = account.match(/async function authCall\([\s\S]*?\n\}/)[0];
+  assert.match(call, /try \{[\s\S]*?await fetch\([\s\S]*?\} catch \{[\s\S]*?return \{ status: 0, data: null \};/,
+    'a transport failure resolves with status 0 instead of rejecting');
+  assert.match(account, /if \(status === 0\) return \{ ok: false, message: 'Could not reach the sign-in service/,
+    'and the sign-in request turns that into a plain, retryable message');
+  assert.match(account, /status === 0 \|\| status >= 500 \? 'unavailable' : 'expired'/,
+    'a link cannot be called expired merely because the network failed');
+  // The failure path must never look like the success path.
+  assert.ok(!/status === 0[^\n]*ok: true/.test(account), 'no failure is ever reported as success');
+});
+
 test('when readiness is true the legitimate sign-in path returns', () => {
   const wire = pro.match(/async function wireAccount\(\)[\s\S]*?\n\}/)[0];
   assert.match(wire, /const available = await signInAvailable\(\)/);

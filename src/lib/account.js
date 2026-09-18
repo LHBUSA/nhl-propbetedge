@@ -32,13 +32,21 @@ export async function signInAvailable() {
 
 async function authCall(path, { method = 'GET', body } = {}) {
   if (!/^\/(auth|pro)\//.test(path)) throw new Error('account.js only talks to /auth and /pro');
-  const res = await fetch(`${GATEWAY_URL}${path}`, {
-    method,
-    mode: 'cors',
-    credentials: 'include',
-    headers: { Accept: 'application/json', ...(body ? { 'Content-Type': 'application/json' } : {}) },
-    body: body ? JSON.stringify(body) : undefined
-  });
+  let res;
+  try {
+    res = await fetch(`${GATEWAY_URL}${path}`, {
+      method,
+      mode: 'cors',
+      credentials: 'include',
+      headers: { Accept: 'application/json', ...(body ? { 'Content-Type': 'application/json' } : {}) },
+      body: body ? JSON.stringify(body) : undefined
+    });
+  } catch {
+    // The call never reached the gateway (offline, DNS, CORS refusal). Status 0
+    // means "no answer": callers must report that as a failure, never let it
+    // escape as an unhandled rejection that leaves the UI mid-action.
+    return { status: 0, data: null };
+  }
   let data = null;
   try { data = await res.json(); } catch { /* handled by status */ }
   return { status: res.status, data };
@@ -76,6 +84,7 @@ export async function refreshAccount() {
 export async function requestSignIn(email) {
   const { status, data } = await authCall('/auth/request', { method: 'POST', body: { email } });
   if (status === 200) return { ok: true, message: data?.message || 'If that email has NHL Pro access, a sign-in link has been sent.' };
+  if (status === 0) return { ok: false, message: 'Could not reach the sign-in service. Check your connection and try again.' };
   if (status === 429) return { ok: false, message: 'Too many requests. Wait a minute and try again.' };
   return { ok: false, message: data?.error || 'Sign-in is unavailable right now.' };
 }
@@ -86,7 +95,9 @@ export async function confirmSignIn(token) {
     await refreshAccount();
     return { ok: true };
   }
-  const error = data?.error || (status >= 500 ? 'unavailable' : 'expired');
+  // No answer at all is "unavailable" (worth retrying), never "expired" (which
+  // would tell someone their perfectly good link is dead).
+  const error = data?.error || (status === 0 || status >= 500 ? 'unavailable' : 'expired');
   return { ok: false, error };
 }
 

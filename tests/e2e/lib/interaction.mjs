@@ -37,6 +37,10 @@ export async function launchBrowser() {
   return chromium.launch({ headless: true, executablePath: CHROME_PATH });
 }
 
+// Requests whose completion changes what is on screen. Anything else (beacons,
+// fonts) must not hold the gate open.
+const RENDERING_REQUEST = /nhl-api\.propbetedge\.ai|propbet-news-api|propbet-img-proxy|\/assets\//;
+
 /**
  * Create a page with error capture and (optionally) the Node-side gateway relay.
  * Returns { page, errors, reset() } — `errors` accumulates page errors and
@@ -45,6 +49,15 @@ export async function launchBrowser() {
 export async function makePage(context, { relay = true } = {}) {
   const page = await context.newPage();
   const errors = [];
+  // In-flight count of the requests that can still change the page. settle()
+  // reads this, so the gate waits for the render to finish instead of
+  // guessing how long it takes.
+  let inflight = 0;
+  page.__pbeInflight = () => inflight;
+  page.on('request', r => { if (RENDERING_REQUEST.test(r.url())) inflight++; });
+  const done = r => { if (RENDERING_REQUEST.test(r.url())) inflight = Math.max(0, inflight - 1); };
+  page.on('requestfinished', done);
+  page.on('requestfailed', done);
   page.on('pageerror', e => errors.push(`pageerror: ${e.message}`.slice(0, 300)));
   page.on('console', m => {
     if (m.type() !== 'error') return;
@@ -53,9 +66,14 @@ export async function makePage(context, { relay = true } = {}) {
     errors.push(`console: ${text.slice(0, 220)}`);
   });
 
+  // Deliberate upstream latency, used to prove the gate does not depend on how
+  // fast the gateway answers. Zero unless a run asks for it.
+  const slowMs = Number(process.env.PBE_E2E_SLOW || 0);
+
   if (relay) {
     const proxy = async route => {
       const url = route.request().url();
+      if (slowMs) await new Promise(r => setTimeout(r, slowMs));
       try {
         const upstream = await fetch(url, {
           headers: { Accept: 'application/json', Origin: PRODUCT_ORIGIN, Referer: `${PRODUCT_ORIGIN}/` }
@@ -92,10 +110,66 @@ export async function gotoHash(page, base, hash, { settle = 2500 } = {}) {
 }
 
 /**
- * Wait until #main looks genuinely mounted: real element children, real text,
- * and not still a pure skeleton. Never throws — callers assert on the result.
+ * A cheap fingerprint of everything the gate asserts on. When this stops
+ * changing AND no rendering request is in flight, the page is done — which is
+ * the condition the old fixed sleeps were standing in for.
  */
-export async function waitForMount(page, { timeout = 12000, settle = 1200 } = {}) {
+const SIGNATURE = () => {
+  const main = document.querySelector('#main');
+  const sel = 'a[href], button, [role="button"], input, select, textarea, summary';
+  const panels = [...document.querySelectorAll('[role="dialog"], [role="menu"], .palette:not([hidden]), .alert-center:not([hidden]), .sheet')]
+    .map(el => {
+      const r = el.getBoundingClientRect();
+      // Rounded geometry: a panel still sliding in keeps changing this, so an
+      // animation cannot be mistaken for a finished state.
+      return `${el.id || el.className}:${Math.round(r.top)}x${Math.round(r.height)}`;
+    });
+  return [
+    location.hash,
+    main?.children.length || 0,
+    main?.querySelectorAll('*').length || 0,
+    (main?.innerText || '').trim().length,
+    main?.querySelectorAll('.pbe-skeleton').length || 0,
+    document.querySelectorAll(sel).length,
+    document.images.length,
+    [...document.images].filter(i => i.complete).length,
+    panels.join(',')
+  ].join('|');
+};
+
+/**
+ * Wait for a finished render: no rendering request in flight and a page
+ * signature that has held steady for `idleMs`.
+ *
+ * Returns { settled, waitedMs, reason } — never throws and never silently
+ * proceeds: a timeout is reported so a slow render shows up as itself rather
+ * than as a mystery failure somewhere later.
+ */
+export async function settle(page, { idleMs = 400, timeout = 15000 } = {}) {
+  const started = Date.now();
+  const deadline = started + timeout;
+  let last = null;
+  let stableSince = 0;
+  while (Date.now() < deadline) {
+    const busy = typeof page.__pbeInflight === 'function' ? page.__pbeInflight() > 0 : false;
+    let sig;
+    try { sig = await page.evaluate(SIGNATURE); } catch { return { settled: false, waitedMs: Date.now() - started, reason: 'page gone' }; }
+    if (busy) { last = sig; stableSince = 0; }
+    else if (sig === last) {
+      if (!stableSince) stableSince = Date.now();
+      if (Date.now() - stableSince >= idleMs) return { settled: true, waitedMs: Date.now() - started, reason: '' };
+    } else { last = sig; stableSince = 0; }
+    await page.waitForTimeout(50);
+  }
+  return { settled: false, waitedMs: Date.now() - started, reason: 'still changing at timeout' };
+}
+
+/**
+ * Wait until #main looks genuinely mounted: real element children, real text,
+ * and not still a pure skeleton — then wait for the render to actually finish.
+ * Never throws — callers assert on the result.
+ */
+export async function waitForMount(page, { timeout = 12000, settle: idleMs = 400 } = {}) {
   try {
     await page.waitForFunction(() => {
       const main = document.querySelector('#main');
@@ -107,7 +181,7 @@ export async function waitForMount(page, { timeout = 12000, settle = 1200 } = {}
       return skeletons === 0 && realNodes > 6;
     }, null, { timeout });
   } catch { /* fall through — mountState() reports the truth */ }
-  await page.waitForTimeout(settle);
+  return settle(page, { idleMs: Math.min(Math.max(idleMs, 250), 800), timeout: Math.max(timeout, 15000) });
 }
 
 /** Describe what is currently mounted in #main. */
