@@ -501,28 +501,43 @@ export function picksBlock(state) {
   const f = picksBlockFacts(state);
   const dateText = f.date ? dateLabel(f.date, { long: true }) : null;
   const officialLive = f.official && f.official !== 'None';
+  const scheduled = Number.isFinite(Number(f.scheduled)) ? Number(f.scheduled) : null;
+  const slateLine = dateText
+    ? (scheduled === null ? dateText : `${dateText} · ${scheduled} game${scheduled === 1 ? '' : 's'}`)
+    : 'Next slate';
+
+  const title = officialLive
+    ? 'Official PBE Picks are live'
+    : f.available
+      ? 'PBE is running the next slate'
+      : 'PBE Picks';
+
+  const badge = officialLive
+    ? 'PICKS LIVE'
+    : f.available && f.pipelineActive
+      ? 'MODEL RUNNING'
+      : f.available
+        ? 'PICKS PREPARING'
+        : 'UNAVAILABLE';
+
+  const copy = officialLive
+    ? `${slateLine}. ${f.publishedPicks ?? 0} locked pick${Number(f.publishedPicks) === 1 ? '' : 's'} published for this slate. Every call is locked before puck drop and carried into the public track record.`
+    : f.available
+      ? `${slateLine}. PBE is running model rehearsals for this slate. Picks stay off the homepage until they are ready to publish; every public call will be locked before puck drop and tracked from day one.`
+      : 'PBE Picks is temporarily unavailable. The Ice Board stays live, and no pick or probability is invented while the picks service is offline.';
+
   return `<section class="picks-entry" aria-labelledby="picks-entry-h">
     <div class="picks-entry__head">
       <div>
         <span class="eyebrow">PBE Picks</span>
-        <h2 id="picks-entry-h">${esc(officialLive ? 'Official model picks for this slate' : 'No official model — so no pick is published')}</h2>
+        <h2 id="picks-entry-h">${esc(title)}</h2>
       </div>
-      <span class="pbe-badge pbe-badge--${officialLive ? 'model' : f.available ? 'heuristic' : 'unavailable'}">${esc(officialLive ? 'OFFICIAL MODEL LIVE' : f.available ? 'NO OFFICIAL MODEL' : 'PIPELINE UNAVAILABLE')}</span>
+      <span class="pbe-badge pbe-badge--${officialLive ? 'model' : f.available ? 'heuristic' : 'unavailable'}">${esc(badge)}</span>
     </div>
-    <dl class="picks-entry__facts">
-      ${factRow('Slate', dateText && f.scheduled !== null ? `${dateText} · ${f.scheduled} scheduled` : dateText, 'Games in scope for the next lock pass.')}
-      ${factRow('Lock target', f.lockMinutes === null ? null : `T-${f.lockMinutes}`, f.lockMinutes === null ? 'From the frozen lock policy.' : `${f.lockMinutes} minutes before puck drop${f.lockPolicy ? ` · ${f.lockPolicy}` : ''}`)}
-      ${factRow('Official model', f.official, 'The champion whose picks would be locked and graded in public.')}
-      ${factRow('Prospective pipeline', f.pipelineActive === null ? null : f.pipelineActive ? 'Active' : 'Not running',
-    f.pipelineAt ? `Last run ${dayET(f.pipelineAt)} ${timeET(f.pipelineAt)}` : 'Shadow output never reaches this page.')}
-      ${factRow('Published picks', f.publishedPicks, 'Locked by an official model before puck drop.')}
-    </dl>
-    <p class="picks-entry__rule dim">${esc(f.available
-    ? 'No pick, probability or edge is shown anywhere on this site until a versioned model is promoted to champion and its calls are locked before puck drop. Shadow output is scored privately and never published.'
-    : 'The PBE Picks read API is not served by this gateway, so the fields above are blank rather than assumed. No prediction state has been inferred.')}</p>
+    <p class="picks-entry__rule dim">${esc(copy)}</p>
     <div class="picks-entry__cta">
       <a class="pbe-btn pbe-btn--primary" href="#/pbe-picks${f.date ? `?date=${esc(f.date)}` : ''}">Open PBE Picks</a>
-      <a class="pbe-btn pbe-btn--ghost" href="#/methodology">How a model becomes a pick</a>
+      <a class="pbe-btn pbe-btn--ghost" href="#/methodology">How picks are tracked</a>
     </div>
   </section>`;
 }
