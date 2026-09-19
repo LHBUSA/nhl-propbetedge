@@ -174,3 +174,9 @@
 .pks-card__model { overflow-wrap: anywhere; }
 .pks-card--rehearsal, .pks-rehearsal, .pks-splitsquad { min-width: 0; max-width: 100%; }
 .pks-rehearsal__cards { min-width: 0; }
+
+/* The split-squad badge is one long unbreakable line
+   (NO REHEARSAL CALL · SPLIT-SQUAD IDENTITY EXCLUDED). At 390px it was 384px
+   wide inside the panel padding and pushed the document 44px sideways. Let it
+   wrap and let it shrink. */
+.pks-splitsquad .pbe-badge { display: inline-block; max-width: 100%; white-space: normal; overflow-wrap: anywhere; line-height: 1.35; }
