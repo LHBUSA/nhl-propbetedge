@@ -76,13 +76,14 @@ test('split-squad games are named and explained, never silently dropped', () => 
 });
 
 test('split-squad detection mirrors the runner: a club twice on one date', () => {
-  const board = { games: [
-    { id: 1, home: { abbrev: 'STL' }, away: { abbrev: 'DAL' } },
-    { id: 2, home: { abbrev: 'TOR' }, away: { abbrev: 'MTL' } },
-    { id: 3, home: { abbrev: 'MTL' }, away: { abbrev: 'TOR' } },
-    { id: 4, home: { abbrev: 'SEA' }, away: { abbrev: 'VAN' } }
+  // the real picks-slate shape
+  const slate = { games: [
+    { game_id: 1, home: { abbrev: 'STL' }, away: { abbrev: 'DAL' } },
+    { game_id: 2, home: { abbrev: 'TOR' }, away: { abbrev: 'MTL' } },
+    { game_id: 3, home: { abbrev: 'MTL' }, away: { abbrev: 'TOR' } },
+    { game_id: 4, home: { abbrev: 'SEA' }, away: { abbrev: 'VAN' } }
   ] };
-  const flagged = splitSquadGames(board);
+  const flagged = splitSquadGames(slate);
   assert.equal(flagged.length, 2);
   assert.deepEqual(flagged.map(g => g.game_id).sort(), [2, 3]);
 });

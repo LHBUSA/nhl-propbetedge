@@ -593,8 +593,10 @@ function lockLabel(utc) {
 // than quietly dropping the fixture.
 // Mirrors the runner's rule (markSplitSquad): a club appearing in more than one
 // game on the same date is icing two rosters, so neither game gets a call.
-export function splitSquadGames(board) {
-  const games = Array.isArray(board?.games) ? board.games : [];
+export function splitSquadGames(source) {
+  // The picks SLATE lists every fixture on the date, including the split-squad
+  // pair the runner excluded; the board route does not. Accept either shape.
+  const games = Array.isArray(source?.games) ? source.games : Array.isArray(source) ? source : [];
   const perClub = new Map();
   for (const g of games) {
     for (const t of [g?.home?.abbrev || g?.home, g?.away?.abbrev || g?.away]) {
@@ -603,7 +605,7 @@ export function splitSquadGames(board) {
   }
   return games
     .filter(g => [g?.home?.abbrev || g?.home, g?.away?.abbrev || g?.away].some(t => t && perClub.get(t) > 1))
-    .map(g => ({ home: g?.home?.abbrev || g?.home || '', away: g?.away?.abbrev || g?.away || '', game_id: g?.id || g?.game_id || null }));
+    .map(g => ({ home: g?.home?.abbrev || g?.home || '', away: g?.away?.abbrev || g?.away || '', game_id: g?.game_id || g?.id || null }));
 }
 
 export function splitSquadNotice(games) {
@@ -771,7 +773,7 @@ export function mount(root, params, ctx) {
     const data = await loadPicksData({ date: state.date, account: state.account, signal });
     if (mine !== token) return;
     Object.assign(state, data);
-    state.splitSquad = splitSquadGames(state.board);
+    state.splitSquad = splitSquadGames(state.slate || state.board);
     render();
   }
 
