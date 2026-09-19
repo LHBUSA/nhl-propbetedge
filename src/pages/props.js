@@ -71,7 +71,7 @@ function boardFrame(hasMarket = false) {
 
 function coveragePanel() {
   return `<section class="pbe-panel dk-cov">
-    <div class="panel-head"><div><span class="eyebrow">Verified market coverage</span><h3>The Odds API · checked ${esc(dateLabel(COVERAGE_DATE))}, 2026</h3></div><span class="pbe-badge pbe-badge--sched">One-time check</span></div>
+    <div class="panel-head"><div><span class="eyebrow">Verified market coverage</span><h3>PropSports Market Feed · checked ${esc(dateLabel(COVERAGE_DATE))}, 2026</h3></div><span class="pbe-badge pbe-badge--sched">One-time check</span></div>
     <p class="dim dk-cov__lede">What US books had posted for the NHL opener (FLA @ CAR, Sep 29) 18 days out. Coverage only — prices were not stored for display.</p>
     <div class="table-wrap" tabindex="0" role="region" aria-label="Verified market coverage"><table class="pbe-table dk-covtable">
       <thead><tr><th>Market</th><th>Books posting</th><th>Status</th></tr></thead>
