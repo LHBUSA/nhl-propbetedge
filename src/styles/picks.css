@@ -180,3 +180,58 @@
    wide inside the panel padding and pushed the document 44px sideways. Let it
    wrap and let it shrink. */
 .pks-splitsquad .pbe-badge { display: inline-block; max-width: 100%; white-space: normal; overflow-wrap: anywhere; line-height: 1.35; }
+
+/* ---- consumer preseason presentation -------------------------------------
+   The pick is the star. Governance language lives far below. */
+.pbe-badge--preseason { background: rgba(120, 170, 255, .14); color: #9fc4ff; border: 1px solid rgba(120, 170, 255, .34); letter-spacing: .07em; font-size: .66rem; }
+.pbe-badge--quiet { background: rgba(255,255,255,.05); color: rgba(255,255,255,.62); border: 1px solid rgba(255,255,255,.12); letter-spacing: .06em; font-size: .66rem; }
+
+.pks-hero--picks .pks-hero__eyebrow { display: inline-block; font-size: .72rem; letter-spacing: .12em; text-transform: uppercase; opacity: .7; margin-bottom: 8px; }
+.pks-hero__stats { display: flex; flex-wrap: wrap; gap: 14px 32px; list-style: none; margin: 18px 0 0; padding: 0; }
+.pks-hero__stats li { display: flex; flex-direction: column; min-width: 0; }
+.pks-hero__stats li b { font-size: 1.9rem; line-height: 1.05; font-variant-numeric: tabular-nums; }
+.pks-hero__stats li span { font-size: .72rem; letter-spacing: .06em; text-transform: uppercase; opacity: .62; }
+
+.pks-preseason { margin: 22px 0 8px; }
+.pks-record { display: flex; flex-direction: column; gap: 6px; padding: 14px 16px; border: 1px solid rgba(255,255,255,.1); border-radius: 12px; background: linear-gradient(180deg, rgba(255,255,255,.04), rgba(255,255,255,.015)); }
+.pks-record__title { font-size: .74rem; letter-spacing: .1em; text-transform: uppercase; opacity: .72; }
+.pks-record ul { display: flex; flex-wrap: wrap; gap: 12px 30px; list-style: none; margin: 4px 0 2px; padding: 0; }
+.pks-record li { display: flex; flex-direction: column; min-width: 0; }
+.pks-record li b { font-size: 1.5rem; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.pks-record li span { font-size: .68rem; letter-spacing: .05em; text-transform: uppercase; opacity: .6; }
+.pks-record p { margin: 2px 0 0; opacity: .62; }
+
+.pks-modelmini { display: flex; flex-wrap: wrap; gap: 10px 26px; margin: 10px 2px 0; }
+.pks-modelmini div { display: flex; flex-direction: column; min-width: 0; }
+.pks-modelmini dt { font-size: .66rem; letter-spacing: .05em; text-transform: uppercase; opacity: .55; }
+.pks-modelmini dd { margin: 0; font-size: .92rem; }
+
+.pks-picks { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); margin-top: 14px; }
+.pks-pick { min-width: 0; border: 1px solid rgba(255,255,255,.1); border-radius: 14px; padding: 15px 16px; background: rgba(255,255,255,.025); }
+.pks-pick__head { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.pks-pick__match { font-weight: 600; font-size: .95rem; }
+.pks-pick__call { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin: 12px 0 14px; }
+.pks-pick__label { flex: 0 0 100%; font-size: .68rem; letter-spacing: .09em; text-transform: uppercase; opacity: .6; }
+.pks-pick__team { font-size: 2rem; line-height: 1; }
+.pks-pick__prob { font-size: 1.15rem; font-variant-numeric: tabular-nums; opacity: .9; }
+.pks-pick__call--none .pks-pick__team { font-size: 1.05rem; font-weight: 500; opacity: .72; }
+.pks-pick__grid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 9px 16px; margin: 0 0 12px; }
+.pks-pick__grid > div { min-width: 0; }
+.pks-pick__grid dt { font-size: .66rem; letter-spacing: .05em; text-transform: uppercase; opacity: .55; }
+.pks-pick__grid dd { margin: 0; min-width: 0; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.pks-pick__result--win { color: #58c489; }
+.pks-pick__result--loss { color: #e06b6b; }
+.pks-pick__cta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 10px; }
+.pks-pick__foot { margin: 0; opacity: .5; letter-spacing: .04em; }
+
+.pks-nopick { display: grid; gap: 10px; grid-template-columns: repeat(auto-fill, minmax(290px, 1fr)); margin-top: 12px; }
+.pks-nopick__game { min-width: 0; border: 1px dashed rgba(255,255,255,.14); border-radius: 12px; padding: 13px 15px; }
+.pks-nopick__game header { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+.pks-nopick__game .pbe-badge { max-width: 100%; white-space: normal; overflow-wrap: anywhere; }
+.pks-nopick__game p { margin: 8px 0 0; opacity: .62; max-width: 46ch; }
+
+@media (max-width: 520px) {
+  .pks-picks, .pks-nopick { grid-template-columns: 1fr; }
+  .pks-hero__stats li b { font-size: 1.6rem; }
+  .pks-pick__team { font-size: 1.7rem; }
+}

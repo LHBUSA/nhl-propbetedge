@@ -241,6 +241,17 @@ function statusRow(label, value, note = '') {
   return `<div><dt>${esc(label)}</dt><dd class="mono">${value === null || value === undefined ? DASH : esc(String(value))}</dd>${note ? `<dd class="pks-kv__note micro">${esc(note)}</dd>` : ''}</div>`;
 }
 
+export function consumerModelStatus(state) {
+  const status = modelStatusOf(state.slate, state.health);
+  const version = status ? readKey(status, ['model_version']) : null;
+  if (!isPreseasonPickMode(state)) return '';
+  return `<div class="pks-modelmini">
+    <div><dt>Model</dt><dd>${esc(consumerModelName(version))}</dd></div>
+    <div><dt>Mode</dt><dd>Preseason</dd></div>
+    <div><dt>Status</dt><dd>Active</dd></div>
+  </div>`;
+}
+
 export function modelStatusBlock(state, { quiet = false } = {}) {
   const status = modelStatusOf(state.slate, state.health);
   const official = hasOfficialModel(status);
@@ -497,7 +508,7 @@ const PREDICTION_LEGEND = [
   ['NONE', 'No prediction exists for this game.'],
   ['SNAPSHOT_READY', 'The feature snapshot is built; nothing has been locked.'],
   ['LOCKED_INTERNAL', 'A shadow candidate locked internally. Not a pick, never shown as one.'],
-  ['LOCKED_REHEARSAL', 'A preseason rehearsal call, locked before puck drop and shown as a rehearsal. Excluded from the official record.'],
+  ['LOCKED_REHEARSAL', 'A preseason pick, locked before puck drop. Tracked separately from the regular-season record.'],
   ['LOCKED_OFFICIAL', 'An official, publishable model locked this pick before puck drop.']
 ];
 
@@ -537,12 +548,34 @@ function proBlock(state) {
   </section>`;
 }
 
+// --------------------------------------------------------------- page mode
+// The page has three presentation modes. A locked preseason call is a REAL
+// pick to a reader, so the hero must never claim there are none while five of
+// them sit further down the same page.
+export const PICKS_MODE = Object.freeze({ PRESEASON: 'PRESEASON_PICKS', OFFICIAL: 'OFFICIAL_PICKS', NONE: 'NO_PICKS' });
+
+export function preseasonPicks(state) {
+  const games = state?.preseason?.ok === true && Array.isArray(state.preseason.games) ? state.preseason.games : [];
+  return games.filter(g => g && g.is_call === true);
+}
+
+export function isPreseasonPickMode(state) {
+  return preseasonPicks(state).length > 0;
+}
+
+export function picksMode(state, games = []) {
+  if (isPreseasonPickMode(state)) return PICKS_MODE.PRESEASON;
+  if (games.some(g => g.prediction_state === 'LOCKED_OFFICIAL')) return PICKS_MODE.OFFICIAL;
+  return PICKS_MODE.NONE;
+}
+
 // --------------------------------------------------------------- rehearsal
-// PRESEASON REHEARSAL. Deliberately its own block, its own badge and its own
-// record. It is never merged into the official slate and never counted in the
-// official track record.
-export const REHEARSAL_BADGE = 'PRESEASON · REHEARSAL';
-export const REHEARSAL_COPY = 'Locked before puck drop using the PBE NHL model pipeline. Preseason rehearsal only — excluded from the official regular-season PBE record.';
+// PRESEASON PICKS (backend record_class PRESEASON_REHEARSAL).
+// Public-facing these are simply preseason picks. They are still never merged
+// into the official slate and never counted in the official track record; that
+// separation is stated once, not repeated on every component.
+export const REHEARSAL_BADGE = 'PRESEASON';
+export const REHEARSAL_COPY = 'Preseason results are tracked separately and do not count toward the regular-season PBE record.';
 
 export function rehearsalCard(game) {
   const call = game.is_call === true && present(game.pick_team);
@@ -555,25 +588,44 @@ export function rehearsalCard(game) {
   const market = game.market_at_lock && typeof game.market_at_lock === 'object'
     ? String(game.market_at_lock.state || '')
     : String(game.market_at_lock || '');
-  return `<article class="pks-card pks-card--rehearsal" data-rehearsal="${esc(String(game.game_id))}">
-    <header class="pks-card__head">
-      <span class="pbe-badge pbe-badge--rehearsal">${REHEARSAL_BADGE}</span>
-      <span class="pks-card__match">${away} @ ${home}</span>
-      <time class="dim">${esc(puckLabel(game.puck_drop_utc))}</time>
+  const id = esc(String(game.game_id || ''));
+  return `<article class="pks-pick" data-rehearsal="${id}">
+    <header class="pks-pick__head">
+      <span class="pks-pick__match">${away} @ ${home}</span>
+      <span class="pbe-badge pbe-badge--preseason">PRESEASON</span>
     </header>
     ${call
-      ? `<div class="pks-card__call"><span class="eyebrow">PBE PRESEASON REHEARSAL PICK</span><b>${esc(game.pick_team)}</b>${pickP ? `<span class="pks-card__p">${pickP}</span>` : ''}</div>`
-      : `<div class="pks-card__call pks-card__call--none"><span class="eyebrow">NO REHEARSAL CALL</span><b>${esc(game.no_call_reason || 'no call')}</b></div>`}
-    <dl class="pks-card__grid">
+      ? `<div class="pks-pick__call">
+          <span class="pks-pick__label">PBE PRESEASON PICK</span>
+          <b class="pks-pick__team">${esc(game.pick_team)}</b>
+          ${pickP ? `<span class="pks-pick__prob">${pickP}</span>` : ''}
+        </div>`
+      : `<div class="pks-pick__call pks-pick__call--none">
+          <span class="pks-pick__label">NO PICK</span>
+          <b class="pks-pick__team">${esc(game.no_call_reason || 'no call')}</b>
+        </div>`}
+    <dl class="pks-pick__grid">
+      <div><dt>Puck Drop</dt><dd>${esc(puckLabel(game.puck_drop_utc))}</dd></div>
+      <div><dt>Locked</dt><dd>${esc(lockLabel(game.locked_at))}</dd></div>
+      <div><dt>Model</dt><dd>${esc(consumerModelName(game.model_version))}</dd></div>
+      <div><dt>Market</dt><dd>${esc(market || '—')}</dd></div>
       <div><dt>${home}</dt><dd>${ph || '—'}</dd></div>
       <div><dt>${away}</dt><dd>${pa || '—'}</dd></div>
-      <div><dt>Locked</dt><dd>${esc(lockLabel(game.locked_at))}</dd></div>
-      <div><dt>Model</dt><dd class="pks-card__model">${esc(game.model_version || '—')}</dd></div>
-      ${market ? `<div><dt>Market at lock</dt><dd>${esc(market)}</dd></div>` : ''}
-      ${graded ? `<div><dt>Result</dt><dd class="pks-card__result pks-card__result--${esc(String(game.result).toLowerCase())}">${esc(game.result)}${present(game.home_score) ? ` · ${esc(String(game.away_score))}–${esc(String(game.home_score))}` : ''}</dd></div>` : ''}
+      ${graded ? `<div><dt>Result</dt><dd class="pks-pick__result pks-pick__result--${esc(String(game.result).toLowerCase())}">${esc(game.result)}${present(game.home_score) ? ` · ${esc(String(game.away_score))}–${esc(String(game.home_score))}` : ''}</dd></div>` : ''}
     </dl>
-    <p class="pks-card__foot dim">Rehearsal · not an official PBE pick · excluded from the official record</p>
+    ${id ? `<div class="pks-pick__cta">
+      <a class="pbe-btn pbe-btn--ghost" href="#/matchup/${id}">Matchup</a>
+      <a class="pbe-btn pbe-btn--ghost" href="#/cast/${id}">PBE Cast</a>
+    </div>` : ''}
+    <p class="pks-pick__foot micro">PRESEASON · Tracked separately from the regular-season record.</p>
   </article>`;
+}
+
+// The reader does not need our artifact ids. "pbe-nhl-model-v1.1-shadow-da0d82a0"
+// becomes "PBE NHL v1.1"; the full id stays in the API and in Model Status.
+export function consumerModelName(version) {
+  const m = /v(\d+\.\d+)/.exec(String(version || ''));
+  return m ? `PBE NHL v${m[1]}` : 'PBE NHL model';
 }
 
 function puckLabel(utc) {
@@ -610,73 +662,46 @@ export function splitSquadGames(source) {
 
 export function splitSquadNotice(games) {
   if (!games || !games.length) return '';
-  return `<div class="pks-splitsquad">
-    <span class="pbe-badge pbe-badge--unavailable">NO REHEARSAL CALL · SPLIT-SQUAD IDENTITY EXCLUDED</span>
-    <p class="dim">${games.map(g => `${esc(g.away)} @ ${esc(g.home)}`).join(' · ')} — one club is icing two rosters at the same time. The team-level feature ledger cannot model them independently, so no call is made.</p>
+  return `<div class="pks-nopick">
+    ${games.map(g => `<article class="pks-nopick__game">
+      <header><span class="pks-pick__match">${esc(g.away)} @ ${esc(g.home)}</span><span class="pbe-badge pbe-badge--quiet">NO PICK · SPLIT SQUAD</span></header>
+      <p class="micro">Split-squad game. The current team-level model cannot reliably distinguish two rosters from the same club playing at the same time.</p>
+    </article>`).join('')}
+  </div>`;
+}
+
+export function preseasonRecordStrip(rec, count) {
+  const graded = rec?.graded ?? 0;
+  const wins = rec?.wins ?? 0;
+  const losses = rec?.losses ?? 0;
+  return `<div class="pks-record" aria-label="2026 preseason record">
+    <span class="pks-record__title">2026 PRESEASON RECORD</span>
+    <ul>
+      <li><b>${count}</b><span>picks</span></li>
+      <li><b>${graded}</b><span>graded</span></li>
+      <li><b>${graded ? `${wins}–${losses}` : '0–0'}</b><span>record</span></li>
+      <li><b>${rec && rec.accuracy !== null && rec.accuracy !== undefined ? `${(rec.accuracy * 100).toFixed(1)}%` : '—'}</b><span>accuracy</span></li>
+    </ul>
+    <p class="micro">Preseason results are tracked separately and do not count toward the regular-season PBE record.</p>
   </div>`;
 }
 
 export function rehearsalSection(state) {
   const data = state.preseason;
-  if (!data || data.ok !== true || !Array.isArray(data.games) || !data.games.length) {
-    if (state.preseasonError) {
-      return `<section class="pks-rehearsal pbe-panel"><header><span class="pbe-badge pbe-badge--rehearsal">${REHEARSAL_BADGE}</span><h2>Preseason rehearsal</h2></header><p class="dim">Rehearsal calls are unavailable right now.</p></section>`;
-    }
-    return '';
-  }
+  const games = data && data.ok === true && Array.isArray(data.games) ? data.games : [];
+  const splits = state.splitSquad || [];
+  if (!games.length && !splits.length) return '';
   const rec = state.preseasonRecord && state.preseasonRecord.ok === true ? state.preseasonRecord : null;
-  return `<section class="pks-rehearsal pbe-panel" data-fresh-scope>
-    <header class="pks-rehearsal__head">
-      <span class="pbe-badge pbe-badge--rehearsal">${REHEARSAL_BADGE}</span>
-      <h2>Preseason rehearsal calls</h2>
-      <p class="dim">${REHEARSAL_COPY}</p>
-    </header>
-    ${rec ? `<div class="pks-rehearsal__record" aria-label="2026 preseason rehearsal record">
-      <span class="eyebrow">2026 PRESEASON REHEARSAL RECORD</span>
-      <ul>
-        <li><b>${rec.locked_calls ?? 0}</b><span>locked calls</span></li>
-        <li><b>${rec.graded ? `${rec.wins}–${rec.losses}` : '—'}</b><span>W–L</span></li>
-        <li><b>${rec.accuracy === null || rec.accuracy === undefined ? '—' : `${(rec.accuracy * 100).toFixed(1)}%`}</b><span>accuracy</span></li>
-        <li><b>${rec.priced ?? 0}/${rec.unpriced ?? 0}</b><span>priced / unpriced</span></li>
-      </ul>
-      <p class="dim">${esc((rec.model_versions || []).join(', ') || '—')} · kept separate from the official PBE record.</p>
-    </div>` : ''}
-    <div class="pks-rehearsal__cards">${data.games.map(rehearsalCard).join('')}</div>
-    ${splitSquadNotice(state.splitSquad)}
+  const calls = games.filter(g => g.is_call === true);
+  return `<section class="pks-preseason" id="pks-preseason" data-fresh-scope>
+    ${calls.length ? preseasonRecordStrip(rec, calls.length) : ''}
+    ${consumerModelStatus(state)}
+    ${games.length ? `<div class="pks-picks">${games.map(rehearsalCard).join('')}</div>` : ''}
+    ${splitSquadNotice(splits)}
   </section>`;
 }
 
 // ------------------------------------------------------------------ header
-function heroBlock(state, games) {
-  const status = modelStatusOf(state.slate, state.health);
-  const official = hasOfficialModel(status);
-  const isToday = state.date === todayET();
-  const officialCount = games.filter(g => g.prediction_state === 'LOCKED_OFFICIAL').length;
-  const next = state.board?.next_puck_drop || null;
-  const pipelineAvailable = Boolean(state.slate);
-
-  return `<div class="pks-hero pbe-panel" data-fresh-scope>
-    <div class="pks-hero__copy">
-      <span class="pbe-badge pbe-badge--${official ? 'model' : 'heuristic'}">${official ? 'OFFICIAL MODEL LIVE' : 'NO OFFICIAL MODEL'}</span>
-      <h1 class="pks-hero__title">Who does the PBE algorithm pick ${isToday ? 'tonight' : `on ${esc(dateLabel(state.date))}`}?</h1>
-      <p>${official
-        ? 'Every call below was generated by a versioned model and locked before puck drop. The same page shows you what it was priced against and how it has been graded.'
-        : 'Right now: nobody. No NHL model has been promoted to champion, so PropBetEdge publishes no pick, no probability and no record. What you can see is the real slate, the real model status and the real lock pipeline behind it.'}</p>
-      <div class="pks-hero__cta">
-        <a class="pbe-btn" href="#/track-record">Track Record</a>
-        <a class="pbe-btn pbe-btn--ghost" href="#/methodology">Methodology</a>
-      </div>
-    </div>
-    <dl class="pks-hero__facts">
-      <div><dt>Slate</dt><dd>${esc(dateLabel(state.date, { long: true }))} · ${games.length} game${games.length === 1 ? '' : 's'}</dd></div>
-      <div><dt>Official picks published</dt><dd class="mono">${pipelineAvailable ? officialCount : DASH}</dd></div>
-      <div><dt>Model</dt><dd class="mono">${esc(status ? readKey(status, ['model_version']) || DASH : DASH)}</dd></div>
-      <div><dt>Next puck drop</dt><dd>${next?.start_time_utc ? `${esc(dayET(next.start_time_utc))} · ${esc(timeET(next.start_time_utc))}` : DASH}</dd></div>
-    </dl>
-    <p class="pks-hero__prov micro">${state.slateMeta ? freshStamp(state.slateMeta, { source: 'PBE Picks' }) : 'PBE Picks read API not answering in this environment'}</p>
-  </div>`;
-}
-
 function slateSection(state, games, { quiet = false } = {}) {
   const pipelineAvailable = Boolean(state.slate);
   const isToday = state.date === todayET();
@@ -709,6 +734,61 @@ function slateSection(state, games, { quiet = false } = {}) {
     ${body}`;
 }
 
+function heroBlock(state, games) {
+  const status = modelStatusOf(state.slate, state.health);
+  const official = hasOfficialModel(status);
+  const isToday = state.date === todayET();
+  const next = state.board?.next_puck_drop || null;
+  const pipelineAvailable = Boolean(state.slate);
+  const mode = picksMode(state, games);
+  const pre = preseasonPicks(state);
+  const rec = state.preseasonRecord && state.preseasonRecord.ok === true ? state.preseasonRecord : null;
+
+  if (mode === PICKS_MODE.PRESEASON) {
+    const graded = rec?.graded ?? 0;
+    const wl = graded ? `${rec.wins}–${rec.losses}` : '0–0';
+    return `<div class="pks-hero pks-hero--picks pbe-panel" data-fresh-scope>
+      <div class="pks-hero__copy">
+        <span class="pks-hero__eyebrow">PBE NHL PICKS</span>
+        <h1 class="pks-hero__title">${isToday ? "Tonight's PBE Preseason Picks" : `PBE Preseason Picks · ${esc(dateLabel(state.date))}`}</h1>
+        <p>Model-generated NHL picks locked before puck drop. Every preseason call is tracked from day one.</p>
+        <div class="pks-hero__cta">
+          <a class="pbe-btn" href="#pks-preseason">See tonight's picks</a>
+          <a class="pbe-btn pbe-btn--ghost" href="#/track-record">Track Record</a>
+        </div>
+      </div>
+      <ul class="pks-hero__stats">
+        <li><b>${pre.length}</b><span>${pre.length === 1 ? 'pick' : 'picks'} ${isToday ? 'tonight' : ''}</span></li>
+        <li><b>${wl}</b><span>preseason record</span></li>
+        <li><b>${pre.length}</b><span>locked before puck drop</span></li>
+      </ul>
+      <p class="pks-hero__prov micro">${state.slateMeta ? freshStamp(state.slateMeta, { source: 'PBE Picks' }) : 'PBE Picks read API not answering in this environment'}</p>
+    </div>`;
+  }
+
+  const officialCount = games.filter(g => g.prediction_state === 'LOCKED_OFFICIAL').length;
+  return `<div class="pks-hero pbe-panel" data-fresh-scope>
+    <div class="pks-hero__copy">
+      <span class="pbe-badge pbe-badge--${official ? 'model' : 'heuristic'}">${official ? 'OFFICIAL MODEL LIVE' : 'NO OFFICIAL MODEL'}</span>
+      <h1 class="pks-hero__title">Who does the PBE algorithm pick ${isToday ? 'tonight' : `on ${esc(dateLabel(state.date))}`}?</h1>
+      <p>${official
+        ? 'Every call below was generated by a versioned model and locked before puck drop. The same page shows you what it was priced against and how it has been graded.'
+        : 'No NHL model has been promoted to champion yet, so PropBetEdge publishes no regular-season pick, probability or record. What you can see is the real slate, the real model status and the real lock pipeline behind it.'}</p>
+      <div class="pks-hero__cta">
+        <a class="pbe-btn" href="#/track-record">Track Record</a>
+        <a class="pbe-btn pbe-btn--ghost" href="#/methodology">Methodology</a>
+      </div>
+    </div>
+    <dl class="pks-hero__facts">
+      <div><dt>Slate</dt><dd>${esc(dateLabel(state.date, { long: true }))} · ${games.length} game${games.length === 1 ? '' : 's'}</dd></div>
+      <div><dt>Official picks published</dt><dd class="mono">${pipelineAvailable ? officialCount : DASH}</dd></div>
+      <div><dt>Model</dt><dd class="mono">${esc(status ? readKey(status, ['model_version']) || DASH : DASH)}</dd></div>
+      <div><dt>Next puck drop</dt><dd>${next?.start_time_utc ? `${esc(dayET(next.start_time_utc))} · ${esc(timeET(next.start_time_utc))}` : DASH}</dd></div>
+    </dl>
+    <p class="pks-hero__prov micro">${state.slateMeta ? freshStamp(state.slateMeta, { source: 'PBE Picks' }) : 'PBE Picks read API not answering in this environment'}</p>
+  </div>`;
+}
+
 // The whole page as a pure function of state, so every render path can be
 // asserted in a test with no browser and no network.
 export function picksView(state) {
@@ -718,8 +798,8 @@ export function picksView(state) {
   return `<section class="wrap section pks">
     ${heroBlock(state, games)}
     ${pipelineBanner(down)}
-    <div class="pks-slate" id="pks-slate">${slateSection(state, games, { quiet })}</div>
     ${rehearsalSection(state)}
+    <div class="pks-slate" id="pks-slate">${slateSection(state, games, { quiet })}</div>
     ${modelStatusBlock(state, { quiet })}
     ${pipelineBlock(state, { quiet })}
     ${explainBlock()}

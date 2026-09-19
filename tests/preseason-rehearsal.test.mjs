@@ -1,10 +1,16 @@
-// The consumer contract for preseason rehearsal picks.
+// The CONSUMER contract for preseason picks.
 //
-// A rehearsal is a REAL locked call, so it must be shown; it is NOT an official
-// pick, so it must never be labelled or counted as one.
+// Backend semantics are unchanged (record_class PRESEASON_REHEARSAL,
+// official:false, rehearsal:true). This file asserts the PRESENTATION: a
+// reader sees picks, not governance language, and the page never claims there
+// are no picks while locked ones exist.
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { rehearsalCard, rehearsalSection, splitSquadNotice, splitSquadGames, REHEARSAL_BADGE } from '../src/pages/pbe-picks.js';
+import {
+  rehearsalCard, rehearsalSection, splitSquadNotice, splitSquadGames,
+  preseasonRecordStrip, consumerModelName, picksMode, isPreseasonPickMode,
+  preseasonPicks, PICKS_MODE, picksView
+} from '../src/pages/pbe-picks.js';
 
 const call = {
   game_id: 2026010001, home: 'STL', away: 'DAL',
@@ -16,67 +22,133 @@ const call = {
   official: false, rehearsal: true, record_class: 'PRESEASON_REHEARSAL'
 };
 
-test('a rehearsal card shows the pick, both probabilities, model and lock time', () => {
+const stateWithPicks = {
+  date: '2026-09-19',
+  preseason: { ok: true, games: [call] },
+  preseasonRecord: { ok: true, locked_calls: 5, graded: 0, wins: 0, losses: 0, accuracy: null, priced: 0, unpriced: 5, model_versions: [call.model_version] },
+  splitSquad: [],
+  slate: null, health: null, board: null, pro: null, account: { state: 'unknown' }
+};
+
+// ---- the pick is the star --------------------------------------------------
+test('the card leads with the pick, not with governance language', () => {
   const html = rehearsalCard(call);
-  assert.match(html, /PBE PRESEASON REHEARSAL PICK/);
-  assert.match(html, />STL</);
-  assert.match(html, /DAL @ STL/);
+  assert.match(html, /PBE PRESEASON PICK/);
+  assert.match(html, /STL/);
   assert.match(html, /50\.7%/);
-  assert.match(html, /49\.3%/);
-  assert.match(html, /pbe-nhl-model-v1\.1-shadow-da0d82a0/);
-  assert.match(html, /UNPRICED/);
+  assert.match(html, /DAL @ STL/);
+  assert.equal(/REHEARSAL/.test(html), false, 'rehearsal must not appear in consumer card copy');
+  assert.equal(/shadow|publish gate|not an official/i.test(html), false);
 });
 
-test('a rehearsal card is never labelled official', () => {
+test('the card badge is PRESEASON, never PRESEASON · REHEARSAL', () => {
   const html = rehearsalCard(call);
-  assert.equal(/LOCKED_OFFICIAL/.test(html), false);
-  assert.equal(/OFFICIAL MODEL LIVE/.test(html), false);
-  assert.match(html, new RegExp(REHEARSAL_BADGE.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')));
-  assert.match(html, /excluded from the official record/i);
-  assert.match(html, /not an official PBE pick/i);
+  assert.match(html, /pbe-badge--preseason">PRESEASON</);
+  assert.equal(/PRESEASON · REHEARSAL/.test(html), false);
 });
 
-test('a no-call renders as a no-call, never as a pick', () => {
+test('the model name is consumer-readable, not an artifact id', () => {
+  assert.equal(consumerModelName('pbe-nhl-model-v1.1-shadow-da0d82a0'), 'PBE NHL v1.1');
+  assert.equal(consumerModelName('pbe-nhl-model-v1.2'), 'PBE NHL v1.2');
+  assert.equal(consumerModelName(null), 'PBE NHL model');
+  const html = rehearsalCard(call);
+  assert.match(html, /PBE NHL v1\.1/);
+  assert.equal(/da0d82a0/.test(html), false, 'the raw artifact id must not be consumer copy');
+});
+
+test('the card carries puck drop, lock time, market and both probabilities', () => {
+  const html = rehearsalCard(call);
+  assert.match(html, /Puck Drop/);
+  assert.match(html, /Locked/);
+  assert.match(html, /UNPRICED/);
+  assert.match(html, /49\.3%/);
+});
+
+test('the footer disclosure is small and said once', () => {
+  const html = rehearsalCard(call);
+  assert.match(html, /PRESEASON · Tracked separately from the regular-season record\./);
+  const disclosures = html.match(/tracked separately/gi) || [];
+  assert.equal(disclosures.length, 1, 'the separation is stated once per card, not repeatedly');
+});
+
+test('a no-call renders as NO PICK, never as a pick', () => {
   const html = rehearsalCard({ ...call, is_call: false, pick_team: null, probability: null, no_call_reason: 'exact_tie_no_call' });
-  assert.match(html, /NO REHEARSAL CALL/);
-  assert.match(html, /exact_tie_no_call/);
-  assert.equal(/PBE PRESEASON REHEARSAL PICK/.test(html), false);
+  assert.match(html, /NO PICK/);
+  assert.equal(/PBE PRESEASON PICK/.test(html), false);
 });
 
-test('a graded rehearsal shows its result', () => {
+test('a graded pick shows its result', () => {
   const html = rehearsalCard({ ...call, result: 'WIN', home_score: 4, away_score: 2 });
   assert.match(html, /WIN/);
   assert.match(html, /2–4/);
 });
 
-test('the section carries the rehearsal record, kept separate from the official one', () => {
-  const html = rehearsalSection({
-    preseason: { ok: true, games: [call] },
-    preseasonRecord: { ok: true, locked_calls: 5, graded: 2, wins: 1, losses: 1, accuracy: 0.5, priced: 0, unpriced: 5, model_versions: ['pbe-nhl-model-v1.1-shadow-da0d82a0'] },
-    splitSquad: []
-  });
-  assert.match(html, /2026 PRESEASON REHEARSAL RECORD/);
-  assert.match(html, /1–1/);
-  assert.match(html, /50\.0%/);
-  assert.match(html, /kept separate from the official PBE record/);
-  assert.equal(/LOCKED_OFFICIAL/.test(html), false);
+// ---- record strip ----------------------------------------------------------
+test('the record strip reads as a track record segment', () => {
+  const html = preseasonRecordStrip({ graded: 0, wins: 0, losses: 0, accuracy: null }, 5);
+  assert.match(html, /2026 PRESEASON RECORD/);
+  assert.equal(/REHEARSAL/.test(html), false);
+  assert.match(html, /<b>5<\/b>/);
+  assert.match(html, /0–0/);
+  assert.match(html, /do not count toward the regular-season PBE record/);
 });
 
-test('no rehearsal data renders nothing rather than an empty promise', () => {
-  assert.equal(rehearsalSection({ preseason: null }), '');
-  assert.equal(rehearsalSection({ preseason: { ok: true, games: [] } }), '');
+test('the record strip updates once results exist', () => {
+  const html = preseasonRecordStrip({ graded: 3, wins: 2, losses: 1, accuracy: 0.6667 }, 5);
+  assert.match(html, /2–1/);
+  assert.match(html, /66\.7%/);
 });
 
-test('split-squad games are named and explained, never silently dropped', () => {
+// ---- page mode -------------------------------------------------------------
+test('preseason picks drive the page mode', () => {
+  assert.equal(picksMode(stateWithPicks, []), PICKS_MODE.PRESEASON);
+  assert.equal(isPreseasonPickMode(stateWithPicks), true);
+  assert.equal(preseasonPicks(stateWithPicks).length, 1);
+  // a no-call alone is not a pick
+  const noCalls = { preseason: { ok: true, games: [{ ...call, is_call: false }] } };
+  assert.equal(isPreseasonPickMode(noCalls), false);
+  assert.equal(picksMode(noCalls, []), PICKS_MODE.NONE);
+  assert.equal(picksMode({}, [{ prediction_state: 'LOCKED_OFFICIAL' }]), PICKS_MODE.OFFICIAL);
+});
+
+test('the hero never says nobody while preseason picks exist', () => {
+  const html = picksView(stateWithPicks);
+  assert.equal(/Right now: nobody/.test(html), false, 'the hero contradicted the picks on the same page');
+  assert.equal(/NO OFFICIAL MODEL/.test(html), false);
+  assert.match(html, /PBE NHL PICKS/);
+  assert.match(html, /Tonight's PBE Preseason Picks/);
+  assert.match(html, /Model-generated NHL picks locked before puck drop/);
+});
+
+test('the hero shows the counts above the fold', () => {
+  const html = picksView(stateWithPicks);
+  const hero = html.slice(0, html.indexOf('</div>', html.indexOf('pks-hero__stats')));
+  assert.match(hero, /locked before puck drop/);
+  assert.match(hero, /preseason record/);
+});
+
+test('with no preseason picks the original hero is untouched', () => {
+  const html = picksView({ date: '2026-09-19', preseason: null, slate: null, health: null, board: null, splitSquad: [] });
+  assert.match(html, /NO OFFICIAL MODEL/);
+  assert.equal(/Tonight's PBE Preseason Picks/.test(html), false);
+});
+
+test('picks are rendered above the official slate block', () => {
+  const html = picksView(stateWithPicks);
+  assert.ok(html.indexOf('pks-preseason') < html.indexOf('pks-slate'), 'the picks must come before the slate section');
+});
+
+// ---- split squad -----------------------------------------------------------
+test('split-squad games say NO PICK · SPLIT SQUAD in plain language', () => {
   const html = splitSquadNotice([{ home: 'TOR', away: 'MTL' }, { home: 'MTL', away: 'TOR' }]);
-  assert.match(html, /SPLIT-SQUAD IDENTITY EXCLUDED/);
+  assert.match(html, /NO PICK · SPLIT SQUAD/);
   assert.match(html, /MTL @ TOR/);
   assert.match(html, /TOR @ MTL/);
-  assert.match(html, /cannot model them independently/);
+  assert.match(html, /cannot reliably distinguish two rosters/);
+  assert.equal(/IDENTITY EXCLUDED|REHEARSAL/.test(html), false, 'database language must not reach the reader');
 });
 
 test('split-squad detection mirrors the runner: a club twice on one date', () => {
-  // the real picks-slate shape
   const slate = { games: [
     { game_id: 1, home: { abbrev: 'STL' }, away: { abbrev: 'DAL' } },
     { game_id: 2, home: { abbrev: 'TOR' }, away: { abbrev: 'MTL' } },
@@ -88,10 +160,13 @@ test('split-squad detection mirrors the runner: a club twice on one date', () =>
   assert.deepEqual(flagged.map(g => g.game_id).sort(), [2, 3]);
 });
 
-test('the official slate and the rehearsal block never share a state name', async () => {
-  const src = await import('node:fs').then(fs => fs.readFileSync(new URL('../src/pages/pbe-picks.js', import.meta.url), 'utf8'));
-  assert.match(src, /LOCKED_REHEARSAL/);
-  // the rehearsal block must not reuse the official state
-  const section = src.slice(src.indexOf('export function rehearsalSection'), src.indexOf('// ------------------------------------------------------------------ header'));
-  assert.equal(/LOCKED_OFFICIAL/.test(section), false);
+// ---- separation still holds ------------------------------------------------
+test('the section still never labels a preseason pick official', () => {
+  const html = rehearsalSection(stateWithPicks);
+  assert.equal(/LOCKED_OFFICIAL|OFFICIAL MODEL LIVE/.test(html), false);
+  assert.match(html, /do not count toward the regular-season PBE record/);
+});
+
+test('no preseason data and no split squads renders nothing', () => {
+  assert.equal(rehearsalSection({ preseason: null, splitSquad: [] }), '');
 });
