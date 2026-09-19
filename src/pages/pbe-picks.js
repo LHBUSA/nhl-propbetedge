@@ -18,7 +18,7 @@
 // /pro/ request, and the free render path has no pick values to leak because
 // nothing ever writes them into state.
 import { esc, on } from '../lib/dom.js';
-import { describeError, picksHealth, picksSlate } from '../lib/api.js';
+import { describeError, picksHealth, picksPreseason, picksPreseasonRecord, picksSlate } from '../lib/api.js';
 import { onAccount, proData, refreshAccount, signInAvailable } from '../lib/account.js';
 import { freshStamp } from '../lib/freshness.js';
 import { addDays, ageText, dateLabel, dayET, gameTypeLabel, pct, timeET, timeLocal, todayET } from '../lib/format.js';
@@ -93,6 +93,10 @@ export function hasOfficialModel(status) {
 
 const PREDICTION_TONE = {
   LOCKED_OFFICIAL: 'model',
+  // A rehearsal is a REAL locked call from the pipeline, but never an official
+  // pick. It gets its own state so it can never be rendered as either an
+  // official pick or hidden internal output.
+  LOCKED_REHEARSAL: 'rehearsal',
   LOCKED_INTERNAL: 'heuristic',
   SNAPSHOT_READY: 'sched',
   NONE: 'unavailable'
@@ -162,12 +166,16 @@ export async function loadPicksData({
   signal,
   publicSlate = (d, o) => picksSlate(d, o),
   publicHealth = o => picksHealth(o),
-  proSlate = (d) => proData(`/pro/picks/slate?date=${encodeURIComponent(d)}`)
+  proSlate = (d) => proData(`/pro/picks/slate?date=${encodeURIComponent(d)}`),
+  publicPreseason = (d, o) => picksPreseason(d, o),
+  publicPreseasonRecord = o => picksPreseasonRecord({}, o)
 } = {}) {
   const settle = promise => promise.then(value => ({ value, error: null }), error => ({ value: null, error }));
-  const [slate, health] = await Promise.all([
+  const [slate, health, preseason, preseasonRecord] = await Promise.all([
     settle(publicSlate(date, { signal, timeout: 9000 })),
-    settle(publicHealth({ signal, timeout: 9000 }))
+    settle(publicHealth({ signal, timeout: 9000 })),
+    settle(publicPreseason(date, { signal, timeout: 9000 })),
+    settle(publicPreseasonRecord({ signal, timeout: 9000 }))
   ]);
   const out = {
     slate: slate.value?.data || null,
@@ -178,7 +186,11 @@ export async function loadPicksData({
     healthError: health.error || null,
     pro: null,
     proError: null,
-    proRequested: false
+    proRequested: false,
+    preseason: preseason.value?.data || null,
+    preseasonError: preseason.error || null,
+    preseasonRecord: preseasonRecord.value?.data || null,
+    splitSquad: []
   };
   if (!proEligible(account)) return out;
   out.proRequested = true;
@@ -485,6 +497,7 @@ const PREDICTION_LEGEND = [
   ['NONE', 'No prediction exists for this game.'],
   ['SNAPSHOT_READY', 'The feature snapshot is built; nothing has been locked.'],
   ['LOCKED_INTERNAL', 'A shadow candidate locked internally. Not a pick, never shown as one.'],
+  ['LOCKED_REHEARSAL', 'A preseason rehearsal call, locked before puck drop and shown as a rehearsal. Excluded from the official record.'],
   ['LOCKED_OFFICIAL', 'An official, publishable model locked this pick before puck drop.']
 ];
 
@@ -521,6 +534,113 @@ function proBlock(state) {
       : `<p class="dim">Entitlement is decided by the gateway on every request. This page never asks for Pro data unless the gateway has already confirmed an active NHL Pro subscription, so a free session carries no pick values at all.</p>
          <div class="pks-pro__cta"><button type="button" class="pbe-btn pbe-btn--primary" data-open-nhl-pro>See NHL Pro</button>
          <a class="pbe-btn pbe-btn--ghost" href="#/methodology">How the model is held to account</a></div>`}
+  </section>`;
+}
+
+// --------------------------------------------------------------- rehearsal
+// PRESEASON REHEARSAL. Deliberately its own block, its own badge and its own
+// record. It is never merged into the official slate and never counted in the
+// official track record.
+export const REHEARSAL_BADGE = 'PRESEASON · REHEARSAL';
+export const REHEARSAL_COPY = 'Locked before puck drop using the PBE NHL model pipeline. Preseason rehearsal only — excluded from the official regular-season PBE record.';
+
+export function rehearsalCard(game) {
+  const call = game.is_call === true && present(game.pick_team);
+  const pickP = call ? probabilityText(game.probability) : null;
+  const home = esc(game.home || '');
+  const away = esc(game.away || '');
+  const ph = probabilityText(game.p_home);
+  const pa = probabilityText(game.p_away);
+  const graded = present(game.result);
+  const market = game.market_at_lock && typeof game.market_at_lock === 'object'
+    ? String(game.market_at_lock.state || '')
+    : String(game.market_at_lock || '');
+  return `<article class="pks-card pks-card--rehearsal" data-rehearsal="${esc(String(game.game_id))}">
+    <header class="pks-card__head">
+      <span class="pbe-badge pbe-badge--rehearsal">${REHEARSAL_BADGE}</span>
+      <span class="pks-card__match">${away} @ ${home}</span>
+      <time class="dim">${esc(puckLabel(game.puck_drop_utc))}</time>
+    </header>
+    ${call
+      ? `<div class="pks-card__call"><span class="eyebrow">PBE PRESEASON REHEARSAL PICK</span><b>${esc(game.pick_team)}</b>${pickP ? `<span class="pks-card__p">${pickP}</span>` : ''}</div>`
+      : `<div class="pks-card__call pks-card__call--none"><span class="eyebrow">NO REHEARSAL CALL</span><b>${esc(game.no_call_reason || 'no call')}</b></div>`}
+    <dl class="pks-card__grid">
+      <div><dt>${home}</dt><dd>${ph || '—'}</dd></div>
+      <div><dt>${away}</dt><dd>${pa || '—'}</dd></div>
+      <div><dt>Locked</dt><dd>${esc(lockLabel(game.locked_at))}</dd></div>
+      <div><dt>Model</dt><dd class="pks-card__model">${esc(game.model_version || '—')}</dd></div>
+      ${market ? `<div><dt>Market at lock</dt><dd>${esc(market)}</dd></div>` : ''}
+      ${graded ? `<div><dt>Result</dt><dd class="pks-card__result pks-card__result--${esc(String(game.result).toLowerCase())}">${esc(game.result)}${present(game.home_score) ? ` · ${esc(String(game.away_score))}–${esc(String(game.home_score))}` : ''}</dd></div>` : ''}
+    </dl>
+    <p class="pks-card__foot dim">Rehearsal · not an official PBE pick · excluded from the official record</p>
+  </article>`;
+}
+
+function puckLabel(utc) {
+  if (!present(utc)) return '';
+  try {
+    return new Intl.DateTimeFormat('en-US', { timeZone: 'America/New_York', hour: 'numeric', minute: '2-digit', timeZoneName: 'short' }).format(new Date(utc));
+  } catch { return String(utc); }
+}
+function lockLabel(utc) {
+  if (!present(utc)) return '—';
+  try {
+    return new Intl.DateTimeFormat('en-US', { timeZone: 'America/New_York', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }).format(new Date(utc));
+  } catch { return String(utc); }
+}
+
+// Split-squad games are excluded by the model, and the product says so rather
+// than quietly dropping the fixture.
+// Mirrors the runner's rule (markSplitSquad): a club appearing in more than one
+// game on the same date is icing two rosters, so neither game gets a call.
+export function splitSquadGames(board) {
+  const games = Array.isArray(board?.games) ? board.games : [];
+  const perClub = new Map();
+  for (const g of games) {
+    for (const t of [g?.home?.abbrev || g?.home, g?.away?.abbrev || g?.away]) {
+      if (t) perClub.set(t, (perClub.get(t) || 0) + 1);
+    }
+  }
+  return games
+    .filter(g => [g?.home?.abbrev || g?.home, g?.away?.abbrev || g?.away].some(t => t && perClub.get(t) > 1))
+    .map(g => ({ home: g?.home?.abbrev || g?.home || '', away: g?.away?.abbrev || g?.away || '', game_id: g?.id || g?.game_id || null }));
+}
+
+export function splitSquadNotice(games) {
+  if (!games || !games.length) return '';
+  return `<div class="pks-splitsquad">
+    <span class="pbe-badge pbe-badge--unavailable">NO REHEARSAL CALL · SPLIT-SQUAD IDENTITY EXCLUDED</span>
+    <p class="dim">${games.map(g => `${esc(g.away)} @ ${esc(g.home)}`).join(' · ')} — one club is icing two rosters at the same time. The team-level feature ledger cannot model them independently, so no call is made.</p>
+  </div>`;
+}
+
+export function rehearsalSection(state) {
+  const data = state.preseason;
+  if (!data || data.ok !== true || !Array.isArray(data.games) || !data.games.length) {
+    if (state.preseasonError) {
+      return `<section class="pks-rehearsal pbe-panel"><header><span class="pbe-badge pbe-badge--rehearsal">${REHEARSAL_BADGE}</span><h2>Preseason rehearsal</h2></header><p class="dim">Rehearsal calls are unavailable right now.</p></section>`;
+    }
+    return '';
+  }
+  const rec = state.preseasonRecord && state.preseasonRecord.ok === true ? state.preseasonRecord : null;
+  return `<section class="pks-rehearsal pbe-panel" data-fresh-scope>
+    <header class="pks-rehearsal__head">
+      <span class="pbe-badge pbe-badge--rehearsal">${REHEARSAL_BADGE}</span>
+      <h2>Preseason rehearsal calls</h2>
+      <p class="dim">${REHEARSAL_COPY}</p>
+    </header>
+    ${rec ? `<div class="pks-rehearsal__record" aria-label="2026 preseason rehearsal record">
+      <span class="eyebrow">2026 PRESEASON REHEARSAL RECORD</span>
+      <ul>
+        <li><b>${rec.locked_calls ?? 0}</b><span>locked calls</span></li>
+        <li><b>${rec.graded ? `${rec.wins}–${rec.losses}` : '—'}</b><span>W–L</span></li>
+        <li><b>${rec.accuracy === null || rec.accuracy === undefined ? '—' : `${(rec.accuracy * 100).toFixed(1)}%`}</b><span>accuracy</span></li>
+        <li><b>${rec.priced ?? 0}/${rec.unpriced ?? 0}</b><span>priced / unpriced</span></li>
+      </ul>
+      <p class="dim">${esc((rec.model_versions || []).join(', ') || '—')} · kept separate from the official PBE record.</p>
+    </div>` : ''}
+    <div class="pks-rehearsal__cards">${data.games.map(rehearsalCard).join('')}</div>
+    ${splitSquadNotice(state.splitSquad)}
   </section>`;
 }
 
@@ -597,6 +717,7 @@ export function picksView(state) {
     ${heroBlock(state, games)}
     ${pipelineBanner(down)}
     <div class="pks-slate" id="pks-slate">${slateSection(state, games, { quiet })}</div>
+    ${rehearsalSection(state)}
     ${modelStatusBlock(state, { quiet })}
     ${pipelineBlock(state, { quiet })}
     ${explainBlock()}
@@ -616,6 +737,7 @@ export function mount(root, params, ctx) {
     health: null, healthMeta: null, healthError: null,
     board: null, boardMeta: null, boardError: null,
     pro: null, proError: null,
+    preseason: null, preseasonError: null, preseasonRecord: null, splitSquad: [],
     account: { state: 'unknown' }
   };
 
@@ -649,6 +771,7 @@ export function mount(root, params, ctx) {
     const data = await loadPicksData({ date: state.date, account: state.account, signal });
     if (mine !== token) return;
     Object.assign(state, data);
+    state.splitSquad = splitSquadGames(state.board);
     render();
   }
 

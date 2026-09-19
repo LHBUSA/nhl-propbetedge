@@ -133,3 +133,35 @@
   .pkc { padding: var(--s-3); }
   .pks-hero__title { font-size: 25px; }
 }
+
+/* ---- preseason rehearsal -------------------------------------------------
+   A rehearsal is a real locked call but never an official pick, so it is
+   visually its own thing: amber, badged, and physically separate from the
+   official slate above it. */
+.pbe-badge--rehearsal { background: rgba(214, 158, 46, 0.16); color: #f0b849; border: 1px solid rgba(214, 158, 46, 0.42); letter-spacing: .06em; }
+.pks-rehearsal { margin-top: 28px; border-left: 3px solid rgba(214, 158, 46, 0.55); }
+.pks-rehearsal__head h2 { margin: 10px 0 4px; font-size: 1.15rem; }
+.pks-rehearsal__head p { max-width: 62ch; }
+.pks-rehearsal__record { margin: 16px 0 6px; padding: 12px 14px; border: 1px solid rgba(255,255,255,.08); border-radius: 10px; background: rgba(255,255,255,.02); }
+.pks-rehearsal__record ul { display: flex; flex-wrap: wrap; gap: 18px 28px; list-style: none; margin: 8px 0; padding: 0; }
+.pks-rehearsal__record li { display: flex; flex-direction: column; }
+.pks-rehearsal__record li b { font-size: 1.25rem; line-height: 1.1; }
+.pks-rehearsal__record li span { font-size: .72rem; letter-spacing: .05em; text-transform: uppercase; opacity: .62; }
+.pks-rehearsal__cards { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); margin-top: 14px; }
+.pks-card--rehearsal { border: 1px solid rgba(214, 158, 46, 0.28); border-radius: 12px; padding: 14px; background: rgba(255,255,255,.02); }
+.pks-card__head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-bottom: 10px; }
+.pks-card__match { font-weight: 600; }
+.pks-card__call { display: flex; flex-direction: column; gap: 2px; margin-bottom: 10px; }
+.pks-card__call b { font-size: 1.3rem; }
+.pks-card__call--none b { font-size: 1rem; opacity: .75; font-weight: 500; }
+.pks-card__p { font-variant-numeric: tabular-nums; opacity: .85; }
+.pks-card__grid { display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 8px 14px; margin: 0 0 10px; }
+.pks-card__grid dt { font-size: .68rem; letter-spacing: .05em; text-transform: uppercase; opacity: .6; }
+.pks-card__grid dd { margin: 0; font-variant-numeric: tabular-nums; }
+.pks-card__model { font-size: .74rem; word-break: break-all; opacity: .8; }
+.pks-card__result--win { color: #58c489; }
+.pks-card__result--loss { color: #e06b6b; }
+.pks-card__foot { font-size: .72rem; margin: 0; }
+.pks-splitsquad { margin-top: 16px; padding: 12px 14px; border: 1px dashed rgba(255,255,255,.16); border-radius: 10px; }
+.pks-splitsquad p { margin: 8px 0 0; max-width: 70ch; }
+@media (max-width: 480px) { .pks-rehearsal__cards { grid-template-columns: 1fr; } }

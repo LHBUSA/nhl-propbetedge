@@ -150,6 +150,10 @@ export async function picks(path, params = {}, options = {}) {
 
 export const picksHealth = (options = {}) => picks('/nhl/picks/health', {}, options);
 export const picksSlate = (date, options = {}) => picks('/nhl/picks/slate', { date }, options);
+// Preseason REHEARSAL reads. A separate contract from the official slate on
+// purpose: these are never official picks and must never be merged into one.
+export const picksPreseason = (date, options = {}) => picks('/nhl/picks/preseason', { date }, options);
+export const picksPreseasonRecord = (params = {}, options = {}) => picks('/nhl/picks/preseason/record', params, options);
 export const picksTrackRecord = (params = {}, options = {}) => picks('/nhl/picks/track-record', params, options);
 export const picksLedger = (params = {}, options = {}) => picks('/nhl/picks/track-record/ledger', params, options);
 
