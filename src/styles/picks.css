@@ -165,3 +165,12 @@
 .pks-splitsquad { margin-top: 16px; padding: 12px 14px; border: 1px dashed rgba(255,255,255,.16); border-radius: 10px; }
 .pks-splitsquad p { margin: 8px 0 0; max-width: 70ch; }
 @media (max-width: 480px) { .pks-rehearsal__cards { grid-template-columns: 1fr; } }
+
+/* A grid item defaults to min-width:auto, so the long model-version string
+   (pbe-nhl-model-v1.1-shadow-da0d82a0) pushed the card wider than a 390px
+   viewport. Let the columns actually shrink and let the string wrap anywhere. */
+.pks-card__grid > div { min-width: 0; }
+.pks-card__grid dd { min-width: 0; overflow-wrap: anywhere; word-break: break-word; }
+.pks-card__model { overflow-wrap: anywhere; }
+.pks-card--rehearsal, .pks-rehearsal, .pks-splitsquad { min-width: 0; max-width: 100%; }
+.pks-rehearsal__cards { min-width: 0; }
