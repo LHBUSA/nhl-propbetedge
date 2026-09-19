@@ -64,6 +64,6 @@ export function marketPanel(ev, meta) {
       <div><span class="k">Avg hold</span><span class="v">${pct(ml?.consensus?.avg_hold)}</span></div>
     </div>
     <div class="table-wrap" style="margin-top:10px"><table class="pbe-table market-table"><thead><tr><th>Book</th><th class="num">${esc(ev.away)} ML</th><th class="num">${esc(ev.home)} ML</th><th class="num">${esc(ev.away)} PL</th><th class="num">${esc(ev.home)} PL${pl ? ` ${pl.home_point > 0 ? '+' : ''}${esc(pl.home_point)}` : ''}</th><th class="num">O ${tot ? esc(tot.point) : ''}</th><th class="num">U</th><th class="num">Quote age</th></tr></thead><tbody>${rows.join('')}</tbody></table></div>
-    <p class="micro market-note">Market snapshot (PropSports.PropTechUSA.ai Market Feed), scheduled 08:00 / 13:00 / 18:00 ET — not a live feed. Consensus = mean no-vig probability across ${ml?.consensus?.books || 0} books quoting both sides. Market intelligence only; PropBetEdge model edges are separate and appear only from a released model.</p>
+    <p class="micro market-note">Market snapshot (<a href="https://propsports.proptechusa.ai/" target="_blank" rel="noopener noreferrer">PropSports.PropTechUSA.ai Market Feed</a>), scheduled 08:00 / 13:00 / 18:00 ET — not a live feed. Consensus = mean no-vig probability across ${ml?.consensus?.books || 0} books quoting both sides. Market intelligence only; PropBetEdge model edges are separate and appear only from a released model.</p>
   </div>`;
 }
