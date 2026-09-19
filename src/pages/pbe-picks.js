@@ -508,7 +508,7 @@ const PREDICTION_LEGEND = [
   ['NONE', 'No prediction exists for this game.'],
   ['SNAPSHOT_READY', 'The feature snapshot is built; nothing has been locked.'],
   ['LOCKED_INTERNAL', 'A shadow candidate locked internally. Not a pick, never shown as one.'],
-  ['LOCKED_REHEARSAL', 'A preseason pick, locked before puck drop. Tracked separately from the regular-season record.'],
+  ['PRESEASON PICK', 'A preseason pick, locked before puck drop. Tracked separately from the regular-season record.'],
   ['LOCKED_OFFICIAL', 'An official, publishable model locked this pick before puck drop.']
 ];
 
