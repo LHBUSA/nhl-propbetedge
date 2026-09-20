@@ -173,7 +173,7 @@ function penaltyBox(cast, st) {
       ${x.served_by_name ? `<p class="micro dim">Served by ${esc(x.served_by_name)}</p>` : ''}
     </li>`;
   };
-  return `<section class="pbox" aria-label="Penalty box">
+  return `<section class="pbox pbox--${sides.length > 1 ? 'dual' : 'single'}" aria-label="Penalty box">
     <div class="pbox__titlebar">
       <span class="pbox__lamp" aria-hidden="true"></span>
       <h3 class="pbox__title">PENALTY BOX</h3>
