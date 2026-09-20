@@ -122,7 +122,7 @@ function pressureChart(plays, game) {
   const attempts = plays.filter(p => p.shot && !p.shot.shootout && Number.isFinite(p.elapsed_s) && p.side);
   if (!attempts.length) return '<p class="dim">Pressure appears after the first recorded shot attempt.</p>';
   const end = Math.max(3600, ...plays.map(p => p.elapsed_s || 0));
-  const W = 600; const H = 120; const pad = 4;
+  const W = 600; const H = 120; const padX = 4; const padTop = 10; const padBottom = 4;
   const win = 300; const step = 30;
   const series = { away: [], home: [] };
   let max = 1;
@@ -133,19 +133,29 @@ function pressureChart(plays, game) {
       if (v > max) max = v;
     }
   }
-  const x = t => pad + (t / end) * (W - 2 * pad);
-  const y = v => H - pad - (v / max) * (H - 2 * pad - 10);
+  const x = t => padX + (t / end) * (W - 2 * padX);
+  const y = v => padTop + (1 - (v / max)) * (H - padTop - padBottom);
   const path = pts => pts.map(([t, v], i) => `${i ? 'L' : 'M'}${x(t).toFixed(1)},${y(v).toFixed(1)}`).join(' ');
-  const periods = [1200, 2400, 3600, 3900].filter(t => t < end).map(t => `<line x1="${x(t)}" x2="${x(t)}" y1="0" y2="${H}" class="pc-period"/>`).join('');
+  const periods = [1200, 2400, 3600, 3900].filter(t => t < end).map(t => `<line x1="${x(t)}" x2="${x(t)}" y1="${padTop}" y2="${H - padBottom}" class="pc-period"/>`).join('');
+  const tickValues = [...new Set([max, Math.round(max / 2), 0])].sort((a, b) => b - a);
+  const grid = tickValues.map(v => `<line x1="${padX}" x2="${W - padX}" y1="${y(v).toFixed(1)}" y2="${y(v).toFixed(1)}" class="pc-grid${v === 0 ? ' pc-grid--zero' : ''}"/>`).join('');
+  const scale = tickValues.map(v => `<span class="pressure-axis__tick mono" style="top:${((y(v) / H) * 100).toFixed(2)}%">${v}</span>`).join('');
   const goals = plays.filter(p => p.type === 'goal' && Number.isFinite(p.elapsed_s) && p.side)
     .map(p => `<line x1="${x(p.elapsed_s)}" x2="${x(p.elapsed_s)}" y1="${H - 14}" y2="${H}" class="pc-goal pc-goal--${p.side}"><title>${esc(shotLabel(p, game.teams))}</title></line>`).join('');
-  return `<svg class="pressure" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="Rolling five-minute shot attempts by team">
-      ${periods}
-      <path d="${path(series.away)}" class="pc-line pc-line--away"/>
-      <path d="${path(series.home)}" class="pc-line pc-line--home"/>
-      ${goals}
-    </svg>
-    <div class="pressure__legend micro"><span class="sw sw--away"></span>${esc(game.teams.away.abbrev)} <span class="sw sw--home"></span>${esc(game.teams.home.abbrev)} · peak ${max} attempts / 5 min · ticks = goals</div>`;
+  return `<div class="pressure-shell">
+      <div class="pressure-axis" aria-hidden="true">${scale}</div>
+      <div class="pressure-plot">
+        <span class="pressure-unit micro" aria-hidden="true">Attempts / 5 min</span>
+        <svg class="pressure" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="Rolling five-minute shot attempts by team. Peak ${max} attempts in a five-minute window.">
+          ${grid}
+          ${periods}
+          <path d="${path(series.away)}" class="pc-line pc-line--away"/>
+          <path d="${path(series.home)}" class="pc-line pc-line--home"/>
+          ${goals}
+        </svg>
+      </div>
+    </div>
+    <div class="pressure__legend micro"><span class="sw sw--away"></span>${esc(game.teams.away.abbrev)} <span class="sw sw--home"></span>${esc(game.teams.home.abbrev)} · peak ${max} attempts / 5 min · vertical ticks = goals</div>`;
 }
 
 function cmpRow(label, a, b, fmt = v => v ?? '—') {
