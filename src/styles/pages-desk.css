@@ -638,6 +638,10 @@
 .dk-bl__note { margin-top: 10px; line-height: 1.6; }
 .dk-bl__tot span { display: block; font: 500 12px/1.4 var(--pbe-font-data); color: var(--pbe-paper-2); white-space: nowrap; }
 .dk-bl__tot i { font-style: normal; font-size: 11px; color: var(--pbe-dim); }
+.dk-bl__focus { background: color-mix(in srgb, var(--pbe-gold) 9%, var(--pbe-ink-2)); box-shadow: inset 3px 0 0 var(--pbe-gold); }
+.dk-propquotes { min-width: 860px; }
+.dk-propquotes td b { color: var(--pbe-paper); }
+.dk-propquotes tbody tr:hover { background: var(--pbe-ink-3); }
 
 /* Phones: prose notes and the book / EV lines under each price read at 12px. */
 @media (max-width: 600px) {
