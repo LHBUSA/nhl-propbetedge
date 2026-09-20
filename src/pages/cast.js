@@ -8,6 +8,7 @@ import { countdownParts, dateLabel, dayET, gameTypeLabel, num, pct, periodLabel,
 import { createPoller } from '../lib/poll.js';
 import { resolveRecentCompleted } from '../lib/recent-games.js';
 import { teamAccent } from '../lib/teams.js';
+import { STATE, clockText, specialTeams } from '../lib/special-teams.js';
 import { stateBadge, stateOf, teamMark } from '../components/game.js';
 import { LAYERS, attachRinkInspector, renderRink, rinkInspector, rinkLegend, shotLabel } from '../components/rink.js';
 import { SPEEDS, replayBar, seek, sliceCast } from '../components/replay.js';
@@ -50,9 +51,13 @@ function playText(play) {
     case 'blocked-shot': return `Shot by ${nm(who(play, 'shooter'))} blocked by ${nm(who(play, 'blocker'))}`;
     case 'penalty': {
       const p = play.penalty || {};
-      return `<b>Penalty</b> — ${nm(who(play, 'committed_by') || who(play, 'served_by'))}: ${esc(titleCase(p.desc_key || 'penalty'))}${p.duration_min ? ` <span class="dim">(${p.duration_min} min)</span>` : ''}${who(play, 'drawn_by') ? ` · drawn by ${nm(who(play, 'drawn_by'))}` : ''}`;
+      const mins = Number(p.duration_min);
+      const dur = Number.isFinite(mins) ? `${mins}:00` : '';
+      // The raw event truth is unchanged; it is simply read as a hockey event
+      // rather than a database row.
+      return `<b class="feed-pen">PENALTY${play.side ? ` · ${esc(feedTeams?.[play.side]?.abbrev || '')}` : ''}</b> — ${nm(who(play, 'committed_by') || who(play, 'served_by'))} · ${esc(titleCase(p.desc_key || 'penalty'))}${dur ? ` · ${esc(dur)}` : ''}${who(play, 'drawn_by') ? ` <span class="dim">· drawn by ${nm(who(play, 'drawn_by'))}</span>` : ''}${p.severity && p.severity !== 'MIN' ? ` <span class="dim">· ${esc(p.severity)}</span>` : ''}`;
     }
-    case 'delayed-penalty': return 'Delayed penalty signalled';
+    case 'delayed-penalty': return `<b class="feed-pen feed-pen--delayed">DELAYED PENALTY</b>${play.side ? ` <span class="dim">· on ${esc(feedTeams?.[play.side]?.abbrev || '')}</span>` : ''}`;
     case 'faceoff': return `Faceoff won by ${nm(who(play, 'faceoff_winner'))} <span class="dim">vs ${who(play, 'faceoff_loser')?.name ? esc(who(play, 'faceoff_loser').name) : 'unlisted'}${play.zone ? ` · ${esc(play.zone)} zone` : ''}</span>`;
     case 'hit': return `${nm(who(play, 'hitter'))} hit ${nm(who(play, 'hittee'))}`;
     case 'giveaway': return `Giveaway — ${nm(who(play, 'player'))}`;
@@ -82,6 +87,86 @@ function manpowerChip(cast) {
   return `<span class="manpower" title="${esc(m.method)}">${esc(parts.join(' · '))}</span>`;
 }
 
+// ---- special teams
+//
+// cast.plays is ALREADY sliced to the replay cursor by sliceCast(), so the
+// engine reconstructs the historical box simply by reading it. Nothing here
+// reaches for the final game state.
+function specialTeamsOf(cast) {
+  return specialTeams(cast.plays || []);
+}
+
+// The centre of the score header. Even strength stays clean and says nothing.
+function specialTeamsBanner(cast, st) {
+  const g = cast.game;
+  const abbr = side => (side ? g.teams[side]?.abbrev || side.toUpperCase() : '');
+  if (st.state === STATE.DELAYED_PENALTY) {
+    const adv = st.delayed?.advantaged_side;
+    return `<div class="stx stx--delayed" role="status">
+      <span class="stx__label">DELAYED PENALTY</span>
+      ${adv ? `<span class="stx__detail">${esc(abbr(adv))} extra attacker</span>` : ''}
+    </div>`;
+  }
+  if (st.state === STATE.FOUR_ON_FOUR) {
+    return `<div class="stx stx--even" role="status">
+      <span class="stx__label">4 ON 4</span>
+      <span class="stx__detail">${esc(st.manpower || '')}</span>
+    </div>`;
+  }
+  if (st.state !== STATE.POWER_PLAY && st.state !== STATE.FIVE_ON_THREE) return '';
+
+  const adv = st.advantaged_side;
+  const sh = st.shorthanded_side;
+  // The clock shown is the longest-running penalty that is actually provable.
+  const lead = st.active_penalties.find(x => x.side === sh && x.remaining_seconds !== null);
+  const time = lead ? clockText(lead.remaining_seconds) : null;
+  const seg = st.pp_segment;
+  return `<div class="stx stx--pp" role="status">
+      <span class="stx__label">${esc(abbr(adv))} POWER PLAY</span>
+      <span class="stx__mp mono">${esc(st.manpower || '')}${time ? ` · ${esc(time)}` : ''}</span>
+      ${sh ? `<span class="stx__pk">${esc(abbr(sh))} PENALTY KILL</span>` : ''}
+      ${seg && (seg.attempts || seg.sog || seg.goals) ? `<span class="stx__seg micro">THIS PP · ${seg.attempts} attempt${seg.attempts === 1 ? '' : 's'} · ${seg.sog} SOG · ${seg.goals} goal${seg.goals === 1 ? '' : 's'}</span>` : ''}
+    </div>`;
+}
+
+// The box rail. Cards stack per side, so 5-on-3 is two cards under one crest
+// with no special case.
+function penaltyBox(cast, st) {
+  const box = st.active_penalties.filter(x => x.player_name || x.infraction);
+  if (!box.length) return '';
+  const g = cast.game;
+  const sides = ['away', 'home'].filter(side => box.some(x => x.side === side));
+  const card = x => {
+    const total = (x.duration_min || 0) * 60;
+    const pctLeft = x.remaining_seconds !== null && total ? Math.max(0, Math.min(100, (x.remaining_seconds / total) * 100)) : null;
+    return `<li class="pbox__pen">
+      <div class="pbox__who">
+        ${x.player_id ? playerIdentity({ id: x.player_id, name: x.player_name, team: g.teams[x.side]?.abbrev, size: 'sm' }) : ''}
+        <span class="pbox__name">${esc(x.player_name || 'Unknown')}</span>
+      </div>
+      <div class="pbox__what">
+        <span>${esc(titleCase(x.infraction || 'penalty'))}</span>
+        <span class="dim">${x.duration_min ? `${x.duration_min} min` : ''}${x.coincidental ? ' · coincidental' : ''}${x.affects_manpower ? '' : ' · no manpower change'}</span>
+      </div>
+      ${x.remaining_seconds !== null
+        ? `<div class="pbox__time"><span class="mono">${esc(clockText(x.remaining_seconds))}</span><span class="micro">remaining</span>
+            <div class="pbox__bar" role="presentation"><i style="width:${pctLeft.toFixed(1)}%"></i></div>
+           </div>`
+        : `<div class="pbox__time pbox__time--unknown"><span class="micro">time not shown</span><span class="micro dim">expiry not reconstructable here</span></div>`}
+      ${x.served_by_name ? `<p class="micro dim">Served by ${esc(x.served_by_name)}</p>` : ''}
+    </li>`;
+  };
+  return `<section class="pbox" aria-label="Penalty box">
+    <h3 class="pbox__title">PENALTY BOX</h3>
+    <div class="pbox__sides">
+      ${sides.map(side => `<div class="pbox__side pbox__side--${side}">
+          <div class="pbox__team"><b>${esc(g.teams[side]?.abbrev || side)}</b></div>
+          <ul class="pbox__list">${box.filter(x => x.side === side).map(card).join('')}</ul>
+        </div>`).join('')}
+    </div>
+  </section>`;
+}
+
 function header(cast, meta, failed) {
   const g = cast.game;
   const st = stateOf(g);
@@ -105,7 +190,7 @@ function header(cast, meta, failed) {
       <div class="cast-mid">
         ${stateBadge(g, { short: true })}
         <div class="cast-clock mono">${esc(clock)}</div>
-        ${manpowerChip(cast)}
+        ${specialTeamsBanner(cast, specialTeamsOf(cast)) || manpowerChip(cast)}
         ${cast.replay ? `<span class="micro">Event ${cast.replay.cursor + 1} of ${cast.replay.total} · derived from play-by-play</span>` : freshStamp(meta, { failed })}
       </div>
       ${team(h, 'home')}
@@ -115,7 +200,8 @@ function header(cast, meta, failed) {
       <span><span class="micro">${esc(h.abbrev || 'Home')} in net</span> ${goalie('home')}</span>
       <span class="micro">${esc(gameTypeLabel(g.game_type))} · ${esc(g.venue || '')} · Game ${esc(g.id)}</span>
       ${['FINAL', 'REPLAY'].includes(st.key) ? '' : watchButton(g.id)}
-    </div>`;
+    </div>
+    ${penaltyBox(cast, specialTeamsOf(cast))}`;
 }
 
 function pressureChart(plays, game) {

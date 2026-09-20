@@ -426,3 +426,48 @@
   margin-top: 8px;
   box-shadow: none;
 }
+
+/* ---- special teams -----------------------------------------------------
+   A broadcast graphic crossed with a data terminal: strong label, scannable
+   manpower, no flashing. Even strength shows nothing at all. */
+.stx { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 6px 12px; border-radius: var(--r-xs); line-height: 1.15; }
+.stx__label { font: 800 var(--fs-sm)/1 var(--pbe-font-data); letter-spacing: .09em; }
+.stx__mp { font-size: 1.32rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+.stx__pk { font: 700 var(--fs-micro)/1 var(--pbe-font-data); letter-spacing: .07em; opacity: .72; }
+.stx__seg { opacity: .72; letter-spacing: .04em; }
+
+.stx--pp { background: linear-gradient(180deg, rgba(233,199,90,.16), rgba(233,199,90,.05)); border: 1px solid rgba(233,199,90,.42); color: var(--pbe-gold-bright); }
+.stx--pp .stx__mp { color: var(--pbe-paper); }
+.stx--delayed { background: rgba(230,57,70,.14); border: 1px solid rgba(230,57,70,.45); color: var(--pbe-crimson-bright); }
+.stx--even { background: rgba(255,255,255,.05); border: 1px solid var(--pbe-line); color: var(--pbe-paper); }
+
+/* ---- penalty box -------------------------------------------------------
+   Dark physical cards under the score. Two entries stack under one crest, so
+   5-on-3 needs no special case. */
+.pbox { margin-top: 10px; padding: 10px 12px; border: 1px solid var(--pbe-line); border-radius: var(--r-xs); background: rgba(6,7,9,.55); }
+.pbox__title { font: 800 var(--fs-micro)/1 var(--pbe-font-data); letter-spacing: .12em; color: var(--pbe-dim); margin: 0 0 8px; }
+.pbox__sides { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 10px; }
+.pbox__side { min-width: 0; }
+.pbox__team b { font: 800 var(--fs-sm)/1 var(--pbe-font-data); letter-spacing: .07em; }
+.pbox__list { list-style: none; margin: 6px 0 0; padding: 0; display: grid; gap: 8px; }
+.pbox__pen { min-width: 0; padding: 9px 10px; border: 1px solid var(--pbe-line-faint); border-left: 3px solid var(--pbe-crimson-bright); border-radius: 6px; background: rgba(0,0,0,.35); }
+.pbox__who { display: flex; align-items: center; gap: 7px; margin-bottom: 4px; }
+.pbox__name { font-weight: 600; overflow-wrap: anywhere; }
+.pbox__what { display: flex; flex-wrap: wrap; gap: 4px 8px; font-size: var(--fs-sm); }
+.pbox__time { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px; margin-top: 5px; }
+.pbox__time .mono { font-size: 1.05rem; font-variant-numeric: tabular-nums; }
+.pbox__time--unknown { flex-direction: column; gap: 1px; }
+.pbox__bar { flex: 1 0 100%; height: 3px; margin-top: 4px; background: rgba(255,255,255,.1); border-radius: 2px; overflow: hidden; }
+.pbox__bar i { display: block; height: 100%; background: var(--pbe-crimson-bright); }
+.pbox__pen p { margin: 4px 0 0; }
+
+.feed-pen { color: var(--pbe-crimson-bright); letter-spacing: .06em; }
+.feed-pen--delayed { color: var(--pbe-gold-bright); }
+
+@media (max-width: 560px) {
+  /* Power play stays with the score; the box stacks beneath it. Never a
+     horizontal scroller and never behind a disclosure. */
+  .pbox__sides { grid-template-columns: 1fr; }
+  .stx__mp { font-size: 1.15rem; }
+}
+@media (prefers-reduced-motion: reduce) { .pbox__bar i { transition: none; } }
