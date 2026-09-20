@@ -77,6 +77,24 @@ function median(values) {
 
 // ---------------------------------------------------------------- picker
 
+function preferredSlateGame(games, now = Date.now()) {
+  if (!Array.isArray(games) || !games.length) return null;
+  const time = g => Date.parse(g?.start_time_utc || '') || 0;
+  const live = games.filter(g => ['LIVE', 'INTERMISSION'].includes(stateOf(g).key))
+    .sort((a, b) => time(a) - time(b));
+  if (live.length) return live[0];
+
+  const upcoming = games.filter(g => ['PREGAME', 'SCHEDULED'].includes(stateOf(g).key) && time(g) >= now - 15 * 60 * 1000)
+    .sort((a, b) => time(a) - time(b));
+  if (upcoming.length) return upcoming[0];
+
+  const finals = games.filter(g => stateOf(g).key === 'FINAL')
+    .sort((a, b) => time(b) - time(a));
+  if (finals.length) return finals[0];
+
+  return [...games].sort((a, b) => Math.abs(time(a) - now) - Math.abs(time(b) - now))[0] || null;
+}
+
 function pickerMarkup(games, currentId) {
   if (!games.length) return '';
   return `<nav class="lab-picker" aria-label="Games on this slate">
@@ -443,7 +461,9 @@ export function mount(root, params, ctx) {
     data: null, meta: null, failed: false, error: null,
     layer: 'all', team: 'both', period: 'all', normalize: true,
     selected: null, sort: { key: 'order', dir: 1 }, showAll: false,
-    pickDate: params.date && /^\d{4}-\d{2}-\d{2}$/.test(params.date) ? params.date : null,
+    pickDate: params.date && /^\d{4}-\d{2}-\d{2}$/.test(params.date)
+      ? params.date
+      : (params.gameId ? null : todayET()),
     pickGames: [], pickLabel: '', pickLoading: true, pickRequested: false,
     // Landing resolution for #/shots with no game id: never a fixture id.
     resolving: false, resolution: null, resolveError: null
@@ -679,28 +699,36 @@ export function mount(root, params, ctx) {
     }
   }) : null;
 
-  // #/shots with no game id is live-first. Re-check today's board with a
-  // short max age before consulting the memoized recent-game resolver so a
-  // game that started after an earlier visit can never leave Shot Lab parked
-  // on yesterday's completed game.
+  // #/shots with no game id is TODAY-first and live-first. The default slate
+  // remains the current ET date. Within that slate we prefer a game actually
+  // being played, then the next upcoming/pregame game, then the latest final.
+  // Historical fallback is only used when today's slate has no usable game.
   async function landing() {
     state.resolving = true;
+    state.pickDate = todayET();
+    renderPicker();
     renderBody();
+
     try {
       const today = todayET();
-      const liveBoard = await ctx.board(today, { signal: aborter.signal, maxAgeMs: 5000 });
-      const liveGames = (liveBoard?.data?.games || [])
-        .filter(g => ['LIVE', 'INTERMISSION'].includes(stateOf(g).key))
-        .sort((a, b) => Date.parse(a.start_time_utc || '') - Date.parse(b.start_time_utc || ''));
-      if (liveGames.length) {
+      const todayBoard = await ctx.board(today, { signal: aborter.signal, maxAgeMs: 5000 });
+      const games = todayBoard?.data?.games || [];
+      state.pickGames = games;
+      state.pickDate = today;
+      state.pickLabel = games.length ? `Today · ${plural(games.length, 'game')}` : 'No NHL games · Today';
+      state.pickLoading = false;
+      renderPicker();
+
+      const preferred = preferredSlateGame(games);
+      if (preferred) {
         state.resolving = false;
-        location.replace(`#/shots/${liveGames[0].id}`);
+        location.replace(`#/shots/${preferred.id}`);
         return;
       }
     } catch (error) {
       if (error?.kind === 'aborted' || aborter.signal.aborted) return;
-      // The recent-game resolver below still has its own bounded schedule
-      // search and truthful error state, so a failed live probe is not fatal.
+      // Historical resolution below still provides a truthful fallback if the
+      // current slate cannot be read.
     }
 
     let hit = null;
@@ -715,7 +743,7 @@ export function mount(root, params, ctx) {
     state.resolving = false;
     if (hit?.games?.length) { location.replace(`#/shots/${hit.games[0].id}`); return; }
     renderBody();
-    loadPicker(null);
+    loadPicker(todayET());
   }
 
   renderPicker();
