@@ -12,25 +12,8 @@ const valid = iso => {
   return Number.isNaN(d.getTime()) ? null : d;
 };
 
-// Product-day rollover is deliberately 05:00 ET, not midnight. Late hockey
-// games routinely cross midnight; flipping the Ice Board, PBE Cast, Picks,
-// ticker and related current-slate surfaces at 00:00 made the whole product
-// jump to the next slate while the prior night's games were still active.
-export const SITE_ROLLOVER_HOUR_ET = 5;
-
 export function todayET(date = new Date()) {
-  const parts = new Intl.DateTimeFormat('en-US', {
-    timeZone: ET,
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    hourCycle: 'h23'
-  }).formatToParts(date);
-  const read = type => parts.find(p => p.type === type)?.value || '';
-  const ymd = `${read('year')}-${read('month')}-${read('day')}`;
-  const hour = Number(read('hour'));
-  return Number.isFinite(hour) && hour < SITE_ROLLOVER_HOUR_ET ? addDays(ymd, -1) : ymd;
+  return new Intl.DateTimeFormat('en-CA', { timeZone: ET, year: 'numeric', month: '2-digit', day: '2-digit' }).format(date);
 }
 
 export function addDays(ymd, days) {
