@@ -42,6 +42,7 @@ const PLAYER_MARKETS = [
   ['Goals', 'player_goals'],
   ['Assists', 'player_assists']
 ];
+const PLAYER_MARKET_LABEL = Object.fromEntries(PLAYER_MARKETS.map(([label, key]) => [key, label]));
 const BOOKS = ['DraftKings', 'FanDuel', 'BetMGM', 'Caesars', 'BetRivers', 'Fanatics', 'Bovada', 'BetOnline', 'LowVig', 'BetUS'];
 
 function boardFrame(hasMarket = false) {
@@ -66,6 +67,43 @@ function boardFrame(hasMarket = false) {
       </tbody>
     </table></div>
     <div class="dk-p-legend micro"><span><i class="dk-spec--official"></i>Official NHL data</span><span><i class="dk-spec--market"></i>Market snapshot</span><span><i class="dk-spec--model"></i>Versioned model output</span></div>
+  </section>`;
+}
+
+function propsQuoteBoard(events, meta, { gameId = null } = {}) {
+  const filtered = gameId ? events.filter(e => String(e.game_id) === String(gameId)) : events;
+  const rows = filtered.flatMap(e => (e.props || []).map(p => ({ ...p, game: e })))
+    .sort((a, b) =>
+      String(a.game.commence_time || '').localeCompare(String(b.game.commence_time || ''))
+      || String(a.player || '').localeCompare(String(b.player || ''))
+      || String(a.market || '').localeCompare(String(b.market || ''))
+      || Number(a.line || 0) - Number(b.line || 0)
+      || String(a.book || '').localeCompare(String(b.book || '')));
+
+  if (!rows.length) return boardFrame(events.some(e => (e.props || []).length));
+
+  const quote = v => (v === null || v === undefined ? '—' : price(v));
+  return `<section class="dk-props-board" id="dk-p-frame" aria-labelledby="dk-p-board">
+    <div class="dk-props-board__head">
+      <div><span class="eyebrow">Props Board · stored quotes</span><h3 id="dk-p-board">${gameId ? 'Player props for this game' : 'Posted NHL player markets'}</h3></div>
+      ${freshStamp(meta, { source: 'Market snapshot' })}
+    </div>
+    <div class="table-wrap" tabindex="0" role="region" aria-label="Posted NHL player props">
+      <table class="pbe-table dk-ptable dk-propquotes">
+        <thead><tr><th>Player</th><th>Game</th><th>Market</th><th class="num">Line</th><th class="num">Over</th><th class="num">Under</th><th>Book</th><th>Updated</th></tr></thead>
+        <tbody>${rows.map(r => `<tr data-game="${esc(r.game.game_id || '')}">
+          <td><b>${esc(r.player || '—')}</b></td>
+          <td><a class="dk-bl__game" href="#/cast/${esc(r.game.game_id || '')}">${mark({ abbrev: r.game.away }, 18)}<b>${esc(r.game.away || 'TBD')}</b><span class="faint">@</span>${mark({ abbrev: r.game.home }, 18)}<b>${esc(r.game.home || 'TBD')}</b></a></td>
+          <td>${esc(PLAYER_MARKET_LABEL[r.market] || r.market || '—')}</td>
+          <td class="num mono">${esc(r.line ?? '—')}</td>
+          <td class="num"><b>${quote(r.over)}</b></td>
+          <td class="num"><b>${quote(r.under)}</b></td>
+          <td>${esc(bookName(r.book))}</td>
+          <td class="micro">${r.last_update ? `${esc(dayET(r.last_update))} · ${esc(timeET(r.last_update))}` : '—'}</td>
+        </tr>`).join('')}</tbody>
+      </table>
+    </div>
+    <p class="micro dk-bl__note">Stored market snapshot only — not a live sportsbook feed. These are quoted player markets; no PropBetEdge model edge is implied.</p>
   </section>`;
 }
 
@@ -121,13 +159,17 @@ function activationPanel() {
 // ---- Best Line (market price intelligence). Rendered only from a stored
 // scheduled snapshot; consensus needs >= 2 books quoting both sides.
 const evPct = v => (Number.isFinite(v) ? `${v >= 0 ? '+' : '−'}${Math.abs(v * 100).toFixed(1)}%` : '—');
-function bestLineBoard(events, meta) {
-  const rows = events.filter(e => e.game_id).sort((a, b) => a.commence_time.localeCompare(b.commence_time)).map(e => {
+function bestLineBoard(events, meta, { gameId = null } = {}) {
+  const rows = events.filter(e => e.game_id).sort((a, b) => {
+    const af = gameId && String(a.game_id) === String(gameId) ? 0 : 1;
+    const bf = gameId && String(b.game_id) === String(gameId) ? 0 : 1;
+    return af - bf || a.commence_time.localeCompare(b.commence_time);
+  }).map(e => {
     const ml = e.pricing?.h2h; const tot = e.pricing?.totals?.[0]; const pl = e.pricing?.spreads?.[0];
     const evA = ml?.ev_vs_consensus?.away; const evH = ml?.ev_vs_consensus?.home;
     const cell = (p, book, ev) => `<td class="num${Number.isFinite(ev) && ev > 0 ? ' dk-bl__plus' : ''}"><b>${price(p)}</b><span class="dk-bl__book">${esc(bookName(book))}</span>${Number.isFinite(ev) ? `<span class="dk-bl__ev" title="Expected value of the best price against the no-vig consensus of ${ml?.consensus?.books || 0} books — market comparison, not a model">${evPct(ev)}</span>` : ''}</td>`;
     const moved = (e.opening?.movement || []).length;
-    return `<tr>
+    return `<tr${gameId && String(e.game_id) === String(gameId) ? ' class="dk-bl__focus"' : ''}>
       <td><a class="dk-bl__game" href="#/cast/${esc(e.game_id)}">${mark({ abbrev: e.away }, 20)}<b>${esc(e.away)}</b><span class="faint">@</span>${mark({ abbrev: e.home }, 20)}<b>${esc(e.home)}</b></a><span class="micro">${esc(dayET(e.commence_time))} · ${esc(timeET(e.commence_time))}</span></td>
       ${cell(ml?.best?.away?.price, ml?.best?.away?.book, evA)}
       ${cell(ml?.best?.home?.price, ml?.best?.home?.book, evH)}
@@ -152,6 +194,8 @@ function bestLineBoard(events, meta) {
 }
 
 export function mount(root, params, ctx) {
+  const targetGame = /^\d{10}$/.test(params.game || '') ? params.game : null;
+  const focus = ['market', 'props'].includes(params.focus) ? params.focus : null;
   root.innerHTML = `<section class="wrap section dk dk-props">
     <div class="section-head section-head--editorial">
       <div><span class="eyebrow">Props</span><h2>Props Board</h2></div>
@@ -195,8 +239,13 @@ export function mount(root, params, ctx) {
   // Market snapshot, when this environment has the odds service.
   odds({}, { signal: ctl.signal, timeout: 8000 })
     .then(res => {
-      $('#dk-p-bestline', root).innerHTML = bestLineBoard(res.data.events || [], res.meta);
-      if (!(res.data.events || []).some(e => e.props?.length)) $('#dk-p-frame', root).outerHTML = boardFrame(true);
+      const events = res.data.events || [];
+      $('#dk-p-bestline', root).innerHTML = bestLineBoard(events, res.meta, { gameId: targetGame });
+      $('#dk-p-frame', root).outerHTML = propsQuoteBoard(events, res.meta, { gameId: targetGame });
+      if (focus) requestAnimationFrame(() => {
+        const el = focus === 'props' ? $('#dk-p-frame', root) : $('#dk-p-bestline', root);
+        el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      });
     })
     .catch(() => { /* absent service: the frame below explains what is missing */ });
 
