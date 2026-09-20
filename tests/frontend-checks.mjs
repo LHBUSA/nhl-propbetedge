@@ -60,6 +60,13 @@ assert.doesNotMatch(apiSource, /credentials: 'include'/, 'api.js (public data) n
   assert.match(cast, /Peak \$\{max\} attempts in a five-minute window/, 'pressure chart accessibility copy exposes the real peak scale');
   assert.match(css, /\.pc-grid \{/, 'pressure chart renders quantitative grid lines');
   assert.match(css, /\.replay__live \{/, 'Jump to live has a dedicated visible treatment');
+  assert.match(cast, /class="pbox__glass"/, 'PBE Cast renders a physical glass penalty-box shell');
+  assert.match(cast, /class="pbox__bench"/, 'the penalty box includes a rink-side bench treatment');
+  assert.match(cast, /class="pbox__boards"/, 'the penalty box includes dasher-board structure');
+  assert.match(cast, /href: profile/, 'penalized player identity links to the player profile');
+  assert.match(cast, /pbox__number mono/, 'jersey number is visible in the penalty box when known');
+  assert.match(css, /\.pbox__glass i:nth-child\(2\)/, 'glass stanchions visually divide the box');
+  assert.match(css, /\.pbox__boards \{/, 'penalty-box dasher boards have a dedicated physical layer');
 }
 
 // 1d. Shot Lab is a first-class live spatial surface, not a PBE Cast alias.
