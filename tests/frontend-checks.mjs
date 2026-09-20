@@ -52,7 +52,13 @@ assert.doesNotMatch(apiSource, /credentials: 'include'/, 'api.js (public data) n
   assert.match(replay, /data-rp="live">Jump to live<\/button>/, 'live replay exposes a dedicated Jump to live action');
   assert.match(replay, /badgeText = atLiveEdge \? 'Live'/, 'live edge is labelled Live instead of Full game');
   assert.match(cast, /--away:\$\{teamAccent\(g\.teams\.away\.abbrev\)\};--home:\$\{teamAccent\(g\.teams\.home\.abbrev\)\}/, 'Shot Share bars use team accents');
-  assert.match(css, /\.rink-legend \{[^\n]*color: var\(--pbe-paper-2\)/, 'shot-map legend uses high-contrast text');
+  assert.match(css, /\.cast-col--stats \.cmp-bar \.a \{ background: var\(--away\)/, 'away Shot Share segment uses the actual away team accent');
+  assert.match(css, /\.cast-col--stats \.cmp-bar \.h \{ background: var\(--home\)/, 'home Shot Share segment uses the actual home team accent');
+  assert.match(css, /\.rink-legend \{[^\n]*color: var\(--pbe-paper\)/, 'shot-map legend uses primary high-contrast text');
+  assert.match(cast, /class="pressure-axis"/, 'pressure chart renders a numeric Y-axis');
+  assert.match(cast, /Attempts \/ 5 min/, 'pressure chart labels its rolling five-minute unit');
+  assert.match(cast, /Peak \$\{max\} attempts in a five-minute window/, 'pressure chart accessibility copy exposes the real peak scale');
+  assert.match(css, /\.pc-grid \{/, 'pressure chart renders quantitative grid lines');
   assert.match(css, /\.replay__live \{/, 'Jump to live has a dedicated visible treatment');
 }
 
