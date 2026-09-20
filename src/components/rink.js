@@ -66,12 +66,14 @@ function marker(play, x, y, label) {
   const sy = -y;
   const side = play.side === 'home' ? 'home' : 'away';
   const cls = `mk mk--${side}`;
+  const shotType = String(play.shot?.shot_type || 'unknown');
   let shape;
   if (play.type === 'goal') shape = `<circle cx="${x}" cy="${sy}" r="2.9" class="${cls} mk--goal"/><circle cx="${x}" cy="${sy}" r="1.3" class="mk-core mk-core--${side}"/>`;
   else if (play.type === 'shot-on-goal') shape = `<circle cx="${x}" cy="${sy}" r="1.55" class="${cls}"/>`;
   else if (play.type === 'missed-shot') shape = `<path d="M${x - 1.4},${sy - 1.4} L${x + 1.4},${sy + 1.4} M${x - 1.4},${sy + 1.4} L${x + 1.4},${sy - 1.4}" class="${cls} mk--x"/>`;
   else shape = `<path d="M${x},${sy - 1.8} L${x + 1.7},${sy + 1.2} L${x - 1.7},${sy + 1.2} Z" class="${cls} mk--tri"/>`;
-  return `<g class="mk-g" data-sort="${play.sort_order}" tabindex="-1"><title>${esc(label)}</title>${shape}</g>`;
+  const hoverRing = `<circle cx="${x}" cy="${sy}" r="4.7" class="mk-hover-ring"/>`;
+  return `<g class="mk-g" data-sort="${play.sort_order}" data-shot-type="${esc(shotType)}" tabindex="-1"><title>${esc(label)}</title>${hoverRing}${shape}</g>`;
 }
 
 export function shotLabel(play, teams) {
