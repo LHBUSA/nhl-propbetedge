@@ -241,6 +241,14 @@
 .feed-item--goal { background: rgba(230,57,70,.08); box-shadow: inset 3px 0 0 var(--pbe-crimson-bright); }
 .feed-item--goal .feed-text b { color: var(--pbe-crimson-text); }
 .feed-item--penalty .feed-text b { color: var(--pbe-gold-bright); }
+.feed-item--fight {
+  background: linear-gradient(90deg, rgba(230,57,70,.12), rgba(233,199,90,.035) 65%, transparent);
+  box-shadow: inset 3px 0 0 var(--pbe-crimson-bright);
+}
+.feed-item--fight .feed-team,
+.feed-fight { color: var(--pbe-crimson-text); font-weight: 800; }
+.feed-list--fights .feed-loc--none { visibility: visible; color: var(--pbe-paper); }
+.fight-feed__result { display: inline-block; margin-left: 5px; color: var(--pbe-gold-bright); }
 .feed-item--stoppage, .feed-item--faceoff { color: var(--pbe-dim); }
 .feed-time { font-size: 12px; color: var(--pbe-dim); }
 .feed-team { font: 700 11px/1 var(--pbe-font-data); letter-spacing: .04em; padding-left: 6px; border-left: 3px solid var(--c); color: var(--pbe-paper-2); }
@@ -334,6 +342,23 @@
 .rp-mark--goal::before { background: var(--pbe-crimson-bright); }
 .rp-mark--penalty { top: 20px; }
 .rp-mark--penalty::before { left: 8px; top: 8px; width: 8px; height: 8px; border-radius: 1px; background: var(--pbe-gold-bright); }
+.rp-mark--fight { top: 18px; z-index: 4; }
+.rp-mark--fight::before {
+  content: "🥊";
+  left: 2px;
+  top: -1px;
+  width: 20px;
+  height: 20px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--pbe-crimson-bright) 18%, var(--pbe-ink-4));
+  box-shadow: 0 0 0 1px rgba(230,57,70,.62), 0 0 12px rgba(230,57,70,.2);
+  font-size: 12px;
+  line-height: 1;
+}
+.replay__fight-jump { border-color: rgba(230,57,70,.48); color: var(--pbe-paper); }
+.replay__fight-jump:hover { border-color: var(--pbe-crimson-bright); color: var(--pbe-paper); }
 .rp-mark--period { top: 6px; pointer-events: none; }
 .rp-mark--period::before { left: 11px; top: 0; width: 2px; height: 24px; border-radius: 0; background: var(--pbe-line-strong); }
 .replay__keys { margin-left: auto; }
@@ -440,6 +465,111 @@
 .stx--pp .stx__mp { color: var(--pbe-paper); }
 .stx--delayed { background: rgba(230,57,70,.14); border: 1px solid rgba(230,57,70,.45); color: var(--pbe-crimson-bright); }
 .stx--even { background: rgba(255,255,255,.05); border: 1px solid var(--pbe-line); color: var(--pbe-paper); }
+
+/* ---- fight desk --------------------------------------------------------
+   A fight is a discrete hockey event, not another penalty row. This module
+   keeps both player identities, the paired fighting majors and any optional
+   fan-vote result in one broadcast-style surface. */
+.fightdesk {
+  width: min(980px, calc(100% - 20px));
+  margin: 12px auto 0;
+  overflow: hidden;
+  border: 1px solid rgba(230,57,70,.38);
+  border-radius: var(--r-sm);
+  background:
+    radial-gradient(circle at 8% 50%, rgba(230,57,70,.10), transparent 34%),
+    radial-gradient(circle at 92% 50%, rgba(233,199,90,.08), transparent 34%),
+    linear-gradient(180deg, rgba(15,16,18,.96), rgba(6,7,9,.98));
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.04), 0 12px 30px rgba(0,0,0,.2);
+}
+.fightdesk__head {
+  min-height: 38px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border-bottom: 1px solid rgba(255,255,255,.08);
+  background: linear-gradient(90deg, rgba(230,57,70,.09), transparent 36%);
+}
+.fightdesk__icon { font-size: 18px; filter: drop-shadow(0 0 8px rgba(230,57,70,.28)); }
+.fightdesk__head > span:nth-child(2) { display: flex; flex-direction: column; gap: 2px; }
+.fightdesk__head b { font: 900 11px/1 var(--pbe-font-data); letter-spacing: .14em; color: var(--pbe-paper); }
+.fightdesk__head small { font: 650 9.5px/1.2 var(--pbe-font-data); letter-spacing: .06em; color: var(--pbe-dim); text-transform: uppercase; }
+.fightdesk__source { margin-left: auto; font: 600 9.5px/1 var(--pbe-font-data); color: var(--pbe-dim); }
+.fightdesk__source b { color: var(--pbe-paper-2); letter-spacing: 0; text-transform: none; }
+.fightdesk__body {
+  display: grid;
+  grid-template-columns: minmax(0,1fr) 50px minmax(0,1fr) minmax(190px,.72fr);
+  align-items: stretch;
+  gap: 0;
+  padding: 10px 12px;
+}
+.fightdesk__fighter {
+  position: relative;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 11px 12px;
+  border: 1px solid color-mix(in srgb, var(--fight-team) 30%, rgba(255,255,255,.08));
+  background: linear-gradient(100deg, color-mix(in srgb, var(--fight-team) 8%, rgba(0,0,0,.28)), rgba(0,0,0,.18));
+}
+.fightdesk__fighter--away { border-radius: 8px 0 0 8px; }
+.fightdesk__fighter--home { border-radius: 0 8px 8px 0; }
+.fightdesk__fighter.is-fan-winner {
+  border-color: color-mix(in srgb, var(--pbe-gold-bright) 68%, var(--fight-team));
+  box-shadow: inset 0 0 0 1px rgba(233,199,90,.12);
+}
+.fightdesk__fighter .pid { flex: none; }
+.fightdesk__fighter-copy { min-width: 0; display: grid; gap: 4px; }
+.fightdesk__fighter-copy > a,
+.fightdesk__fighter-copy > strong {
+  min-width: 0;
+  color: var(--pbe-paper);
+  font-size: 1rem;
+  font-weight: 850;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.fightdesk__fighter-copy > a:hover { color: var(--pbe-gold-bright); }
+.fightdesk__team { color: var(--pbe-dim); font-size: 10px; font-weight: 750; letter-spacing: .08em; }
+.fightdesk__winner {
+  justify-self: start;
+  padding: 3px 6px;
+  border: 1px solid rgba(233,199,90,.52);
+  border-radius: 999px;
+  color: var(--pbe-gold-bright);
+  font: 800 9px/1 var(--pbe-font-data);
+  letter-spacing: .07em;
+  text-transform: uppercase;
+}
+.fightdesk__vs {
+  position: relative;
+  display: grid;
+  place-items: center;
+  color: var(--pbe-crimson-bright);
+  font: 900 11px/1 var(--pbe-font-data);
+}
+.fightdesk__vs i { position: absolute; inset: 5px 24px; width: 1px; background: rgba(255,255,255,.1); }
+.fightdesk__vs span { position: relative; z-index: 1; padding: 7px 5px; border-radius: 50%; background: var(--pbe-ink-2); box-shadow: 0 0 0 1px rgba(230,57,70,.36); }
+.fightdesk__result {
+  margin-left: 10px;
+  padding: 9px 10px;
+  display: grid;
+  align-content: center;
+  gap: 4px;
+  border: 1px solid rgba(255,255,255,.08);
+  border-radius: 8px;
+  background: rgba(0,0,0,.24);
+}
+.fightdesk__result-k { color: var(--pbe-dim); font: 800 9px/1 var(--pbe-font-data); letter-spacing: .08em; }
+.fightdesk__result strong { color: var(--pbe-paper); font-size: .95rem; }
+.fightdesk__result--available { border-color: rgba(233,199,90,.32); }
+.fightdesk__result--available strong,
+.fightdesk__result--available .mono { color: var(--pbe-gold-bright); }
+.fightdesk__result--pending strong { color: var(--pbe-paper-2); }
+.fightdesk__note { margin: 0; padding: 0 12px 10px; color: var(--pbe-dim); }
 
 /* ---- penalty box -------------------------------------------------------
    This is intentionally shaped like the rink-side box: glass panes, a bench,
@@ -605,6 +735,22 @@
 }
 a.pbox__name:hover { color: var(--pbe-gold-bright); }
 .pbox__what { display: flex; flex-wrap: wrap; gap: 3px 8px; font-size: var(--fs-sm); color: var(--pbe-paper-2); }
+.pbox__fight-tag {
+  justify-self: start;
+  max-width: 100%;
+  padding: 3px 6px;
+  border: 1px solid rgba(230,57,70,.4);
+  border-radius: 999px;
+  color: var(--pbe-crimson-text);
+  background: rgba(230,57,70,.08);
+  font: 800 9px/1 var(--pbe-font-data);
+  letter-spacing: .05em;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pbox__pen--fight { border-left-color: var(--pbe-crimson-bright); }
+.pbox__pen--fight.is-fan-winner { box-shadow: inset 0 0 0 1px rgba(233,199,90,.14), 0 5px 14px rgba(0,0,0,.18); }
 .pbox__silhouette {
   width: 48px;
   height: 48px;
@@ -689,6 +835,24 @@ a.pbox__name:hover { color: var(--pbe-gold-bright); }
 .feed-pen { color: var(--pbe-crimson-bright); letter-spacing: .06em; }
 .feed-pen--delayed { color: var(--pbe-gold-bright); }
 
+@media (max-width: 760px) {
+  .fightdesk { width: calc(100% - 12px); }
+  .fightdesk__head { flex-wrap: wrap; }
+  .fightdesk__source { width: 100%; margin-left: 28px; }
+  .fightdesk__body { grid-template-columns: 1fr 34px 1fr; padding: 9px; }
+  .fightdesk__result { grid-column: 1 / -1; margin: 9px 0 0; }
+  .fightdesk__fighter { padding: 9px; gap: 8px; }
+  .fightdesk__fighter .pid--lg { --pid: 58px !important; }
+  .fightdesk__fighter-copy > a,
+  .fightdesk__fighter-copy > strong { font-size: .9rem; }
+}
+@media (max-width: 460px) {
+  .fightdesk__body { grid-template-columns: 1fr; gap: 7px; }
+  .fightdesk__vs { min-height: 24px; }
+  .fightdesk__vs i { inset: 12px 0 auto; width: 100%; height: 1px; }
+  .fightdesk__fighter--away,
+  .fightdesk__fighter--home { border-radius: 8px; }
+}
 @media (max-width: 560px) {
   /* Power play stays with the score; the physical box becomes one rink-side
      compartment per row rather than turning into a horizontal scroller. */
