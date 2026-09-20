@@ -39,7 +39,9 @@ const desc = one('name', 'description');
 assert.ok(desc.length >= 80 && desc.length <= 300, 'description length is sensible');
 const canon = all(/<link rel="canonical" href="([^"]+)"/g).map(m => m[1]);
 assert.deepEqual(canon, [SITE], 'one canonical, the production origin');
-assert.ok(!/localhost|127\.0\.0\.1|vercel\.app|workers\.dev/.test(head), 'no dev/preview hosts in <head>');
+const metadataHead = head.replace(/<script[\s\S]*?<\/script>/g, '');
+assert.ok(!/localhost|127\.0\.0\.1|vercel\.app|workers\.dev/.test(metadataHead), 'no dev/preview hosts in head metadata');
+assert.match(head, /host\.endsWith\('\.vercel\.app'\)/, 'analytics explicitly stays off on Vercel preview hosts');
 one('name', 'robots');
 one('name', 'theme-color');
 
