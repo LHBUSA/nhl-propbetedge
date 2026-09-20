@@ -13,7 +13,7 @@ import {
 } from '../src/pages/pbe-picks.js';
 
 const call = {
-  game_id: 2026010001, home: 'STL', away: 'DAL',
+  game_id: 2026010001, season: 20262027, home: 'STL', away: 'DAL',
   puck_drop_utc: '2026-09-19T23:00:00Z', locked_at: '2026-09-19T21:15:07Z',
   is_call: true, pick_team: 'STL', probability: 0.507132815565031,
   p_home: 0.507132815565031, p_away: 0.492867184434969,
@@ -99,6 +99,15 @@ test('the record strip updates once results exist', () => {
   const html = preseasonRecordStrip({ season: 20262027, locked_calls: 5, graded: 3, wins: 2, losses: 1, accuracy: 0.6667 }, 1);
   assert.match(html, /2–1/);
   assert.match(html, /66\.7%/);
+});
+
+test('the preseason section derives the season label from locked pick rows during old-gateway fallback', () => {
+  const state = {
+    ...stateWithPicks,
+    preseasonRecord: { ok: true, locked_calls: 6, graded: 5, wins: 3, losses: 2, accuracy: 0.6 }
+  };
+  const html = rehearsalSection(state);
+  assert.match(html, /2026–27 PRESEASON RECORD/);
 });
 
 // ---- page mode -------------------------------------------------------------
