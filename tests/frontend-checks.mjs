@@ -62,6 +62,26 @@ assert.doesNotMatch(apiSource, /credentials: 'include'/, 'api.js (public data) n
   assert.match(css, /\.replay__live \{/, 'Jump to live has a dedicated visible treatment');
 }
 
+// 1d. Shot Lab is a first-class live spatial surface, not a PBE Cast alias.
+{
+  const lab = fs.readFileSync('src/pages/shotlab.js', 'utf8');
+  const rink = fs.readFileSync('src/components/rink.js', 'utf8');
+  const css = fs.readFileSync('src/styles/pages-lab.css', 'utf8');
+
+  assert.match(lab, /Shot Lab · live spatial telemetry/, 'Shot Lab declares its own live spatial-telemetry identity');
+  assert.match(lab, /LIVE SHOT LAB/, 'live games display an explicit Shot Lab live state');
+  assert.match(lab, /return 5000;/, 'live Shot Lab polls on a five-second cadence');
+  assert.match(lab, /ctx\.board\(today, \{ signal: aborter\.signal, maxAgeMs: 5000 \}\)/, 'bare Shot Lab landing rechecks today before using cached recent games');
+  assert.match(lab, /data-shot-type=/, 'Shot Lab rows expose shot-type cross-filter metadata');
+  assert.match(rink, /class="mk-hover-ring"/, 'rink markers carry a dedicated hover halo');
+  assert.match(lab, /crossHighlight\(\{ shotId:/, 'attempt rows cross-highlight their exact rink point');
+  assert.match(lab, /crossHighlight\(\{ shotType:/, 'shot-type rows cross-highlight matching rink points');
+  assert.match(lab, /class="lab-hist__scale mono"/, 'distance profile includes a numeric attempt scale');
+  assert.match(lab, /Attempts \/ 5-ft bin/, 'distance profile states its Y-axis unit');
+  assert.match(css, /\.lab \.rink-legend \{ color: #fffdf7;/, 'Shot Lab overrides the rink legend to primary high contrast');
+  assert.match(css, /\.mk-g\.is-cross-hit \.mk-hover-ring/, 'cross-filtered rink points receive a visible halo');
+}
+
 // 2. Truth rules: no randomness or stale launch copy in shipped source.
 const files = [];
 const walk = dir => {
