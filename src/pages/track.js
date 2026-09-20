@@ -11,12 +11,12 @@
 // plausible-looking value. When the ledger is empty the page shows the API's
 // OWN `reason`, not a sentence written here months ago.
 import { esc, on } from '../lib/dom.js';
-import { describeError, picksLedger, picksTrackRecord } from '../lib/api.js';
+import { describeError, picksLedger, picksPreseasonLedger, picksPreseasonRecord, picksTrackRecord } from '../lib/api.js';
 import { freshStamp } from '../lib/freshness.js';
 import { dayET, pct, timeET } from '../lib/format.js';
 
 const DASH = '—';
-const LEDGER_LIMIT = 50;
+const LEDGER_LIMIT = 25;
 
 const present = value => (value === null || value === undefined || value === '' ? null : value);
 
@@ -73,71 +73,110 @@ function recordText(agg) {
     .join('-');
 }
 
-const METRICS = [
-  ['Locked calls', agg => intText(readNum(agg, ['locked_calls', 'locked', 'n_locked', 'locked_picks'])), 'Official picks locked before puck drop.'],
+function seasonLabel(value) {
+  const raw = String(value || '');
+  if (/^\d{8}$/.test(raw)) return raw.slice(0, 4) + '–' + raw.slice(6);
+  return raw || 'All seasons';
+}
+
+const REGULAR_METRICS = [
+  ['Locked calls', agg => intText(readNum(agg, ['locked_calls', 'locked', 'n_locked', 'locked_picks'])), 'Official regular-season picks locked before puck drop.'],
   ['Record', agg => recordText(agg), 'Wins-losses, plus pushes and voids when the API reports them.'],
   ['Hit rate (SU)', agg => rateText(readNum(agg, ['hit_rate', 'su_hit_rate', 'straight_up_hit_rate'])), 'Straight-up accuracy. UNPRICED picks are counted here.'],
   ['Brier', agg => fixed(readNum(agg, ['brier', 'brier_score'])), 'Calibration of the published probability. Lower is better.'],
   ['Log loss', agg => fixed(readNum(agg, ['log_loss', 'logloss'])), 'Penalty for confident misses. Lower is better.'],
-  ['Priced', agg => intText(readNum(agg, ['priced', 'priced_count', 'priced_picks'])), 'Picks with a legitimate quoted price at lock.'],
-  ['UNPRICED', agg => intText(readNum(agg, ['unpriced', 'unpriced_count', 'unpriced_picks'])), 'No quoted price at lock. Graded, but excluded from ROI and CLV.'],
+  ['Priced', agg => intText(readNum(agg, ['priced_calls', 'priced', 'priced_count', 'priced_picks'])), 'Picks with a legitimate quoted price at lock.'],
+  ['UNPRICED', agg => intText(readNum(agg, ['unpriced_calls', 'unpriced', 'unpriced_count', 'unpriced_picks'])), 'No quoted price at lock. Graded, but excluded from ROI and CLV.'],
   ['ROI', agg => signedText(readNum(agg, ['roi', 'roi_units', 'return_on_investment'])), 'Over priced picks only, as returned by the API.'],
-  ['CLV', agg => signedText(readNum(agg, ['clv', 'avg_clv', 'clv_avg', 'mean_clv'])), 'Recorded price against captured closing price, priced picks only.'],
-  ['Sample size', agg => intText(readNum(agg, ['sample_size', 'n', 'graded'])), 'Graded picks behind every number here.']
+  ['CLV', agg => signedText(readNum(agg, ['clv_pts', 'clv', 'avg_clv', 'clv_avg', 'mean_clv'])), 'Recorded price against captured closing price, priced picks only.'],
+  ['Sample size', agg => intText(readNum(agg, ['graded_calls', 'sample_size', 'n', 'graded'])), 'Graded picks behind every number here.']
 ];
 
-function aggregatesOf(data, modelVersion) {
-  if (!data) return null;
-  if (modelVersion) {
-    const row = modelRows(data).find(r => String(readKey(r, ['model_version'])) === modelVersion);
-    return row || null;
-  }
-  const root = readKey(data, ['lifetime', 'aggregates', 'totals', 'overall']);
-  if (root && typeof root === 'object') return root;
-  // Some shapes put the aggregate fields on the response itself.
-  return METRICS.some(([, read]) => read(data) !== null) ? data : null;
-}
+const PRESEASON_METRICS = [
+  ['Locked picks', agg => intText(readNum(agg, ['locked_calls'])), 'Every preseason call locked before puck drop.'],
+  ['Graded', agg => intText(readNum(agg, ['graded'])), 'Finished picks with a recorded result.'],
+  ['Record', agg => recordText(agg), 'Preseason wins and losses only.'],
+  ['Accuracy', agg => rateText(readNum(agg, ['accuracy'])), 'Straight-up preseason accuracy.'],
+  ['Priced', agg => intText(readNum(agg, ['priced'])), 'Preseason calls with a recorded market price.'],
+  ['UNPRICED', agg => intText(readNum(agg, ['unpriced'])), 'Preseason calls without a qualifying price at lock.']
+];
 
 function modelRows(data) {
   const rows = readKey(data, ['by_model_version', 'model_versions', 'models', 'per_model_version']);
   return Array.isArray(rows) ? rows : [];
 }
 
-function metricsGrid(agg, sample) {
-  return `<div class="trk-metrics">
-    ${METRICS.map(([label, read, help]) => {
-      const value = agg ? read(agg) : null;
-      return `<div class="trk-metric">
-        <span class="trk-metric__k">${esc(label)}</span>
-        <b class="trk-metric__v mono"${value === null ? ' aria-label="No value returned"' : ''}>${value === null ? DASH : esc(value)}</b>
-        <span class="trk-metric__n micro">${esc(sample)}</span>
-        <span class="trk-metric__help">${esc(help)}</span>
-      </div>`;
-    }).join('')}
-  </div>`;
+function regularAggregate(data, modelVersion) {
+  if (!data) return null;
+  if (modelVersion) {
+    const row = modelRows(data).find(r => String(readKey(r, ['model_version'])) === modelVersion);
+    return row ? (row.lifetime || row) : null;
+  }
+  const root = readKey(data, ['lifetime', 'aggregates', 'totals', 'overall']);
+  if (root && typeof root === 'object') return root;
+  return REGULAR_METRICS.some(([, read]) => read(data) !== null) ? data : null;
+}
+
+function preseasonAggregate(data, season) {
+  if (!data) return null;
+  if (!season) return data;
+  const rows = Array.isArray(data.seasons) ? data.seasons : [];
+  return rows.find(row => String(row.season) === String(season)) || null;
+}
+
+function metricsGrid(metrics, agg, sample) {
+  return '<div class="trk-metrics">' + metrics.map(([label, read, help]) => {
+    const value = agg ? read(agg) : null;
+    return '<div class="trk-metric">' +
+      '<span class="trk-metric__k">' + esc(label) + '</span>' +
+      '<b class="trk-metric__v mono"' + (value === null ? ' aria-label="No value returned"' : '') + '>' + (value === null ? DASH : esc(value)) + '</b>' +
+      '<span class="trk-metric__n micro">' + esc(sample) + '</span>' +
+      '<span class="trk-metric__help">' + esc(help) + '</span>' +
+    '</div>';
+  }).join('') + '</div>';
 }
 
 // ------------------------------------------------------------------ ledger
+function rowPrice(row) {
+  return row && row.price && typeof row.price === 'object' ? row.price : null;
+}
+
 const LEDGER_COLUMNS = [
+  ['Season', '', row => seasonLabel(readKey(row, ['season']))],
+  ['Type', '', row => {
+    const type = readNum(row, ['game_type']);
+    if (type === 1) return 'PRESEASON';
+    if (type === 2) return 'REGULAR';
+    if (type === 3) return 'PLAYOFFS';
+    return null;
+  }],
   ['Locked at', '', row => {
     const at = readKey(row, ['locked_at_utc', 'locked_at', 'lock_time']);
-    return at ? `${dayET(at)} ${timeET(at)}` : null;
+    return at ? dayET(at) + ' ' + timeET(at) : null;
   }],
   ['Game', '', row => readKey(row, ['matchup', 'game', 'game_label'])
+    || (readKey(row, ['away']) && readKey(row, ['home'])
+      ? readKey(row, ['away']) + ' @ ' + readKey(row, ['home']) : null)
     || (readKey(row, ['away_abbrev']) && readKey(row, ['home_abbrev'])
-      ? `${readKey(row, ['away_abbrev'])} @ ${readKey(row, ['home_abbrev'])}` : null)],
+      ? readKey(row, ['away_abbrev']) + ' @ ' + readKey(row, ['home_abbrev']) : null)],
   ['Pick', '', row => readKey(row, ['pick', 'pick_team', 'selection'])],
   ['Probability', 'num', row => rateText(readNum(row, ['probability', 'p_pick', 'model_probability']))],
   ['Model version', '', row => readKey(row, ['model_version'])],
   ['Price', 'num', row => {
-    const state = readKey(row, ['market_state', 'price_state']);
-    if (String(state).toUpperCase() === 'UNPRICED') return 'UNPRICED';
-    return americanPrice(readKey(row, ['recorded_price', 'price', 'best_price'])) || (state ? String(state) : null);
+    const p = rowPrice(row);
+    const state = p ? readKey(p, ['state']) : readKey(row, ['market_state', 'price_state', 'market_at_lock']);
+    if (String(state || '').toUpperCase() === 'UNPRICED') return 'UNPRICED';
+    return americanPrice(p ? readKey(p, ['best_price']) : readKey(row, ['recorded_price', 'best_price'])) || (state ? String(state) : null);
   }],
-  ['Book', '', row => readKey(row, ['recorded_book', 'book', 'best_book'])],
-  ['Closing', 'num', row => americanPrice(readKey(row, ['closing_price', 'close_price']))],
-  ['Result', '', row => readKey(row, ['result', 'outcome'])],
-  ['Grade rev', 'num', row => intText(readNum(row, ['grade_revision', 'revision']))]
+  ['Book', '', row => {
+    const p = rowPrice(row);
+    return p ? readKey(p, ['best_book']) : readKey(row, ['recorded_book', 'book', 'best_book']);
+  }],
+  ['Result', '', row => readKey(row, ['result', 'outcome']) || 'PENDING'],
+  ['Graded at', '', row => {
+    const at = readKey(row, ['graded_at']);
+    return at ? dayET(at) + ' ' + timeET(at) : null;
+  }]
 ];
 
 function ledgerRows(data) {
@@ -145,51 +184,49 @@ function ledgerRows(data) {
   return Array.isArray(rows) ? rows : [];
 }
 
-// nhl-picks-read-v1 answers with a machine `reason` code plus a human `detail`.
-// The page shows the sentence the API wrote and keeps its code beside it; it
-// never substitutes wording of its own.
 const apiReason = data => readKey(data, ['detail', 'reason']);
 const apiReasonCode = data => readKey(data, ['reason']);
 
 function ledgerTable(state) {
   const rows = ledgerRows(state.ledger);
-  const reason = apiReason(state.ledger) || apiReason(state.record);
-  const code = apiReasonCode(state.ledger) || apiReasonCode(state.record);
+  const activeRecord = state.segment === 'preseason' ? state.preseasonRecord : state.regularRecord;
+  const reason = apiReason(state.ledger) || apiReason(activeRecord);
+  const code = apiReasonCode(state.ledger) || apiReasonCode(activeRecord);
   let body;
   if (rows.length) {
-    body = rows.map(row => `<tr>${LEDGER_COLUMNS.map(([, cls, read]) => {
+    body = rows.map(row => '<tr>' + LEDGER_COLUMNS.map(([, cls, read]) => {
       const value = read(row);
-      return `<td class="${cls}">${value === null || value === undefined ? DASH : esc(String(value))}</td>`;
-    }).join('')}</tr>`).join('');
+      return '<td class="' + cls + '">' + (value === null || value === undefined ? DASH : esc(String(value))) + '</td>';
+    }).join('') + '</tr>').join('');
   } else {
     const message = state.ledgerError
       ? unavailableText(state.ledgerError)
       : reason
         ? String(reason)
         : 'The ledger API returned no rows and no reason.';
-    body = `<tr class="trk-ledger__empty"><td colspan="${LEDGER_COLUMNS.length}">
-      <div class="trk-ledger__msg">
-        <b>No locked, graded picks are published.</b>
-        <span>${esc(message)}</span>
-        <span class="micro">Reported by the API${code ? ` as “${esc(String(code))}”` : ''}, not written into this page.</span>
-      </div>
-    </td></tr>`;
+    body = '<tr class="trk-ledger__empty"><td colspan="' + LEDGER_COLUMNS.length + '">' +
+      '<div class="trk-ledger__msg">' +
+        '<b>No picks on this page.</b>' +
+        '<span>' + esc(message) + '</span>' +
+        '<span class="micro">Reported by the API' + (code ? ' as “' + esc(String(code)) + '”' : '') + '.</span>' +
+      '</div>' +
+    '</td></tr>';
   }
-  return `<div class="table-wrap trk-ledger">
-    <table class="pbe-table">
-      <thead><tr>${LEDGER_COLUMNS.map(([label, cls]) => `<th class="${cls}" scope="col">${esc(label)}</th>`).join('')}</tr></thead>
-      <tbody>${body}</tbody>
-    </table>
-  </div>`;
+  return '<div class="table-wrap trk-ledger">' +
+    '<table class="pbe-table">' +
+      '<thead><tr>' + LEDGER_COLUMNS.map(([label, cls]) => '<th class="' + cls + '" scope="col">' + esc(label) + '</th>').join('') + '</tr></thead>' +
+      '<tbody>' + body + '</tbody>' +
+    '</table>' +
+  '</div>';
 }
 
 function unavailableText(error) {
   if (error?.kind === 'pipeline_unavailable') {
     const said = error.payload?.error || error.message || '';
-    return `The PBE Picks read API is not served by this gateway yet${said ? `, which answered “${said}”` : ''}.`;
+    return 'The PBE Picks read API is not served by this gateway yet' + (said ? ', which answered “' + said + '”' : '') + '.';
   }
   const d = describeError(error);
-  return `${d.title}: ${d.body}`;
+  return d.title + ': ' + d.body;
 }
 
 // ------------------------------------------------------------------ static
