@@ -6,6 +6,7 @@ import { $, esc, on } from '../lib/dom.js';
 import { describeError, nhl } from '../lib/api.js';
 import { freshStamp } from '../lib/freshness.js';
 import { dateLabel, periodLabel, share, pct, todayET } from '../lib/format.js';
+import { fightEvents } from '../lib/fights.js';
 import { createPoller } from '../lib/poll.js';
 import { resolveRecentCompleted } from '../lib/recent-games.js';
 import { teamAccent } from '../lib/teams.js';
@@ -38,8 +39,9 @@ function tile(g, cast) {
   const m = cast?.manpower;
   const man = m && (m.away_skaters !== m.home_skaters || !m.away_goalie_in_net || !m.home_goalie_in_net) ? `${m.away_skaters}v${m.home_skaters}` : null;
   const last = cast ? lastEvent(cast.plays, st.key === 'FINAL') : null;
+  const fights = cast ? fightEvents(cast) : [];
   return `<article class="ctile" data-state="${esc(st.key)}" data-open-cast="${esc(g.id)}" role="link" tabindex="0" aria-label="Open ${esc(a.abbrev)} at ${esc(h.abbrev)} in PBE Cast" style="--away:${teamAccent(a.abbrev)};--home:${teamAccent(h.abbrev)}">
-    <header class="ctile__head">${stateBadge(g)}${man ? `<span class="manpower">${esc(man)}</span>` : ''}${LIVE.has(st.key) || st.key === 'SCHEDULED' || st.key === 'PREGAME' ? watchButton(g.id, true) : ''}</header>
+    <header class="ctile__head">${stateBadge(g)}${man ? `<span class="manpower">${esc(man)}</span>` : ''}${fights.length ? `<span class="ctile__fight" title="${fights.length} paired fighting major${fights.length === 1 ? '' : 's'}">🥊 ${fights.length} fight${fights.length === 1 ? '' : 's'}</span>` : ''}${LIVE.has(st.key) || st.key === 'SCHEDULED' || st.key === 'PREGAME' ? watchButton(g.id, true) : ''}</header>
     <a class="ctile__body" href="#/cast/${esc(g.id)}">
       ${[['away', a], ['home', h]].map(([side, team]) => `<div class="ctile__team">${teamMark(team, 28)}<b>${esc(team.abbrev)}</b>
         ${scored ? `<span class="ctile__sog mono">${team.sog ?? '—'} SOG</span><span class="ctile__score mono">${team.score ?? '—'}</span>` : ''}
@@ -60,10 +62,14 @@ function scout(games, casts) {
   }
   rows.sort((x, y) => y.n - x.n);
   const pp = live.filter(g => { const m = casts.get(String(g.id))?.manpower; return m && m.away_skaters !== m.home_skaters; });
+  const fights = live
+    .map(g => ({ g, fights: fightEvents(casts.get(String(g.id))) }))
+    .filter(x => x.fights.length);
   return `<div class="scout">
     <span class="eyebrow">Slate scout · last 5 min of game time</span>
     <div class="scout__row">${rows.slice(0, 4).map(r => `<a href="#/cast/${esc(r.g.id)}" class="scout__item"><b class="mono">${r.n}</b><span>${esc(r.team)} attempts</span></a>`).join('')}
-      ${pp.map(g => `<a href="#/cast/${esc(g.id)}" class="scout__item scout__item--pp"><b class="mono">PP</b><span>${esc(g.teams.away.abbrev)} @ ${esc(g.teams.home.abbrev)}</span></a>`).join('')}</div>
+      ${pp.map(g => `<a href="#/cast/${esc(g.id)}" class="scout__item scout__item--pp"><b class="mono">PP</b><span>${esc(g.teams.away.abbrev)} @ ${esc(g.teams.home.abbrev)}</span></a>`).join('')}
+      ${fights.map(({ g, fights }) => `<a href="#/cast/${esc(g.id)}" class="scout__item scout__item--fight"><b>🥊</b><span>${esc(g.teams.away.abbrev)} @ ${esc(g.teams.home.abbrev)} · ${fights.length} fight${fights.length === 1 ? '' : 's'}</span></a>`).join('')}</div>
   </div>`;
 }
 
