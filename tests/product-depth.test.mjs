@@ -80,6 +80,7 @@ assert.match(matchupPage, /name: `\$\{r\.firstName\?\.default \|\| ''\} \$\{r\.l
 assert.match(playerPage, /Fan-voted fight record/, 'player profiles expose the hockey-native fan-voted fight record');
 assert.match(playerPage, /\/nhl\/game\/\$\{candidate\.game_id\}\/cast/, 'fight history is built from the same documented PBE Cast fight ledger');
 assert.match(playerPage, /FIGHT W-L-D/, 'fight wins, losses and draws are first-class player stats');
+assert.match(playerPage, /cell\('FIGHT W-L-D'/, 'fight W-L-D is visible in the main NHL season stat strip, not only the history panel');
 assert.match(playerPage, /PBE Cast →/, 'every documented fight links back to its game record');
 assert.match(playerPage, /not an official NHL decision/, 'fan-vote outcomes are never mislabeled as official NHL results');
 
