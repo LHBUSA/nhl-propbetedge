@@ -228,7 +228,10 @@ function histogramPanel(game, list, filterNote) {
     body = `<p class="dim lab-hist__empty">${list.length ? 'None of the attempts in this view has a measured distance.' : 'No attempts match the current map filters.'}</p>`;
   } else {
     const max = Math.max(1, ...bins.away, ...bins.home);
+    const half = Math.max(1, Math.ceil(max / 2));
     const W = BIN_COUNT * 10; const H = 100; const mid = H / 2;
+    const yAway = v => mid - 1 - (v / max) * (mid - 3);
+    const yHome = v => mid + 1 + (v / max) * (mid - 3);
     const bars = [];
     for (let i = 0; i < BIN_COUNT; i += 1) {
       for (const side of SIDES) {
@@ -248,10 +251,20 @@ function histogramPanel(game, list, filterNote) {
       const m = median(dists[side]);
       return m === null ? 'no attempts in view' : `${dists[side].length} att · median ${m.toFixed(1)} ft · ${peak(side)}`;
     };
+    const gridY = [yAway(max), yAway(half), mid, yHome(half), yHome(max)];
     body = `<div class="lab-hist">
         <div class="lab-hist__side" aria-hidden="true"><span>${esc(a)}</span><span>${esc(h)}</span></div>
+        <div class="lab-hist__scale mono" aria-hidden="true">
+          <span style="top:${yAway(max)}%">${max}</span>
+          <span style="top:${yAway(half)}%">${half}</span>
+          <span style="top:${mid}%">0</span>
+          <span style="top:${yHome(half)}%">${half}</span>
+          <span style="top:${yHome(max)}%">${max}</span>
+        </div>
         <div class="lab-hist__plot">
-          <svg class="lab-hist__svg" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="Shot distance distribution in ${BIN_FT}-foot bins: ${esc(a)} above the axis, ${esc(h)} below">
+          <span class="lab-hist__unit micro" aria-hidden="true">Attempts / 5-ft bin</span>
+          <svg class="lab-hist__svg" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="Shot distance distribution in ${BIN_FT}-foot bins: ${esc(a)} above the axis, ${esc(h)} below. Peak bin has ${max} attempts.">
+            ${gridY.map((yy, i) => `<line x1="0" x2="${W}" y1="${yy}" y2="${yy}" class="lab-hgrid${i === 2 ? ' lab-hgrid--zero' : ''}"/>`).join('')}
             <line x1="0" x2="${W}" y1="${mid}" y2="${mid}" class="lab-haxis"/>
             ${bars.join('')}
           </svg>
@@ -289,7 +302,8 @@ function typePanel(game, shots) {
   const rows = keys.map(key => {
     const a = stat('away', key); const h = stat('home', key);
     const cells = (s, split) => `<td class="num${split ? ' lab-col-split' : ''}">${s.att}</td><td class="num">${s.att ? pctText(s.sog, s.att) : '—'}</td><td class="num">${s.g}</td>`;
-    return `<tr${!a.att && !h.att ? ' class="is-zero"' : ''}><th scope="row">${key === null ? 'Unknown' : esc(labels.get(key))}</th>${cells(a)}${cells(h, true)}</tr>`;
+    const typeKey = key || 'unknown';
+    return `<tr class="lab-type-row${!a.att && !h.att ? ' is-zero' : ''}" data-shot-type="${esc(typeKey)}" tabindex="0" title="Hover or focus to highlight these attempts on the rink"><th scope="row">${key === null ? 'Unknown' : esc(labels.get(key))}</th>${cells(a)}${cells(h, true)}</tr>`;
   }).join('');
   return `<section class="pbe-panel lab-card">
       <div class="panel-head"><h3>Shot types</h3><span class="micro">All periods · on-goal = SOG ÷ attempts</span></div>
@@ -352,7 +366,7 @@ function shotTable(game, list, st) {
     const shooter = shooterOf(p);
     const sel = st.selected === p.sort_order;
     const place = plottable(p, st.normalize);
-    return `<tr class="lab-row${sel ? ' is-selected' : ''}${s.goal ? ' is-goal' : ''}" data-shot="${esc(p.sort_order)}" tabindex="0" aria-selected="${sel}" title="${place.ok ? 'Show on the rink' : `Not plotted: ${esc(place.why)}`}">
+    return `<tr class="lab-row${sel ? ' is-selected' : ''}${s.goal ? ' is-goal' : ''}" data-shot="${esc(p.sort_order)}" data-shot-type="${esc(String(s.shot_type || 'unknown'))}" tabindex="0" aria-selected="${sel}" title="${place.ok ? 'Hover to highlight; select to pin on the rink' : `Not plotted: ${esc(place.why)}`}">
       <td class="mono">${esc(periodLabel(p.period, p.period_type))}</td>
       <td class="num">${esc(p.time_in_period || '—')}</td>
       <td>${team ? `<span class="lab-team" style="--c:${teamAccent(team.abbrev)}">${esc(team.abbrev)}</span>` : '<span class="faint">—</span>'}</td>
