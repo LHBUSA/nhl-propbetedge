@@ -1,5 +1,6 @@
 import { esc } from '../lib/dom.js';
 import { parseSituationClient, periodLabel } from '../lib/format.js';
+import { deriveFightEvents, fightEvents } from '../lib/fights.js';
 
 // Replay state is a pure function of (plays, cursor): everything is rebuilt
 // from events 0..cursor, so stepping backwards can never corrupt state.
@@ -42,6 +43,11 @@ export function aggregate(plays) {
 export function sliceCast(cast, cursor) {
   const plays = cast.plays.slice(0, cursor + 1);
   const at = plays[plays.length - 1] || null;
+  const atSort = Number(at?.sort_order);
+  const fights = fightEvents(cast).filter(f => {
+    const last = Number(f.last_sort_order);
+    return Number.isFinite(atSort) && Number.isFinite(last) && last <= atSort;
+  });
   const totals = aggregate(plays);
   let score = { away: 0, home: 0 };
   for (const p of plays) if (p.score_after && p.score_after.away !== null) score = p.score_after;
@@ -67,24 +73,40 @@ export function sliceCast(cast, cursor) {
     replay: { cursor, total: cast.plays.length, at },
     game,
     plays,
+    fights,
     totals,
     manpower: sit ? { ...sit, method: 'situationCode of the event at the replay cursor' } : null,
     goalies_in_net: goalies
   };
 }
 
-export function markers(plays) {
+export function markers(plays, fights = []) {
   const out = [];
+  const fightSorts = new Set((fights || []).flatMap(f => (f.fighters || []).map(x => Number(x.penalty_sort_order)).filter(Number.isFinite)));
   plays.forEach((p, i) => {
     if (p.type === 'goal') out.push({ i, kind: 'goal', label: `${periodLabel(p.period, p.period_type)} ${p.time_in_period} goal` });
-    else if (p.type === 'penalty') out.push({ i, kind: 'penalty', label: `${periodLabel(p.period, p.period_type)} ${p.time_in_period} penalty` });
+    else if (p.type === 'penalty' && !fightSorts.has(Number(p.sort_order))) out.push({ i, kind: 'penalty', label: `${periodLabel(p.period, p.period_type)} ${p.time_in_period} penalty` });
     else if (p.type === 'period-start' && p.period > 1) out.push({ i, kind: 'period', label: `Start of ${periodLabel(p.period, p.period_type)}` });
   });
-  return out;
+  for (const fight of fights || []) {
+    const i = plays.findIndex(p => Number(p.sort_order) === Number(fight.last_sort_order ?? fight.first_sort_order));
+    if (i >= 0) {
+      const names = (fight.fighters || []).map(x => x.name).filter(Boolean).join(' vs ');
+      out.push({ i, kind: 'fight', label: `${periodLabel(fight.period, fight.period_type)} ${fight.clock || ''} fight${names ? ` · ${names}` : ''}` });
+    }
+  }
+  return out.sort((a, b) => a.i - b.i);
 }
 
 // Index of the next/previous event matching `kind` from `from`.
 export function seek(plays, from, kind, dir = 1) {
+  if (kind === 'fight') {
+    const fightSorts = new Set(deriveFightEvents(plays, {}).map(f => Number(f.last_sort_order ?? f.first_sort_order)).filter(Number.isFinite));
+    for (let i = from + dir; i >= 0 && i < plays.length; i += dir) {
+      if (fightSorts.has(Number(plays[i].sort_order))) return i;
+    }
+    return null;
+  }
   const test = {
     goal: p => p.type === 'goal',
     penalty: p => p.type === 'penalty',
@@ -106,9 +128,10 @@ export function replayBar(state, cast, { live = false } = {}) {
   const cur = state.cursor ?? n - 1;
   const at = cast.plays[cur];
   const pct = n > 1 ? (cur / (n - 1)) * 100 : 100;
-  // Markers are visual; the Goal/Penalty/Power play/Period chips are the
-  // keyboard- and touch-sized way to jump (markers can sit pixels apart).
-  const marks = markers(cast.plays).map(m => `<span class="rp-mark rp-mark--${m.kind}" style="left:${n > 1 ? (m.i / (n - 1)) * 100 : 0}%" title="${esc(m.label)}" aria-hidden="true"></span>`).join('');
+  // Markers are visual; the jump chips are the keyboard- and touch-sized way
+  // to navigate. Fighting majors collapse into one dedicated fight marker.
+  const fights = fightEvents(cast);
+  const marks = markers(cast.plays, fights).map(m => `<span class="rp-mark rp-mark--${m.kind}" style="left:${n > 1 ? (m.i / (n - 1)) * 100 : 0}%" title="${esc(m.label)}" aria-hidden="true"></span>`).join('');
   const atLiveEdge = live && state.cursor === null;
   const badgeClass = atLiveEdge ? 'live' : state.cursor === null ? 'final' : 'sched';
   const badgeText = atLiveEdge ? 'Live' : state.cursor === null ? 'Full game' : 'Replay';
@@ -137,6 +160,7 @@ export function replayBar(state, cast, { live = false } = {}) {
     <div class="chips replay__jumps" role="group" aria-label="Jump to">
       <button class="chip" data-rp-seek="goal" data-dir="-1">‹ Goal</button><button class="chip" data-rp-seek="goal" data-dir="1">Goal ›</button>
       <button class="chip" data-rp-seek="penalty" data-dir="1">Penalty ›</button>
+      ${fights.length ? '<button class="chip replay__fight-jump" data-rp-seek="fight" data-dir="1">🥊 Fight ›</button>' : ''}
       <button class="chip" data-rp-seek="pp" data-dir="1">Power play ›</button>
       <button class="chip" data-rp-seek="period" data-dir="1">Period ›</button>
       <span class="micro replay__keys">${atLiveEdge ? 'Live feed auto-follows · ← step back to replay' : 'Space play · ← → step'}</span>
