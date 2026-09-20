@@ -23,6 +23,16 @@ registerHooks({
   }
 });
 
+// This fixture is a captured 2026-09-18 board. Freeze the clock to that
+// capture date so "Today", "Tomorrow", countdowns and next-slate semantics
+// remain deterministic no matter when CI runs.
+const RealDate = Date;
+const FIXED_NOW_MS = RealDate.parse('2026-09-18T16:00:00Z');
+globalThis.Date = class FixedBoardDate extends RealDate {
+  constructor(...args) { super(...(args.length ? args : [FIXED_NOW_MS])); }
+  static now() { return FIXED_NOW_MS; }
+};
+
 const {
   boardView, countdownShort, heroInner, heroState, intelStatus, nextSlateFacts,
   picksBlock, picksBlockFacts, picksSlateDate, quickLaunch, slateCard, slateView, tools
@@ -399,4 +409,5 @@ assert.equal((intel.match(/Projected/g) || []).length, projectedChunks.length, '
 assert.ok(projectedChunks.every(c => c.includes('cap--source') && c.includes('aria-disabled="true"')), 'and every one of them is a disabled source-required card');
 assert.ok(!/Math\.random/.test(boardSource) && !/Math\.random/.test(modeSource));
 
+globalThis.Date = RealDate;
 console.log('board slate checks: PASS');
