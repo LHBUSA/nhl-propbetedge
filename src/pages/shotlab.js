@@ -710,6 +710,28 @@ export function mount(root, params, ctx) {
   }
   poller?.start();
 
+  function clearCrossHighlight() {
+    body.querySelectorAll('.mk-g.is-cross-hit, .mk-g.is-cross-dim').forEach(el => el.classList.remove('is-cross-hit', 'is-cross-dim'));
+    body.querySelectorAll('.lab-row.is-cross-match, .lab-type-row.is-cross-source').forEach(el => el.classList.remove('is-cross-match', 'is-cross-source'));
+  }
+
+  function crossHighlight({ shotId = null, shotType = null, source = null } = {}) {
+    clearCrossHighlight();
+    if (shotId === null && shotType === null) return;
+    body.querySelectorAll('.lab-rink__ice .mk-g').forEach(marker => {
+      const hit = shotId !== null
+        ? Number(marker.dataset.sort) === Number(shotId)
+        : marker.dataset.shotType === shotType;
+      marker.classList.toggle('is-cross-hit', hit);
+      marker.classList.toggle('is-cross-dim', !hit);
+    });
+    if (shotType !== null) {
+      const safeType = CSS.escape(shotType);
+      body.querySelectorAll(`.lab-row[data-shot-type="${safeType}"]`).forEach(row => row.classList.add('is-cross-match'));
+    }
+    source?.classList.add('is-cross-source');
+  }
+
   const disposers = [
     on(root, 'click', '[data-layer]', (_, b) => { state.layer = b.dataset.layer; renderBody(); }),
     on(root, 'click', '[data-team]', (_, b) => { state.team = b.dataset.team; renderBody(); }),
@@ -722,6 +744,30 @@ export function mount(root, params, ctx) {
       state.sort = state.sort.key === key ? { key, dir: -state.sort.dir } : { key, dir: 1 };
       renderBody();
       $(`[data-sort="${key}"]`, body)?.focus({ preventScroll: true });
+    }),
+    on(root, 'mouseover', 'tr[data-shot]', (event, tr) => {
+      if (tr.contains(event.relatedTarget)) return;
+      crossHighlight({ shotId: Number(tr.dataset.shot), source: tr });
+    }),
+    on(root, 'mouseout', 'tr[data-shot]', (event, tr) => {
+      if (tr.contains(event.relatedTarget)) return;
+      clearCrossHighlight();
+    }),
+    on(root, 'focusin', 'tr[data-shot]', (_, tr) => crossHighlight({ shotId: Number(tr.dataset.shot), source: tr })),
+    on(root, 'focusout', 'tr[data-shot]', (event, tr) => {
+      if (!tr.contains(event.relatedTarget)) clearCrossHighlight();
+    }),
+    on(root, 'mouseover', 'tr.lab-type-row[data-shot-type]', (event, tr) => {
+      if (tr.contains(event.relatedTarget)) return;
+      crossHighlight({ shotType: tr.dataset.shotType, source: tr });
+    }),
+    on(root, 'mouseout', 'tr.lab-type-row[data-shot-type]', (event, tr) => {
+      if (tr.contains(event.relatedTarget)) return;
+      clearCrossHighlight();
+    }),
+    on(root, 'focusin', 'tr.lab-type-row[data-shot-type]', (_, tr) => crossHighlight({ shotType: tr.dataset.shotType, source: tr })),
+    on(root, 'focusout', 'tr.lab-type-row[data-shot-type]', (event, tr) => {
+      if (!tr.contains(event.relatedTarget)) clearCrossHighlight();
     }),
     on(root, 'click', 'tr[data-shot]', (event, tr) => {
       if (event.target.closest('a')) return;
