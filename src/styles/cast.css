@@ -442,32 +442,254 @@
 .stx--even { background: rgba(255,255,255,.05); border: 1px solid var(--pbe-line); color: var(--pbe-paper); }
 
 /* ---- penalty box -------------------------------------------------------
-   Dark physical cards under the score. Two entries stack under one crest, so
-   5-on-3 needs no special case. */
-.pbox { margin-top: 10px; padding: 10px 12px; border: 1px solid var(--pbe-line); border-radius: var(--r-xs); background: rgba(6,7,9,.55); }
-.pbox__title { font: 800 var(--fs-micro)/1 var(--pbe-font-data); letter-spacing: .12em; color: var(--pbe-dim); margin: 0 0 8px; }
-.pbox__sides { display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 10px; }
-.pbox__side { min-width: 0; }
-.pbox__team b { font: 800 var(--fs-sm)/1 var(--pbe-font-data); letter-spacing: .07em; }
-.pbox__list { list-style: none; margin: 6px 0 0; padding: 0; display: grid; gap: 8px; }
-.pbox__pen { min-width: 0; padding: 9px 10px; border: 1px solid var(--pbe-line-faint); border-left: 3px solid var(--pbe-crimson-bright); border-radius: 6px; background: rgba(0,0,0,.35); }
-.pbox__who { display: flex; align-items: center; gap: 7px; margin-bottom: 4px; }
-.pbox__name { font-weight: 600; overflow-wrap: anywhere; }
-.pbox__what { display: flex; flex-wrap: wrap; gap: 4px 8px; font-size: var(--fs-sm); }
-.pbox__time { display: flex; flex-wrap: wrap; align-items: baseline; gap: 6px; margin-top: 5px; }
-.pbox__time .mono { font-size: 1.05rem; font-variant-numeric: tabular-nums; }
-.pbox__time--unknown { flex-direction: column; gap: 1px; }
-.pbox__bar { flex: 1 0 100%; height: 3px; margin-top: 4px; background: rgba(255,255,255,.1); border-radius: 2px; overflow: hidden; }
-.pbox__bar i { display: block; height: 100%; background: var(--pbe-crimson-bright); }
-.pbox__pen p { margin: 4px 0 0; }
+   This is intentionally shaped like the rink-side box: glass panes, a bench,
+   dasher boards and the actual penalized player sitting inside it. */
+.pbox {
+  margin-top: 12px;
+  overflow: hidden;
+  border: 1px solid var(--pbe-line);
+  border-radius: var(--r-sm);
+  background: linear-gradient(180deg, rgba(12,14,16,.84), rgba(5,6,8,.94));
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.04), 0 12px 30px rgba(0,0,0,.18);
+}
+.pbox__titlebar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 34px;
+  padding: 8px 12px;
+  border-bottom: 1px solid rgba(255,255,255,.08);
+  background: linear-gradient(180deg, rgba(255,255,255,.035), transparent);
+}
+.pbox__lamp {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--pbe-crimson-bright);
+  box-shadow: 0 0 0 4px rgba(230,57,70,.1), 0 0 14px rgba(230,57,70,.4);
+}
+.pbox__title {
+  margin: 0;
+  font: 800 var(--fs-micro)/1 var(--pbe-font-data);
+  letter-spacing: .15em;
+  color: var(--pbe-paper);
+}
+.pbox__state {
+  margin-left: auto;
+  font-size: var(--fs-micro);
+  color: var(--pbe-gold-bright);
+}
+.pbox__sides {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
+  gap: 1px;
+  background: var(--pbe-line);
+}
+.pbox__side {
+  position: relative;
+  min-width: 0;
+  min-height: 178px;
+  overflow: hidden;
+  padding: 12px 12px 34px;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--box-team) 7%, transparent), transparent 46%),
+    linear-gradient(180deg, rgba(18,22,26,.86), rgba(8,10,12,.96));
+}
+.pbox__side::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  box-shadow: inset 0 0 28px rgba(0,0,0,.34);
+}
+.pbox__glass {
+  position: absolute;
+  z-index: 0;
+  inset: 0 0 27px;
+  pointer-events: none;
+  border-top: 1px solid rgba(220,235,245,.18);
+  background:
+    linear-gradient(112deg, transparent 0 18%, rgba(255,255,255,.035) 19% 20%, transparent 21% 60%, rgba(255,255,255,.025) 61% 62%, transparent 63%),
+    linear-gradient(180deg, rgba(164,205,225,.045), rgba(164,205,225,.012) 60%, transparent);
+}
+.pbox__glass i {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: rgba(215,232,240,.11);
+  box-shadow: 1px 0 rgba(0,0,0,.34);
+}
+.pbox__glass i:nth-child(1) { left: 25%; }
+.pbox__glass i:nth-child(2) { left: 50%; }
+.pbox__glass i:nth-child(3) { left: 75%; }
+.pbox__team {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 9px;
+}
+.pbox__team > span:not(.team-mark) { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.pbox__team b { font: 800 var(--fs-sm)/1 var(--pbe-font-data); letter-spacing: .08em; color: var(--pbe-paper); }
+.pbox__team small { font: 700 9px/1 var(--pbe-font-data); letter-spacing: .11em; color: var(--pbe-dim); }
+.pbox__team em {
+  margin-left: auto;
+  min-width: 24px;
+  height: 24px;
+  display: grid;
+  place-items: center;
+  border: 1px solid color-mix(in srgb, var(--box-team) 55%, var(--pbe-line));
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--box-team) 16%, var(--pbe-ink-4));
+  color: var(--pbe-paper);
+  font-style: normal;
+  font-size: 11px;
+}
+.pbox__list {
+  position: relative;
+  z-index: 2;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+.pbox__pen {
+  position: relative;
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(0,1fr) auto;
+  gap: 8px 12px;
+  padding: 10px;
+  overflow: hidden;
+  border: 1px solid rgba(255,255,255,.08);
+  border-left: 3px solid var(--box-team);
+  border-radius: 7px;
+  background: linear-gradient(105deg, rgba(0,0,0,.52), rgba(16,18,20,.76));
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.025);
+}
+.pbox__seat {
+  position: absolute;
+  left: 7px;
+  right: 7px;
+  bottom: 5px;
+  height: 4px;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--box-team) 20%, #33251c);
+  opacity: .7;
+}
+.pbox__player {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+.pbox__player .pid { flex: none; }
+.pbox__identity { min-width: 0; display: grid; gap: 4px; }
+.pbox__name-row { min-width: 0; display: flex; align-items: baseline; gap: 6px; }
+.pbox__number { flex: none; color: var(--pbe-gold-bright); font-size: 11px; font-weight: 800; }
+.pbox__name {
+  min-width: 0;
+  color: var(--pbe-paper);
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+a.pbox__name:hover { color: var(--pbe-gold-bright); }
+.pbox__what { display: flex; flex-wrap: wrap; gap: 3px 7px; font-size: var(--fs-sm); }
+.pbox__silhouette {
+  width: 48px;
+  height: 48px;
+  flex: none;
+  border-radius: 50%;
+  border: 1px solid var(--pbe-line-strong);
+  background: radial-gradient(circle at 50% 34%, rgba(255,255,255,.16) 0 18%, transparent 19%), rgba(255,255,255,.035);
+}
+.pbox__time {
+  min-width: 88px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  justify-content: center;
+  gap: 2px;
+  text-align: right;
+}
+.pbox__clock {
+  color: var(--pbe-crimson-bright);
+  font-size: 1.18rem;
+  font-weight: 800;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.pbox__time--unknown { max-width: 150px; }
+.pbox__bar {
+  width: 100%;
+  height: 4px;
+  margin-top: 4px;
+  overflow: hidden;
+  border-radius: 2px;
+  background: rgba(255,255,255,.1);
+}
+.pbox__bar i {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, var(--pbe-crimson-bright), var(--pbe-gold-bright));
+  transition: width .2s linear;
+}
+.pbox__pen p { grid-column: 1 / -1; margin: 0; }
+.pbox__bench {
+  position: absolute;
+  z-index: 1;
+  left: 10px;
+  right: 10px;
+  bottom: 21px;
+  height: 6px;
+  border-radius: 2px 2px 0 0;
+  background: linear-gradient(180deg, #4a3828, #241910);
+  box-shadow: 0 2px 5px rgba(0,0,0,.45);
+}
+.pbox__bench span {
+  position: absolute;
+  left: 5%;
+  right: 5%;
+  bottom: 5px;
+  height: 3px;
+  background: rgba(116,85,56,.7);
+}
+.pbox__boards {
+  position: absolute;
+  z-index: 3;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 21px;
+  border-top: 2px solid rgba(233,199,90,.55);
+  background: linear-gradient(180deg, #d9d6cf 0 20%, #a9a7a1 21% 28%, #20242a 29% 100%);
+  box-shadow: 0 -4px 12px rgba(0,0,0,.28);
+}
+.pbox__boards i {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  background: rgba(22,24,27,.7);
+}
+.pbox__boards i:first-child { left: 33%; }
+.pbox__boards i:last-child { left: 66%; }
 
 .feed-pen { color: var(--pbe-crimson-bright); letter-spacing: .06em; }
 .feed-pen--delayed { color: var(--pbe-gold-bright); }
 
 @media (max-width: 560px) {
-  /* Power play stays with the score; the box stacks beneath it. Never a
-     horizontal scroller and never behind a disclosure. */
+  /* Power play stays with the score; the physical box becomes one rink-side
+     compartment per row rather than turning into a horizontal scroller. */
   .pbox__sides { grid-template-columns: 1fr; }
+  .pbox__pen { grid-template-columns: minmax(0,1fr); }
+  .pbox__time { min-width: 0; align-items: flex-start; text-align: left; }
+  .pbox__time--unknown { max-width: none; }
   .stx__mp { font-size: 1.15rem; }
 }
 @media (prefers-reduced-motion: reduce) { .pbox__bar i { transition: none; } }
