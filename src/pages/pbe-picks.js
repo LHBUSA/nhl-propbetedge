@@ -672,7 +672,7 @@ export function splitSquadNotice(games) {
 
 function compactSeasonLabel(value) {
   const raw = String(value || '');
-  if (/^\\d{8}$/.test(raw)) return `${raw.slice(0, 4)}–${raw.slice(6)}`;
+  if (/^\d{8}$/.test(raw)) return `${raw.slice(0, 4)}–${raw.slice(6)}`;
   return raw || 'Current';
 }
 
