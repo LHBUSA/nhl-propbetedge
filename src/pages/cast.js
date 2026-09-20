@@ -172,7 +172,7 @@ function statsPanel(cast) {
     .sort((x, y) => (y.sog ?? 0) - (x.sog ?? 0) || (y.points ?? 0) - (x.points ?? 0)).slice(0, 8);
   return `
     <section class="pbe-panel cast-card">
-      <div class="panel-head"><h3>Shot share</h3><span class="micro">${esc(g.teams.away.abbrev)} · ${esc(g.teams.home.abbrev)}</span></div>
+      <div class="panel-head"><h3>Shot share</h3><span class="micro shot-share__teams"><span><i class="shot-share__sw" style="--team:${teamAccent(g.teams.away.abbrev)}"></i>${esc(g.teams.away.abbrev)}</span><span><i class="shot-share__sw" style="--team:${teamAccent(g.teams.home.abbrev)}"></i>${esc(g.teams.home.abbrev)}</span></span></div>
       <div class="cmp" style="--away:${teamAccent(g.teams.away.abbrev)};--home:${teamAccent(g.teams.home.abbrev)}">
         ${cmpRow('Shot attempts (Corsi)', a.corsi, h.corsi)}
         ${cmpRow('Unblocked (Fenwick)', a.fenwick, h.fenwick)}
