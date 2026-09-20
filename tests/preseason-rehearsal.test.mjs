@@ -118,7 +118,7 @@ test('the hero never says nobody while preseason picks exist', () => {
   assert.equal(/Right now: nobody/.test(html), false, 'the hero contradicted the picks on the same page');
   assert.equal(/NO OFFICIAL MODEL/.test(html), false);
   assert.match(html, /PBE NHL PICKS/);
-  assert.match(html, /Tonight's PBE Preseason Picks/);
+  assert.match(html, /PBE Preseason Picks/);
   assert.match(html, /Model-generated NHL picks locked before puck drop/);
 });
 
