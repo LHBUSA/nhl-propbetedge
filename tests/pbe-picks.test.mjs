@@ -270,55 +270,84 @@ for (const [name, source] of [['pbe-picks.js', picksSource], ['track.js', trackS
 // -------------------------------------------- 7. Track Record reads the API
 assert.match(trackSource, /picksTrackRecord/, 'track record reads /nhl/picks/track-record');
 assert.match(trackSource, /picksLedger/, 'track record reads /nhl/picks/track-record/ledger');
+assert.match(trackSource, /picksPreseasonLedger/, 'track record reads the paginated preseason ledger');
+assert.match(trackSource, /picksPreseasonHistory/, 'track record has a compatibility fallback during gateway rollout');
 assert.ok(!/Sep 11, 2026|Not built yet/.test(trackSource), 'the dated static statement is gone');
 
 // Live nhl-picks-read-v1 shape: lifetime is null, models is empty, `reason` is a
 // machine code and `detail` is the human sentence.
 const LIVE_DETAIL = 'No official NHL model has been released. The model in the ledger is a shadow candidate: it is not publishable, has no champion and has no official record.';
 const trackEmpty = trackView({
-  modelVersion: '',
-  record: { schema: 'nhl-picks-read-v1', model_status: NO_MODEL_STATUS, lifetime: null, models: [], reason: 'no_official_model', detail: LIVE_DETAIL },
-  recordMeta: null, recordError: null,
-  ledger: { schema: 'nhl-picks-read-v1', count: 0, total: 0, limit: 50, offset: 0, picks: [], reason: 'no_official_model', detail: LIVE_DETAIL },
+  segment: 'regular', season: '', page: 0, modelVersion: '',
+  preseasonRecord: null, preseasonRecordMeta: null, preseasonRecordError: null,
+  regularRecord: { schema: 'nhl-picks-read-v1', model_status: NO_MODEL_STATUS, lifetime: null, models: [], reason: 'no_official_model', detail: LIVE_DETAIL },
+  regularRecordMeta: null, regularRecordError: null,
+  ledger: { schema: 'nhl-picks-read-v1', count: 0, total: 0, limit: 25, offset: 0, picks: [], reason: 'no_official_model', detail: LIVE_DETAIL },
   ledgerMeta: null, ledgerError: null
 });
-assert.match(trackEmpty, /shadow candidate: it is not publishable/, "the empty state quotes the API's own detail sentence");
-assert.match(trackEmpty, /as “no_official_model”/, 'the API reason code is shown beside it');
-assert.ok(!/0 graded|Locked predictions<\/dt><dd class="mono">0/.test(trackEmpty), 'a null aggregate is never rendered as zero');
+assert.match(trackEmpty, /Regular Season · 0/, 'regular season has its own segment');
+assert.match(trackEmpty, /The regular-season record starts at 0–0/, 'regular season starts independently of preseason');
+assert.match(trackEmpty, /as “no_official_model”/, 'the API reason code is shown beside the empty ledger');
 assert.match(trackEmpty, /Rules the ledger is held to/, 'the rules section is kept');
-assert.match(trackEmpty, /Shadow models stay internal/, 'the shadow-models section is kept');
-assert.match(trackEmpty, /Locked calls/, 'the metric labels stay visible while empty');
-assert.match(trackEmpty, /Brier/, 'Brier is a declared metric');
-assert.match(trackEmpty, /Log loss/, 'log loss is a declared metric');
+assert.match(trackEmpty, /Records never bleed into each other/, 'record separation is explicit');
+assert.match(trackEmpty, /Locked calls/, 'the regular metric labels stay visible while empty');
+assert.match(trackEmpty, /Brier/, 'Brier is a declared regular-season metric');
+assert.match(trackEmpty, /Log loss/, 'log loss is a declared regular-season metric');
 assert.match(trackEmpty, /UNPRICED/, 'priced vs UNPRICED is a declared metric');
-assert.ok(!/\d{1,3}(?:\.\d+)?\s*%/.test(trackEmpty), 'no rate is shown when the API returned none');
-assert.ok((trackEmpty.match(/—/g) || []).length >= 10, 'every unreturned metric renders as an em dash');
+assert.ok(!/\d{1,3}(?:\.\d+)?\s*%/.test(trackEmpty), 'no rate is invented when the API returned none');
 
-const trackFull = trackView({
-  modelVersion: '',
-  record: {
-    model_status: { ...NO_MODEL_STATUS, model_version: 'pbe-nhl-model-v2.0', publishable: true },
-    lifetime: { locked_calls: 120, wins: 68, losses: 52, hit_rate: 0.5667, brier: 0.2291, log_loss: 0.6612, priced: 101, unpriced: 19, roi: 3.4, clv: 1.2, sample_size: 120 },
-    models: [
-      { model_version: 'pbe-nhl-model-v2.0', locked_calls: 90, wins: 52, losses: 38, hit_rate: 0.5778, brier: 0.2275, log_loss: 0.6588, priced: 80, unpriced: 10, roi: 4.1, clv: 1.5, sample_size: 90 },
-      { model_version: 'pbe-nhl-model-v1.9', locked_calls: 30, wins: 16, losses: 14, hit_rate: 0.5333, brier: 0.2340, log_loss: 0.6680, priced: 21, unpriced: 9, roi: -1.0, clv: 0.2, sample_size: 30 }
+const preseasonTrack = trackView({
+  segment: 'preseason', season: '', page: 0, modelVersion: '',
+  preseasonRecord: {
+    ok: true, locked_calls: 6, graded: 5, wins: 3, losses: 2, accuracy: 0.6, priced: 0, unpriced: 6,
+    seasons: [{ season: 20262027, locked_calls: 6, graded: 5, wins: 3, losses: 2, accuracy: 0.6, priced: 0, unpriced: 6 }]
+  },
+  preseasonRecordMeta: null, preseasonRecordError: null,
+  regularRecord: { lifetime: null, models: [] }, regularRecordMeta: null, regularRecordError: null,
+  ledger: {
+    count: 6, total: 6, limit: 25, offset: 0,
+    picks: [
+      { season: 20262027, game_type: 1, locked_at: '2026-09-20T15:15:05Z', away: 'NYI', home: 'NJD', pick_team: 'NJD', probability: 0.5596, model_version: 'pbe-nhl-model-v1.1-shadow-da0d82a0', result: null },
+      { season: 20262027, game_type: 1, locked_at: '2026-09-19T23:15:07Z', away: 'VGK', home: 'LAK', pick_team: 'LAK', probability: 0.5045, model_version: 'pbe-nhl-model-v1.1-shadow-da0d82a0', result: 'LOSS' }
     ]
   },
-  recordMeta: null, recordError: null,
+  ledgerMeta: null, ledgerError: null
+});
+assert.match(preseasonTrack, /Preseason · 6/, 'preseason segment carries the season-wide pick count');
+assert.match(preseasonTrack, /3-2/, 'preseason record is independent and visible');
+assert.match(preseasonTrack, /60\.0%/, 'preseason accuracy is rendered from the API');
+assert.match(preseasonTrack, /2026–27/, 'season filter is human readable');
+assert.match(preseasonTrack, /NYI @ NJD/, 'pending preseason pick is retained in history');
+assert.match(preseasonTrack, /PENDING/, 'ungraded picks remain visible');
+assert.match(preseasonTrack, /1–6 of 6 picks · Page 1 of 1/, 'the pick history is paginated');
+
+const trackFull = trackView({
+  segment: 'regular', season: '', page: 0, modelVersion: '',
+  preseasonRecord: { locked_calls: 6 }, preseasonRecordMeta: null, preseasonRecordError: null,
+  regularRecord: {
+    model_status: { ...NO_MODEL_STATUS, model_version: 'pbe-nhl-model-v2.0', publishable: true },
+    lifetime: { locked_calls: 120, wins: 68, losses: 52, graded_calls: 120, hit_rate: 0.5667, brier: 0.2291, log_loss: 0.6612, priced_calls: 101, unpriced_calls: 19, roi: 3.4, clv_pts: 1.2, sample_size: 120 },
+    models: [
+      { model_version: 'pbe-nhl-model-v2.0', lifetime: { locked_calls: 90, wins: 52, losses: 38, graded_calls: 90, hit_rate: 0.5778, brier: 0.2275, log_loss: 0.6588, priced_calls: 80, unpriced_calls: 10, roi: 4.1, clv_pts: 1.5, sample_size: 90 }, seasons: [{ season: 20262027, locked_calls: 90, wins: 52, losses: 38, graded_calls: 90, hit_rate: 0.5778 }] },
+      { model_version: 'pbe-nhl-model-v1.9', lifetime: { locked_calls: 30, wins: 16, losses: 14, graded_calls: 30, hit_rate: 0.5333, brier: 0.2340, log_loss: 0.6680, priced_calls: 21, unpriced_calls: 9, roi: -1.0, clv_pts: 0.2, sample_size: 30 }, seasons: [{ season: 20262027, locked_calls: 30, wins: 16, losses: 14, graded_calls: 30, hit_rate: 0.5333 }] }
+    ]
+  },
+  regularRecordMeta: null, regularRecordError: null,
   ledger: {
-    count: 1, total: 1,
+    count: 1, total: 1, limit: 25, offset: 0,
     picks: [{
-      locked_at_utc: '2026-11-02T23:30:00Z', matchup: 'DAL @ STL', pick: 'STL', probability: 0.582,
-      model_version: 'pbe-nhl-model-v2.0', recorded_price: -118, recorded_book: 'BookA',
-      closing_price: -126, result: 'WIN', grade_revision: 1
+      season: 20262027, game_type: 2, locked_at_utc: '2026-11-02T23:30:00Z', matchup: 'DAL @ STL', pick: 'STL', probability: 0.582,
+      model_version: 'pbe-nhl-model-v2.0', price: { state: 'PRICED', best_price: -118, best_book: 'BookA' },
+      result: 'WIN', graded_at: '2026-11-03T03:10:00Z'
     }]
   },
   ledgerMeta: null, ledgerError: null
 });
-assert.match(trackFull, /DAL @ STL/, 'ledger rows render');
+assert.match(trackFull, /DAL @ STL/, 'regular-season ledger rows render');
 assert.match(trackFull, /56\.7%/, 'the lifetime hit rate is formatted from the API value');
-assert.match(trackFull, /pbe-nhl-model-v1\.9/, 'a retired model version is never filtered out');
+assert.match(trackFull, /pbe-nhl-model-v1\.9/, 'a retired model version stays filterable');
 assert.match(trackFull, /data-model="pbe-nhl-model-v2\.0"/, 'a per-model-version filter is offered');
 assert.match(trackFull, /\+3\.40/, 'ROI is shown signed, as returned');
+assert.match(trackFull, /REGULAR/, 'the ledger marks regular-season picks by type');
 
 console.log('PBE Picks: PASS — route, nav, honest empty state, official render, Pro boundary, ledger read');
