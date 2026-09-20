@@ -149,7 +149,7 @@ function penaltyBox(cast, st) {
           name: x.player_name,
           team,
           number: x.player_number,
-          size: 'md',
+          size: 'lg',
           href: profile
         }) : '<span class="pbox__silhouette" aria-hidden="true"></span>'}
         <div class="pbox__identity">
@@ -179,11 +179,11 @@ function penaltyBox(cast, st) {
       <h3 class="pbox__title">PENALTY BOX</h3>
       <span class="pbox__state mono">${esc(st.manpower || '')}</span>
     </div>
-    <div class="pbox__sides">
+    <div class="pbox__sides pbox__sides--${sides.length > 1 ? 'dual' : 'single'}">
       ${sides.map(side => {
         const t = g.teams[side] || {};
         const sideBox = box.filter(x => x.side === side);
-        const role = st.shorthanded_side === side ? 'PENALTY KILL' : (st.state === STATE.FOUR_ON_FOUR ? '4 ON 4' : 'IN THE BOX');
+        const role = st.shorthanded_side === side ? `PENALTY KILL · ${st.manpower || ''}` : (st.state === STATE.FOUR_ON_FOUR ? '4 ON 4' : 'IN THE BOX');
         return `<div class="pbox__side pbox__side--${side}" style="--box-team:${teamAccent(t.abbrev)}" aria-label="${esc(t.abbrev || side)} penalty box">
           <div class="pbox__glass" aria-hidden="true"><i></i><i></i><i></i></div>
           <div class="pbox__team">
