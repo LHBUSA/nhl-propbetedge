@@ -25,7 +25,7 @@ const call = {
 const stateWithPicks = {
   date: '2026-09-19',
   preseason: { ok: true, games: [call] },
-  preseasonRecord: { ok: true, locked_calls: 5, graded: 0, wins: 0, losses: 0, accuracy: null, priced: 0, unpriced: 5, model_versions: [call.model_version] },
+  preseasonRecord: { ok: true, season: 20262027, locked_calls: 6, graded: 5, wins: 3, losses: 2, accuracy: 0.6, priced: 0, unpriced: 6, model_versions: [call.model_version] },
   splitSquad: [],
   slate: null, health: null, board: null, pro: null, account: { state: 'unknown' }
 };
@@ -84,17 +84,19 @@ test('a graded pick shows its result', () => {
 });
 
 // ---- record strip ----------------------------------------------------------
-test('the record strip reads as a track record segment', () => {
-  const html = preseasonRecordStrip({ graded: 0, wins: 0, losses: 0, accuracy: null }, 5);
-  assert.match(html, /2026 PRESEASON RECORD/);
+test('the record strip is season-wide, never the visible-day count', () => {
+  const html = preseasonRecordStrip({ season: 20262027, locked_calls: 6, graded: 5, wins: 3, losses: 2, accuracy: 0.6 }, 1);
+  assert.match(html, /2026–27 PRESEASON RECORD/);
   assert.equal(/REHEARSAL/.test(html), false);
-  assert.match(html, /<b>5<\/b>/);
-  assert.match(html, /0–0/);
+  assert.match(html, /<b>6<\/b><span>picks<\/span>/);
+  assert.doesNotMatch(html, /<b>1<\/b><span>picks<\/span>/);
+  assert.match(html, /3–2/);
+  assert.match(html, /60\.0%/);
   assert.match(html, /do not count toward the regular-season PBE record/);
 });
 
 test('the record strip updates once results exist', () => {
-  const html = preseasonRecordStrip({ graded: 3, wins: 2, losses: 1, accuracy: 0.6667 }, 5);
+  const html = preseasonRecordStrip({ season: 20262027, locked_calls: 5, graded: 3, wins: 2, losses: 1, accuracy: 0.6667 }, 1);
   assert.match(html, /2–1/);
   assert.match(html, /66\.7%/);
 });
