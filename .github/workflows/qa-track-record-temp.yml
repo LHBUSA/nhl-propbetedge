@@ -1,0 +1,25 @@
+name: Temporary Track Record QA
+
+on:
+  push:
+    branches:
+      - fix/nhl-full-pick-ledger-20260920
+
+permissions:
+  contents: read
+
+jobs:
+  qa:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm install
+      - name: Preseason presentation regression
+        run: node --test tests/preseason-rehearsal.test.mjs
+      - name: PBE Picks and Track Record regression
+        run: node tests/pbe-picks.test.mjs
+      - name: Production build
+        run: npm run build
