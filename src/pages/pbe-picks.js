@@ -676,14 +676,14 @@ function compactSeasonLabel(value) {
   return raw || 'Current';
 }
 
-export function preseasonRecordStrip(rec, visibleCount = 0) {
+export function preseasonRecordStrip(rec, visibleCount = 0, seasonHint = null) {
   const graded = rec?.graded ?? 0;
   const wins = rec?.wins ?? 0;
   const losses = rec?.losses ?? 0;
   // This is a season record strip, not a count of the cards visible for the
   // currently selected date. Mixing those scopes produced "1 picks / 5 graded".
   const count = rec?.locked_calls ?? visibleCount;
-  const season = rec?.season ?? rec?.seasons?.[0]?.season ?? null;
+  const season = rec?.season ?? rec?.seasons?.[0]?.season ?? seasonHint ?? null;
   const seasonLabel = compactSeasonLabel(season);
   return `<div class="pks-record" aria-label="${esc(seasonLabel)} preseason record">
     <span class="pks-record__title">${esc(seasonLabel)} PRESEASON RECORD</span>
@@ -705,7 +705,7 @@ export function rehearsalSection(state) {
   const rec = state.preseasonRecord && state.preseasonRecord.ok === true ? state.preseasonRecord : null;
   const calls = games.filter(g => g.is_call === true);
   return `<section class="pks-preseason" id="pks-preseason" data-fresh-scope>
-    ${calls.length ? preseasonRecordStrip(rec, calls.length) : ''}
+    ${calls.length ? preseasonRecordStrip(rec, calls.length, calls[0]?.season ?? games[0]?.season ?? null) : ''}
     ${consumerModelStatus(state)}
     ${games.length ? `<div class="pks-picks">${games.map(rehearsalCard).join('')}</div>` : ''}
     ${splitSquadNotice(splits)}
