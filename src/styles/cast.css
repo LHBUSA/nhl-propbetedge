@@ -445,21 +445,23 @@
    This is intentionally shaped like the rink-side box: glass panes, a bench,
    dasher boards and the actual penalized player sitting inside it. */
 .pbox {
-  margin-top: 12px;
+  margin: 12px auto 0;
   overflow: hidden;
-  border: 1px solid var(--pbe-line);
+  border: 1px solid rgba(255,255,255,.11);
   border-radius: var(--r-sm);
-  background: linear-gradient(180deg, rgba(12,14,16,.84), rgba(5,6,8,.94));
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.04), 0 12px 30px rgba(0,0,0,.18);
+  background: linear-gradient(180deg, rgba(12,14,16,.9), rgba(5,6,8,.97));
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.05), 0 14px 34px rgba(0,0,0,.24);
 }
+.pbox--single { width: min(760px, calc(100% - 20px)); }
+.pbox--dual { width: min(1080px, calc(100% - 20px)); }
 .pbox__titlebar {
   display: flex;
   align-items: center;
   gap: 8px;
-  min-height: 34px;
-  padding: 8px 12px;
-  border-bottom: 1px solid rgba(255,255,255,.08);
-  background: linear-gradient(180deg, rgba(255,255,255,.035), transparent);
+  min-height: 31px;
+  padding: 7px 11px;
+  border-bottom: 1px solid rgba(255,255,255,.09);
+  background: linear-gradient(180deg, rgba(255,255,255,.045), transparent);
 }
 .pbox__lamp {
   width: 7px;
@@ -483,17 +485,18 @@
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
   gap: 1px;
-  background: var(--pbe-line);
+  background: rgba(255,255,255,.07);
 }
+.pbox__sides--single { grid-template-columns: minmax(0,1fr); }
 .pbox__side {
   position: relative;
   min-width: 0;
-  min-height: 178px;
+  min-height: 154px;
   overflow: hidden;
-  padding: 12px 12px 34px;
+  padding: 10px 12px 31px;
   background:
-    linear-gradient(180deg, color-mix(in srgb, var(--box-team) 7%, transparent), transparent 46%),
-    linear-gradient(180deg, rgba(18,22,26,.86), rgba(8,10,12,.96));
+    radial-gradient(circle at 18% 38%, color-mix(in srgb, var(--box-team) 12%, transparent), transparent 38%),
+    linear-gradient(180deg, rgba(18,22,26,.88), rgba(8,10,12,.97));
 }
 .pbox__side::after {
   content: "";
@@ -529,7 +532,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-bottom: 9px;
+  margin-bottom: 7px;
 }
 .pbox__team > span:not(.team-mark) { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .pbox__team b { font: 800 var(--fs-sm)/1 var(--pbe-font-data); letter-spacing: .08em; color: var(--pbe-paper); }
@@ -561,14 +564,15 @@
   min-width: 0;
   display: grid;
   grid-template-columns: minmax(0,1fr) auto;
-  gap: 8px 12px;
-  padding: 10px;
+  align-items: center;
+  gap: 8px 16px;
+  padding: 8px 11px 10px;
   overflow: hidden;
-  border: 1px solid rgba(255,255,255,.08);
+  border: 1px solid rgba(255,255,255,.09);
   border-left: 3px solid var(--box-team);
-  border-radius: 7px;
-  background: linear-gradient(105deg, rgba(0,0,0,.52), rgba(16,18,20,.76));
-  box-shadow: inset 0 1px 0 rgba(255,255,255,.025);
+  border-radius: 8px;
+  background: linear-gradient(100deg, rgba(0,0,0,.56), rgba(15,18,21,.84));
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.03), 0 5px 14px rgba(0,0,0,.18);
 }
 .pbox__seat {
   position: absolute;
@@ -584,22 +588,23 @@
   min-width: 0;
   display: flex;
   align-items: center;
-  gap: 9px;
+  gap: 12px;
 }
 .pbox__player .pid { flex: none; }
-.pbox__identity { min-width: 0; display: grid; gap: 4px; }
+.pbox__identity { min-width: 0; display: grid; gap: 5px; }
 .pbox__name-row { min-width: 0; display: flex; align-items: baseline; gap: 6px; }
-.pbox__number { flex: none; color: var(--pbe-gold-bright); font-size: 11px; font-weight: 800; }
+.pbox__number { flex: none; color: var(--pbe-gold-bright); font-size: 12px; font-weight: 900; }
 .pbox__name {
   min-width: 0;
   color: var(--pbe-paper);
-  font-weight: 700;
+  font-size: 1rem;
+  font-weight: 800;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 a.pbox__name:hover { color: var(--pbe-gold-bright); }
-.pbox__what { display: flex; flex-wrap: wrap; gap: 3px 7px; font-size: var(--fs-sm); }
+.pbox__what { display: flex; flex-wrap: wrap; gap: 3px 8px; font-size: var(--fs-sm); color: var(--pbe-paper-2); }
 .pbox__silhouette {
   width: 48px;
   height: 48px;
@@ -609,20 +614,21 @@ a.pbox__name:hover { color: var(--pbe-gold-bright); }
   background: radial-gradient(circle at 50% 34%, rgba(255,255,255,.16) 0 18%, transparent 19%), rgba(255,255,255,.035);
 }
 .pbox__time {
-  min-width: 88px;
+  min-width: 108px;
   display: flex;
   flex-direction: column;
   align-items: flex-end;
   justify-content: center;
-  gap: 2px;
+  gap: 3px;
   text-align: right;
 }
 .pbox__clock {
   color: var(--pbe-crimson-bright);
-  font-size: 1.18rem;
-  font-weight: 800;
-  line-height: 1;
+  font-size: 1.55rem;
+  font-weight: 900;
+  line-height: .95;
   font-variant-numeric: tabular-nums;
+  text-shadow: 0 0 14px rgba(230,57,70,.22);
 }
 .pbox__time--unknown { max-width: 150px; }
 .pbox__bar {
@@ -645,11 +651,11 @@ a.pbox__name:hover { color: var(--pbe-gold-bright); }
   z-index: 1;
   left: 10px;
   right: 10px;
-  bottom: 21px;
-  height: 6px;
+  bottom: 20px;
+  height: 7px;
   border-radius: 2px 2px 0 0;
-  background: linear-gradient(180deg, #4a3828, #241910);
-  box-shadow: 0 2px 5px rgba(0,0,0,.45);
+  background: linear-gradient(180deg, #5a422f, #281c12);
+  box-shadow: 0 2px 6px rgba(0,0,0,.52);
 }
 .pbox__bench span {
   position: absolute;
@@ -665,10 +671,10 @@ a.pbox__name:hover { color: var(--pbe-gold-bright); }
   left: 0;
   right: 0;
   bottom: 0;
-  height: 21px;
-  border-top: 2px solid rgba(233,199,90,.55);
-  background: linear-gradient(180deg, #d9d6cf 0 20%, #a9a7a1 21% 28%, #20242a 29% 100%);
-  box-shadow: 0 -4px 12px rgba(0,0,0,.28);
+  height: 20px;
+  border-top: 2px solid rgba(233,199,90,.68);
+  background: linear-gradient(180deg, #ebe7dd 0 22%, #b8b3a8 23% 31%, #20242a 32% 100%);
+  box-shadow: 0 -4px 12px rgba(0,0,0,.32);
 }
 .pbox__boards i {
   position: absolute;
@@ -686,8 +692,13 @@ a.pbox__name:hover { color: var(--pbe-gold-bright); }
 @media (max-width: 560px) {
   /* Power play stays with the score; the physical box becomes one rink-side
      compartment per row rather than turning into a horizontal scroller. */
+  .pbox--single,
+  .pbox--dual { width: calc(100% - 12px); }
   .pbox__sides { grid-template-columns: 1fr; }
-  .pbox__pen { grid-template-columns: minmax(0,1fr); }
+  .pbox__side { min-height: 150px; padding-inline: 9px; }
+  .pbox__pen { grid-template-columns: minmax(0,1fr); padding: 8px 9px 10px; }
+  .pbox__player { gap: 9px; }
+  .pbox__player .pid--lg { --pid: 64px !important; }
   .pbox__time { min-width: 0; align-items: flex-start; text-align: left; }
   .pbox__time--unknown { max-width: none; }
   .stx__mp { font-size: 1.15rem; }
