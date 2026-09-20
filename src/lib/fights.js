@@ -103,6 +103,53 @@ export function fightForPlayer(cast, playerId) {
   return fightEvents(cast).find(f => (f.fighters || []).some(p => String(p.player_id) === String(playerId))) || null;
 }
 
+function personKey(value) {
+  const parts = String(value || '')
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLocaleLowerCase()
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
+  return {
+    full: parts.join(' '),
+    first: parts[0] || '',
+    last: parts[parts.length - 1] || ''
+  };
+}
+
+function samePersonLabel(a, b) {
+  const x = personKey(a);
+  const y = personKey(b);
+  if (!x.last || !y.last || x.last !== y.last) return false;
+  if (!x.first || !y.first) return true;
+  return x.first === y.first || x.first[0] === y.first[0];
+}
+
+// The NHL never declares a fight winner. This classifies only the optional
+// HockeyFights fan-vote result already carried by the PropSports fight ledger.
+export function fightOutcomeForPlayer(fight, playerId) {
+  const fighters = Array.isArray(fight?.fighters) ? fight.fighters : [];
+  const player = fighters.find(p => String(p.player_id) === String(playerId)) || null;
+  const opponent = fighters.find(p => String(p.player_id) !== String(playerId)) || null;
+  const r = fight?.result;
+  if (!player) return { outcome: 'UNRELATED', player: null, opponent, decided: false };
+  if (r?.type !== 'fan_vote' || r?.status !== 'available' || !r.winner_name || !Number(r.vote_count)) {
+    return { outcome: 'PENDING', player, opponent, decided: false };
+  }
+  if (/\b(draw|tie)\b/i.test(String(r.winner_name))) {
+    return { outcome: 'DRAW', player, opponent, decided: true };
+  }
+  if (samePersonLabel(r.winner_name, player.name)) {
+    return { outcome: 'WIN', player, opponent, decided: true };
+  }
+  if (opponent && samePersonLabel(r.winner_name, opponent.name)) {
+    return { outcome: 'LOSS', player, opponent, decided: true };
+  }
+  return { outcome: 'PENDING', player, opponent, decided: false };
+}
+
 export function fightForPlay(cast, play) {
   if (!play) return null;
   const sort = Number(play.sort_order);
