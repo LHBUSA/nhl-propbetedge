@@ -679,13 +679,30 @@ export function mount(root, params, ctx) {
     }
   }) : null;
 
-  // #/shots with no game id. The landing game is resolved from the live
-  // schedule — the most recent live game, else the most recent completed one —
-  // and never from an id written into this file. When the schedule genuinely
-  // has no completed game to show, the page says so and offers the selector.
+  // #/shots with no game id is live-first. Re-check today's board with a
+  // short max age before consulting the memoized recent-game resolver so a
+  // game that started after an earlier visit can never leave Shot Lab parked
+  // on yesterday's completed game.
   async function landing() {
     state.resolving = true;
     renderBody();
+    try {
+      const today = todayET();
+      const liveBoard = await ctx.board(today, { signal: aborter.signal, maxAgeMs: 5000 });
+      const liveGames = (liveBoard?.data?.games || [])
+        .filter(g => ['LIVE', 'INTERMISSION'].includes(stateOf(g).key))
+        .sort((a, b) => Date.parse(a.start_time_utc || '') - Date.parse(b.start_time_utc || ''));
+      if (liveGames.length) {
+        state.resolving = false;
+        location.replace(`#/shots/${liveGames[0].id}`);
+        return;
+      }
+    } catch (error) {
+      if (error?.kind === 'aborted' || aborter.signal.aborted) return;
+      // The recent-game resolver below still has its own bounded schedule
+      // search and truthful error state, so a failed live probe is not fatal.
+    }
+
     let hit = null;
     try {
       hit = await resolveRecentCompleted(ctx.board, { signal: aborter.signal });
