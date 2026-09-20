@@ -153,7 +153,9 @@ export const picksSlate = (date, options = {}) => picks('/nhl/picks/slate', { da
 // Preseason REHEARSAL reads. A separate contract from the official slate on
 // purpose: these are never official picks and must never be merged into one.
 export const picksPreseason = (date, options = {}) => picks('/nhl/picks/preseason', { date }, options);
+export const picksPreseasonHistory = (params = {}, options = {}) => picks('/nhl/picks/preseason', params, options);
 export const picksPreseasonRecord = (params = {}, options = {}) => picks('/nhl/picks/preseason/record', params, options);
+export const picksPreseasonLedger = (params = {}, options = {}) => picks('/nhl/picks/preseason/ledger', params, options);
 export const picksTrackRecord = (params = {}, options = {}) => picks('/nhl/picks/track-record', params, options);
 export const picksLedger = (params = {}, options = {}) => picks('/nhl/picks/track-record/ledger', params, options);
 
