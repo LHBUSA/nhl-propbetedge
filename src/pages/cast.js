@@ -173,7 +173,7 @@ function statsPanel(cast) {
   return `
     <section class="pbe-panel cast-card">
       <div class="panel-head"><h3>Shot share</h3><span class="micro">${esc(g.teams.away.abbrev)} · ${esc(g.teams.home.abbrev)}</span></div>
-      <div class="cmp" style="--away:var(--pbe-paper-2);--home:var(--pbe-gold)">
+      <div class="cmp" style="--away:${teamAccent(g.teams.away.abbrev)};--home:${teamAccent(g.teams.home.abbrev)}">
         ${cmpRow('Shot attempts (Corsi)', a.corsi, h.corsi)}
         ${cmpRow('Unblocked (Fenwick)', a.fenwick, h.fenwick)}
         ${cmpRow('Shots on goal', g.teams.away.sog ?? a.sog, g.teams.home.sog ?? h.sog)}
@@ -372,7 +372,7 @@ export function mount(root, params, ctx) {
     const feedScroll = $('.feed-scroll', body)?.scrollTop || 0;
     body.innerHTML = `
       ${header(cast, state.meta, state.failed)}
-      ${!pre && full.plays.length ? replayBar(state, full) : ''}
+      ${!pre && full.plays.length ? replayBar(state, full, { live: ['LIVE', 'INTERMISSION'].includes(st.key) }) : ''}
       ${cast.partial?.boxscore || cast.partial?.right_rail ? `<div class="pbe-note" style="margin-top:12px"><b>Partial data.</b> ${cast.partial.boxscore ? 'Box score unavailable. ' : ''}${cast.partial.right_rail ? 'Official team stats unavailable. ' : ''}Play-by-play is current.</div>` : ''}
       <div class="cast-tabs" role="tablist" aria-label="PBE Cast sections">
         ${[['feed', 'Play-by-play'], ['rink', 'Shot map'], ['stats', 'Intelligence']].map(([k, l]) => `<button role="tab" class="chip" aria-selected="${state.tab === k}" data-tab="${k}">${l}</button>`).join('')}
@@ -518,7 +518,7 @@ export function mount(root, params, ctx) {
       if (act === 'fwd') return step(1);
       stopPlay();
       if (act === 'start') goTo(0);
-      if (act === 'end') goTo(null);
+      if (act === 'end' || act === 'live') goTo(null);
       writeDeepLink();
       return n;
     }),
