@@ -112,17 +112,20 @@ export function replayBar(state, cast, { live = false } = {}) {
   const atLiveEdge = live && state.cursor === null;
   const badgeClass = atLiveEdge ? 'live' : state.cursor === null ? 'final' : 'sched';
   const badgeText = atLiveEdge ? 'Live' : state.cursor === null ? 'Full game' : 'Replay';
-  return `<div class="replay" role="group" aria-label="Replay controls">
+  const playControl = atLiveEdge
+    ? '<span class="rp-live-follow" aria-live="polite"><span class="rp-live-follow__dot" aria-hidden="true"></span>LIVE · Following</span>'
+    : `<button class="rp-btn rp-btn--play" data-rp="play" aria-label="${state.playing ? 'Pause' : 'Play'}">${state.playing ? '❚❚' : '▶'}</button>`;
+  return `<div class="replay" role="group" aria-label="${atLiveEdge ? 'Live broadcast controls' : 'Replay controls'}">
     <div class="replay__row">
       <span class="pbe-badge pbe-badge--${badgeClass}">${badgeText}</span>
       <div class="replay__btns">
         <button class="rp-btn" data-rp="start" aria-label="Start of game">⏮</button>
         <button class="rp-btn" data-rp="back" aria-label="Previous event">◀</button>
-        <button class="rp-btn rp-btn--play" data-rp="play" aria-label="${state.playing ? 'Pause' : 'Play'}">${state.playing ? '❚❚' : '▶'}</button>
+        ${playControl}
         <button class="rp-btn" data-rp="fwd" aria-label="Next event">▶</button>
         <button class="rp-btn" data-rp="end" aria-label="End of game">⏭</button>
       </div>
-      <div class="chips replay__speed" role="group" aria-label="Speed">${SPEEDS.map(([k, l]) => `<button class="chip" data-rp-speed="${k}" aria-pressed="${state.speed === k}">${l}</button>`).join('')}</div>
+      ${atLiveEdge ? '' : `<div class="chips replay__speed" role="group" aria-label="Speed">${SPEEDS.map(([k, l]) => `<button class="chip" data-rp-speed="${k}" aria-pressed="${state.speed === k}">${l}</button>`).join('')}</div>`}
       <span class="replay__pos mono">${cur + 1}/${n}${at ? ` · ${esc(periodLabel(at.period, at.period_type))} ${esc(at.time_remaining || '')} left` : ''}</span>
       ${live && state.cursor !== null ? '<button class="chip replay__live" type="button" data-rp="live">Jump to live</button>' : ''}
     </div>
@@ -136,7 +139,7 @@ export function replayBar(state, cast, { live = false } = {}) {
       <button class="chip" data-rp-seek="penalty" data-dir="1">Penalty ›</button>
       <button class="chip" data-rp-seek="pp" data-dir="1">Power play ›</button>
       <button class="chip" data-rp-seek="period" data-dir="1">Period ›</button>
-      <span class="micro replay__keys">Space play · ← → step</span>
+      <span class="micro replay__keys">${atLiveEdge ? 'Live feed auto-follows · ← step back to replay' : 'Space play · ← → step'}</span>
     </div>
   </div>`;
 }

@@ -443,7 +443,14 @@ export function mount(root, params, ctx) {
     const n = state.cast?.plays.length || 0;
     if (!state.playing || !n) return;
     const next = (state.cursor ?? -1) + 1;
-    if (next >= n) { stopPlay(); state.cursor = n - 1; renderBody(); writeDeepLink(); return; }
+    if (next >= n) {
+      const liveNow = ['LIVE', 'INTERMISSION'].includes(stateOf(state.cast?.game).key);
+      stopPlay();
+      state.cursor = liveNow ? null : n - 1;
+      renderBody();
+      writeDeepLink();
+      return;
+    }
     state.cursor = next;
     state.selected = null;
     renderBody();
@@ -451,6 +458,10 @@ export function mount(root, params, ctx) {
   };
   const togglePlay = () => {
     if (!state.cast) return;
+    const liveNow = ['LIVE', 'INTERMISSION'].includes(stateOf(state.cast.game).key);
+    // A live game at cursor=null is already following the live edge. The play
+    // action is replay-only and must never restart a live game from event one.
+    if (liveNow && state.cursor === null) return;
     if (state.playing) { stopPlay(); renderBody(); writeDeepLink(); return; }
     const n = state.cast.plays.length;
     if (state.cursor === null || state.cursor >= n - 1) state.cursor = -1;

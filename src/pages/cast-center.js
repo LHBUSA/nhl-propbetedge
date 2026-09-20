@@ -38,7 +38,7 @@ function tile(g, cast) {
   const m = cast?.manpower;
   const man = m && (m.away_skaters !== m.home_skaters || !m.away_goalie_in_net || !m.home_goalie_in_net) ? `${m.away_skaters}v${m.home_skaters}` : null;
   const last = cast ? lastEvent(cast.plays, st.key === 'FINAL') : null;
-  return `<article class="ctile" data-state="${esc(st.key)}" style="--away:${teamAccent(a.abbrev)};--home:${teamAccent(h.abbrev)}">
+  return `<article class="ctile" data-state="${esc(st.key)}" data-open-cast="${esc(g.id)}" role="link" tabindex="0" aria-label="Open ${esc(a.abbrev)} at ${esc(h.abbrev)} in PBE Cast" style="--away:${teamAccent(a.abbrev)};--home:${teamAccent(h.abbrev)}">
     <header class="ctile__head">${stateBadge(g)}${man ? `<span class="manpower">${esc(man)}</span>` : ''}${LIVE.has(st.key) || st.key === 'SCHEDULED' || st.key === 'PREGAME' ? watchButton(g.id, true) : ''}</header>
     <a class="ctile__body" href="#/cast/${esc(g.id)}">
       ${[['away', a], ['home', h]].map(([side, team]) => `<div class="ctile__team">${teamMark(team, 28)}<b>${esc(team.abbrev)}</b>
@@ -168,9 +168,22 @@ export function mountCenter(root, params, ctx) {
   })();
 
   const setDate = d => { state.date = d; state.board = null; state.casts = new Map(); loadedFinals.clear(); history.replaceState(null, '', `#/cast?view=all&date=${d}`); render(); poller.refresh(); };
+  const openCastTile = (event, tile) => {
+    // Buttons/links inside the tile keep their own action. In particular the
+    // Watch star is alerts-only and must never be a prerequisite for PBE Cast.
+    if (event.target.closest?.('a, button, input, select, textarea, [role="button"]')) return;
+    location.hash = `#/cast/${tile.dataset.openCast}`;
+  };
   const disposers = [
     on(root, 'change', '#cc-date', (_, i) => { if (/^\d{4}-\d{2}-\d{2}$/.test(i.value)) setDate(i.value); }),
-    on(root, 'click', '[data-cc-date]', (_, b) => setDate(b.dataset.ccDate))
+    on(root, 'click', '[data-cc-date]', (_, b) => setDate(b.dataset.ccDate)),
+    on(root, 'click', '.ctile[data-open-cast]', openCastTile),
+    on(root, 'keydown', '.ctile[data-open-cast]', (event, tile) => {
+      if (event.key !== 'Enter' && event.key !== ' ') return;
+      if (event.target.closest?.('a, button, input, select, textarea, [role="button"]')) return;
+      event.preventDefault();
+      location.hash = `#/cast/${tile.dataset.openCast}`;
+    })
   ];
   return () => { disposed = true; poller.stop(); disposers.forEach(d => d()); };
 }
