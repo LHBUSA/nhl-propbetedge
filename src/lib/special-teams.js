@@ -224,6 +224,7 @@ function reconstruct(upTo, now, cls) {
       infraction: pen.desc_key || null,
       severity: severity || null,
       duration_min: minutes,
+      start_sort_order: p.sort_order ?? null,
       start_period: p.period ?? null,
       start_clock: p.time_in_period || null,
       affects_manpower: affectsManpower,
