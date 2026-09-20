@@ -93,15 +93,22 @@
 .scard__meta dt { font: 700 var(--fs-micro)/1.2 var(--pbe-font-data); letter-spacing: var(--ls-micro); text-transform: uppercase; color: var(--pbe-faint); }
 .scard__meta dd { margin: 3px 0 0; font-size: 12px; color: var(--pbe-paper-2); overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
 .scard__chips { display: flex; gap: 6px; flex-wrap: wrap; }
+.scard__market-wait {
+  color: var(--pbe-gold-bright);
+  border-color: color-mix(in srgb, var(--pbe-gold) 72%, var(--pbe-line-strong));
+  background: color-mix(in srgb, var(--pbe-gold) 10%, var(--pbe-ink-4));
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--pbe-gold) 16%, transparent);
+}
 .scard__actions { display: flex; gap: 6px; margin-top: auto; flex-wrap: wrap; }
-.scard__actions a {
+.scard__actions a, .scard__action-off {
   display: inline-flex; align-items: center; min-height: 36px; padding: 0 12px;
   border: 1px solid var(--pbe-line-strong); border-radius: var(--r-sm);
   font-weight: 600; font-size: 12px; color: var(--pbe-dim);
 }
 .scard__actions a:hover { color: var(--pbe-gold-bright); border-color: var(--pbe-gold); }
+.scard__action-off { border-style: dashed; color: var(--pbe-faint); cursor: not-allowed; opacity: .82; }
 .scard__actions .scard__primary { color: var(--pbe-paper); border-color: var(--pbe-gold); flex: 1 1 auto; justify-content: center; }
-@media (max-width: 768px) { .scard__actions a { min-height: 44px; } }
+@media (max-width: 768px) { .scard__actions a, .scard__action-off { min-height: 44px; } }
 
 /* ---------- PBE Picks entry */
 .picks-entry {
