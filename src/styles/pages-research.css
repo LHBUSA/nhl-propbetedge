@@ -227,6 +227,25 @@ a.rs-team:hover b, a.rs-team:hover .rs-tname { color: var(--pbe-gold-bright); }
 .rs-phead__kv { grid-column: 1 / -1; grid-template-columns: repeat(4, minmax(0, 1fr)) minmax(0, 2.2fr); }
 .rs-born { font-family: var(--pbe-font-ui) !important; font-size: var(--fs-sm) !important; }
 .rs-p-season { margin-bottom: var(--s-4); }
+.rs-p-fights { margin-bottom: var(--s-4); }
+.rs-fight-summary { display: grid; grid-template-columns: minmax(170px, .55fr) minmax(0, 1.45fr); gap: var(--s-4); align-items: stretch; }
+.rs-fight-record { display: flex; flex-direction: column; justify-content: center; min-height: 126px; padding: var(--s-4); border: 1px solid color-mix(in srgb, var(--pbe-gold) 34%, transparent); background: linear-gradient(135deg, color-mix(in srgb, var(--pbe-gold) 10%, transparent), rgba(255,255,255,.015)); }
+.rs-fight-record b { margin-top: 6px; font: 900 clamp(34px, 5vw, 58px)/.9 var(--pbe-font-display); letter-spacing: -.04em; }
+.rs-fight-record small { margin-top: 8px; color: var(--pbe-muted); }
+.rs-fight-kv { grid-template-columns: repeat(5, minmax(64px, 1fr)); align-content: stretch; }
+.rs-fight-kv > div { min-height: 82px; }
+.rs-fight-note { margin: 12px 0 0; color: var(--pbe-muted); }
+.rs-fight-list { list-style: none; margin: var(--s-4) 0 0; padding: 0; border-top: 1px solid var(--pbe-line); }
+.rs-fight-row { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--pbe-line); }
+.rs-fight-row__main { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.rs-fight-row__main strong { font-size: var(--fs-md); }
+.rs-fight-row__cast { color: var(--pbe-gold-bright); font-weight: 800; white-space: nowrap; }
+@media (max-width: 700px) {
+  .rs-fight-summary { grid-template-columns: 1fr; }
+  .rs-fight-kv { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .rs-fight-row { grid-template-columns: auto minmax(0, 1fr); }
+  .rs-fight-row__cast { grid-column: 2; justify-self: start; }
+}
 .rs-season-kv { grid-template-columns: repeat(auto-fit, minmax(78px, 1fr)); }
 .rs-player-grid { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, 1fr); gap: var(--s-4); align-items: start; margin-bottom: var(--s-4); }
 .rs-freq td { white-space: nowrap; }
