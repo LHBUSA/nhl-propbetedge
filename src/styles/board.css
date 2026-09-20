@@ -54,7 +54,22 @@
   margin-top: var(--s-4); max-width: 48ch; color: var(--pbe-paper);
   font-size: 16px; line-height: 1.55; text-shadow: 0 1px 18px rgba(0,0,0,.65);
 }
-.hero__cta { display: flex; gap: var(--s-3); flex-wrap: wrap; margin-top: var(--s-5); }
+.hero__cta { display: flex; gap: var(--s-3); flex-wrap: wrap; margin-top: var(--s-4); }
+.hero-signal {
+  display: grid; grid-template-columns: minmax(0,1fr) auto; gap: 4px 12px; align-items: end;
+  max-width: 520px; margin-top: var(--s-4); padding: 12px 14px;
+  background: rgba(13,11,8,.68); border: 1px solid var(--pbe-line-strong); border-left: 3px solid var(--pbe-gold);
+  border-radius: var(--r-sm); -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px);
+  box-shadow: 0 12px 34px rgba(0,0,0,.18);
+}
+.hero-signal:hover { border-color: var(--pbe-gold); background: rgba(20,17,13,.78); }
+.hero-signal__k { grid-column: 1 / -1; font: 800 var(--fs-micro)/1.1 var(--pbe-font-data); letter-spacing: .1em; text-transform: uppercase; color: var(--pbe-gold-bright); }
+.hero-signal strong { font: 800 clamp(18px,2vw,24px)/1.1 var(--pbe-font-display); color: var(--pbe-paper); }
+.hero-signal > b { font-size: var(--fs-data-lg); color: var(--pbe-paper); }
+.hero-signal small { grid-column: 1 / -1; color: var(--pbe-dim); font-size: 12px; line-height: 1.35; }
+.hero-signal--live { border-left-color: var(--pbe-crimson-bright); }
+.hero-signal--live .hero-signal__k { color: var(--pbe-crimson-text); }
+.hero-signal strong i { font-style: normal; color: var(--pbe-faint); padding-inline: 4px; }
 .hero__cta .pbe-btn:not(.pbe-btn--primary) { background: rgba(13,11,8,.62); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
 
 /* ---------- hero rail: the next puck drop and its real matchups */
@@ -96,6 +111,13 @@
 .hmatch__side { display: inline-flex; align-items: center; gap: 6px; }
 .hmatch__at { color: var(--pbe-faint); }
 .hmatch__when { margin-left: auto; color: var(--pbe-gold-bright); }
+.hmatch[data-state="LIVE"] a, .hmatch[data-state="INTERMISSION"] a {
+  background: linear-gradient(90deg, color-mix(in srgb, var(--pbe-crimson-bright) 10%, transparent), rgba(13,11,8,.18));
+  border-color: color-mix(in srgb, var(--pbe-crimson-bright) 38%, var(--pbe-line));
+}
+.hmatch[data-state="LIVE"] .hmatch__when, .hmatch[data-state="INTERMISSION"] .hmatch__when {
+  color: var(--pbe-paper); font-weight: 800;
+}
 .hmatch__venue { grid-column: 1 / -1; font-family: var(--pbe-font-ui); font-size: 11px; color: var(--pbe-faint); }
 .hero__rail-more {
   display: block; width: 100%; margin-top: 10px; padding: 9px 10px;
@@ -145,6 +167,8 @@
 @media (max-width: 480px) {
   .hero__title { font-size: 32px; max-width: 100%; }
   .hero__deck { font-size: 15px; }
+  .hero-signal { grid-template-columns: 1fr; }
+  .hero-signal > b { justify-self: start; }
   .hero__cta .pbe-btn { flex: 1 1 auto; }
   .hero__cta .pbe-btn--ghost { display: none; }
   .cd b { font-size: 22px; }
