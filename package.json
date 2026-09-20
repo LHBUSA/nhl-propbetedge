@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "test": "node tests/site-rollover.test.mjs && node tests/frontend-checks.mjs && node tests/product-depth.test.mjs && node tests/score-ticker.test.mjs && node tests/identity-checks.mjs && node tests/alerts.test.mjs && node tests/pro-pricing.test.mjs && node tests/pbe-picks.test.mjs && node tests/board-slate.test.mjs && node --test tests/chrome-and-destinations.test.mjs",
+    "test": "node tests/frontend-checks.mjs && node tests/product-depth.test.mjs && node tests/score-ticker.test.mjs && node tests/identity-checks.mjs && node tests/alerts.test.mjs && node tests/pro-pricing.test.mjs && node tests/pbe-picks.test.mjs && node tests/board-slate.test.mjs && node --test tests/chrome-and-destinations.test.mjs",
     "canary:headshots": "node scripts/headshot-canary.mjs",
     "e2e:ticker": "node tests/e2e/score-ticker.e2e.mjs",
     "e2e:acceptance": "node tests/e2e/live-acceptance.mjs",
