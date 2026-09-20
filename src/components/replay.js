@@ -101,7 +101,7 @@ export function seek(plays, from, kind, dir = 1) {
   return null;
 }
 
-export function replayBar(state, cast) {
+export function replayBar(state, cast, { live = false } = {}) {
   const n = cast.plays.length;
   const cur = state.cursor ?? n - 1;
   const at = cast.plays[cur];
@@ -109,9 +109,12 @@ export function replayBar(state, cast) {
   // Markers are visual; the Goal/Penalty/Power play/Period chips are the
   // keyboard- and touch-sized way to jump (markers can sit pixels apart).
   const marks = markers(cast.plays).map(m => `<span class="rp-mark rp-mark--${m.kind}" style="left:${n > 1 ? (m.i / (n - 1)) * 100 : 0}%" title="${esc(m.label)}" aria-hidden="true"></span>`).join('');
+  const atLiveEdge = live && state.cursor === null;
+  const badgeClass = atLiveEdge ? 'live' : state.cursor === null ? 'final' : 'sched';
+  const badgeText = atLiveEdge ? 'Live' : state.cursor === null ? 'Full game' : 'Replay';
   return `<div class="replay" role="group" aria-label="Replay controls">
     <div class="replay__row">
-      <span class="pbe-badge pbe-badge--${state.cursor === null ? 'final' : 'sched'}">${state.cursor === null ? 'Full game' : 'Replay'}</span>
+      <span class="pbe-badge pbe-badge--${badgeClass}">${badgeText}</span>
       <div class="replay__btns">
         <button class="rp-btn" data-rp="start" aria-label="Start of game">⏮</button>
         <button class="rp-btn" data-rp="back" aria-label="Previous event">◀</button>
@@ -121,6 +124,7 @@ export function replayBar(state, cast) {
       </div>
       <div class="chips replay__speed" role="group" aria-label="Speed">${SPEEDS.map(([k, l]) => `<button class="chip" data-rp-speed="${k}" aria-pressed="${state.speed === k}">${l}</button>`).join('')}</div>
       <span class="replay__pos mono">${cur + 1}/${n}${at ? ` · ${esc(periodLabel(at.period, at.period_type))} ${esc(at.time_remaining || '')} left` : ''}</span>
+      ${live && state.cursor !== null ? '<button class="chip replay__live" type="button" data-rp="live">Jump to live</button>' : ''}
     </div>
     <div class="replay__track">
       <label class="sr-only" for="rp-range">Replay position</label>
