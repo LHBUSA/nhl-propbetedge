@@ -670,12 +670,23 @@ export function splitSquadNotice(games) {
   </div>`;
 }
 
-export function preseasonRecordStrip(rec, count) {
+function compactSeasonLabel(value) {
+  const raw = String(value || '');
+  if (/^\\d{8}$/.test(raw)) return `${raw.slice(0, 4)}–${raw.slice(6)}`;
+  return raw || 'Current';
+}
+
+export function preseasonRecordStrip(rec, visibleCount = 0) {
   const graded = rec?.graded ?? 0;
   const wins = rec?.wins ?? 0;
   const losses = rec?.losses ?? 0;
-  return `<div class="pks-record" aria-label="2026 preseason record">
-    <span class="pks-record__title">2026 PRESEASON RECORD</span>
+  // This is a season record strip, not a count of the cards visible for the
+  // currently selected date. Mixing those scopes produced "1 picks / 5 graded".
+  const count = rec?.locked_calls ?? visibleCount;
+  const season = rec?.season ?? rec?.seasons?.[0]?.season ?? null;
+  const seasonLabel = compactSeasonLabel(season);
+  return `<div class="pks-record" aria-label="${esc(seasonLabel)} preseason record">
+    <span class="pks-record__title">${esc(seasonLabel)} PRESEASON RECORD</span>
     <ul>
       <li><b>${count}</b><span>picks</span></li>
       <li><b>${graded}</b><span>graded</span></li>
