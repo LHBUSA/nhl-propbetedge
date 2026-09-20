@@ -142,17 +142,21 @@ function headerMarkup(p, meta, nextGame) {
   </header>`;
 }
 
-function seasonLine(p, totals, gameType) {
+function seasonLine(p, totals, gameType, fightState = {}) {
   const goalie = p.position === 'G';
   if (!totals) return `${panelHead('Season line')}<p class="dim">No NHL ${esc(typeLabel(gameType))} row in this player's season totals.</p>`;
   const label = `${seasonLabel(totals.season)} ${typeLabel(gameType)}`;
   const cell = (k, v) => `<div><dt>${esc(k)}</dt><dd>${v}</dd></div>`;
+  const f = fightState?.data;
+  const fightRecord = f ? `${f.wins || 0}-${f.losses || 0}-${f.draws || 0}` : '—';
   const cells = goalie
     ? [cell('GP', num(totals.gamesPlayed)), cell('GS', num(totals.gamesStarted)), cell('W', num(totals.wins)), cell('L', num(totals.losses)), cell('OTL', num(totals.otLosses)),
-      cell('SV%', svPct(totals.savePctg)), cell('GAA', num(totals.gaa, 2)), cell('SA', num(totals.shotsAgainst)), cell('SO', num(totals.shutouts))]
+      cell('SV%', svPct(totals.savePctg)), cell('GAA', num(totals.gaa, 2)), cell('SA', num(totals.shotsAgainst)), cell('SO', num(totals.shutouts)),
+      cell('FIGHT W-L-D', `<b>${esc(fightRecord)}</b>`)]
     : [cell('GP', num(totals.gamesPlayed)), cell('G', num(totals.goals)), cell('A', num(totals.assists)), cell('P', `<b>${num(totals.points)}</b>`), cell('+/−', signedNum(totals.plusMinus)),
-      cell('PPG', num(totals.powerPlayGoals)), cell('PPP', num(totals.powerPlayPoints)), cell('SOG', num(totals.shots)),
-      cell('SOG/GP', totals.gamesPlayed ? (totals.shots / totals.gamesPlayed).toFixed(2) : '—'), cell('S%', pct(totals.shootingPctg, 1)), cell('TOI/GP', mmss(totals.avgToiSec))];
+      cell('PIM', num(totals.pim)), cell('PPG', num(totals.powerPlayGoals)), cell('PPP', num(totals.powerPlayPoints)), cell('SOG', num(totals.shots)),
+      cell('SOG/GP', totals.gamesPlayed ? (totals.shots / totals.gamesPlayed).toFixed(2) : '—'), cell('S%', pct(totals.shootingPctg, 1)), cell('TOI/GP', mmss(totals.avgToiSec)),
+      cell('FIGHT W-L-D', `<b>${esc(fightRecord)}</b>`)];
   return `${panelHead(`${label} line`, `<span class="micro">NHL · ${esc(totals.teams.join(' / ') || '')}${totals.rows > 1 ? ' · combined' : ''}</span>`)}
     <dl class="kv rs-kvfix rs-season-kv">${cells.join('')}</dl>`;
 }
@@ -392,7 +396,7 @@ export function mount(root, params) {
     const p = st.player.data?.player;
     if (!p) { bodyEl.innerHTML = ''; return; }
     bodyEl.innerHTML = `
-      <section class="pbe-panel rs-p-season">${seasonLine(p, st.totals, st.gameType)}</section>
+      <section class="pbe-panel rs-p-season">${seasonLine(p, st.totals, st.gameType, st.fights)}</section>
       <section class="pbe-panel rs-p-fights">${fightSection(p, st.fights)}</section>
       <div class="rs-player-grid">
         <section class="pbe-panel" id="rs-p-charts">${chartsSection(p, st.log, st.totals)}</section>
