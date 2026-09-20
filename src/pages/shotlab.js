@@ -6,7 +6,7 @@ import { createPoller } from '../lib/poll.js';
 import { cachedRecentCompleted, nextCompletedAfter, resolveRecentCompleted } from '../lib/recent-games.js';
 import { teamAccent } from '../lib/teams.js';
 import { stateBadge, stateOf, teamMark } from '../components/game.js';
-import { LAYERS, layerMatch, renderRink, rinkLegend, shotLabel } from '../components/rink.js';
+import { LAYERS, attachRinkInspector, layerMatch, renderRink, rinkInspector, rinkLegend, shotLabel } from '../components/rink.js';
 
 // Shot Lab: every attempt from the official play-by-play at its recorded
 // location, with geometric-v1 distance/angle. Nothing here is a model output.
@@ -570,7 +570,7 @@ export function mount(root, params, ctx) {
           </div>
         </div>
         <div class="rink-ends micro" aria-hidden="true">${state.normalize ? `<span>← ${esc(game.teams.away.abbrev)} attack</span><span>${esc(game.teams.home.abbrev)} attack →</span>` : '<span>As recorded by source</span>'}</div>
-        <div class="rink-wrap lab-rink__ice">${rink.svg}</div>
+        <div class="rink-stage"><div class="rink-wrap lab-rink__ice">${rink.svg}</div>${rinkInspector()}</div>
         ${rinkLegend()}
         ${omittedTotal ? `<p class="micro rink-omit">Not plotted: ${rink.omitted.coordinates ? `${rink.omitted.coordinates} without source coordinates` : ''}${rink.omitted.coordinates && rink.omitted.direction ? ' · ' : ''}${rink.omitted.direction ? `${rink.omitted.direction} with unknown attack direction (switch off “Normalize ends” to show as recorded)` : ''}. They remain in the table and totals.</p>` : ''}
         ${sel ? `<div class="lab-selected" role="status">
@@ -580,6 +580,8 @@ export function mount(root, params, ctx) {
           </div>` : ''}
       </section>`;
   }
+
+  let inspector = null;
 
   function renderBody() {
     if (!state.gameId) {
@@ -649,6 +651,23 @@ export function mount(root, params, ctx) {
       </div>
       ${shotTable(game, list, state)}
       ${definitions()}`;
+    mountInspector(game);
+  }
+
+  // ONE inspector per render. Pinning a rink marker cross-highlights its table
+  // row, which is the same contract a row hover already has in reverse.
+  function mountInspector(game) {
+    const wasPinned = inspector?.pinned() ?? null;
+    inspector?.dispose();
+    inspector = attachRinkInspector(body, {
+      teams: game?.teams || {},
+      onPin: id => {
+        if (id === null) { clearCrossHighlight(); return; }
+        const row = body.querySelector(`tr[data-shot="${CSS.escape(String(id))}"]`);
+        crossHighlight({ shotId: id, source: row });
+      }
+    });
+    if (wasPinned !== null) inspector.pin(wasPinned);
   }
 
   function select(id, { reveal = false } = {}) {
@@ -784,11 +803,14 @@ export function mount(root, params, ctx) {
     on(root, 'click', '[data-normalize]', () => { state.normalize = !state.normalize; renderBody(); }),
     on(root, 'click', '[data-clear]', () => { state.selected = null; renderBody(); }),
     on(root, 'click', '[data-show-all]', () => { state.showAll = !state.showAll; renderBody(); }),
-    on(root, 'click', '[data-sort]', (_, b) => {
+    // button.lab-sort, NOT bare [data-sort]: rink markers carry data-sort too
+    // (a shot sort_order), so the bare selector let a marker click rewrite the
+    // table's sort key.
+    on(root, 'click', 'button.lab-sort[data-sort]', (_, b) => {
       const key = b.dataset.sort;
       state.sort = state.sort.key === key ? { key, dir: -state.sort.dir } : { key, dir: 1 };
       renderBody();
-      $(`[data-sort="${key}"]`, body)?.focus({ preventScroll: true });
+      $(`button.lab-sort[data-sort="${key}"]`, body)?.focus({ preventScroll: true });
     }),
     on(root, 'mouseover', 'tr[data-shot]', (event, tr) => {
       if (tr.contains(event.relatedTarget)) return;
@@ -799,6 +821,9 @@ export function mount(root, params, ctx) {
       clearCrossHighlight();
     }),
     on(root, 'focusin', 'tr[data-shot]', (_, tr) => crossHighlight({ shotId: Number(tr.dataset.shot), source: tr })),
+    // A row click pins the matching rink shot, so the table and the map stay
+    // one surface rather than two that merely look at each other.
+    on(root, 'click', 'tr[data-shot]', (_, tr) => inspector?.pin(Number(tr.dataset.shot))),
     on(root, 'focusout', 'tr[data-shot]', (event, tr) => {
       if (!tr.contains(event.relatedTarget)) clearCrossHighlight();
     }),
@@ -838,6 +863,7 @@ export function mount(root, params, ctx) {
   ];
 
   return () => {
+    inspector?.dispose();
     poller?.stop();
     aborter.abort();
     pickToken += 1;

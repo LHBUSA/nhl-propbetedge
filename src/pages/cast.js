@@ -9,7 +9,7 @@ import { createPoller } from '../lib/poll.js';
 import { resolveRecentCompleted } from '../lib/recent-games.js';
 import { teamAccent } from '../lib/teams.js';
 import { stateBadge, stateOf, teamMark } from '../components/game.js';
-import { LAYERS, renderRink, rinkLegend, shotLabel } from '../components/rink.js';
+import { LAYERS, attachRinkInspector, renderRink, rinkInspector, rinkLegend, shotLabel } from '../components/rink.js';
 import { SPEEDS, replayBar, seek, sliceCast } from '../components/replay.js';
 import { watchButton } from '../components/alerts-ui.js';
 
@@ -299,6 +299,7 @@ export function mount(root, params, ctx) {
   // Shot sort_orders already drawn for this game. null until the first paint so
   // an initial load never animates a backlog of historical attempts.
   let seenShots = null;
+  let inspector = null;
 
   root.innerHTML = `<section class="wrap section cast" data-fresh-scope>
     <div class="section-head"><div><span class="eyebrow">PBE Cast</span><h2>Live hockey intelligence broadcast</h2></div>
@@ -404,7 +405,7 @@ export function mount(root, params, ctx) {
               </div>
             </div>
             <div class="rink-ends micro" aria-hidden="true">${state.normalize ? `<span>← ${esc(g.teams.away.abbrev)} attack</span><span>${esc(g.teams.home.abbrev)} attack →</span>` : '<span>As recorded by source</span>'}</div>
-            <div class="rink-wrap">${rink.svg}</div>
+            <div class="rink-stage"><div class="rink-wrap">${rink.svg}</div>${rinkInspector()}</div>
             ${rinkLegend()}
             ${omittedTotal ? `<p class="micro rink-omit">Not plotted: ${rink.omitted.coordinates ? `${rink.omitted.coordinates} without source coordinates` : ''}${rink.omitted.coordinates && rink.omitted.direction ? ' · ' : ''}${rink.omitted.direction ? `${rink.omitted.direction} with unknown attack direction (switch off “Normalize ends” to show as recorded)` : ''}. They remain in the feed and totals.</p>` : ''}
           </section>
@@ -427,6 +428,30 @@ export function mount(root, params, ctx) {
     const scroller = $('.feed-scroll', body);
     if (scroller) scroller.scrollTop = feedScroll;
     markArrivingShots(body);
+    mountInspector();
+  }
+
+  // ONE inspector per render pass. The body is replaced wholesale each poll, so
+  // the old controller is disposed and a new one attached; a pinned shot is
+  // re-pinned if it still exists, so live data never yanks the card out from
+  // under the reader.
+  function mountInspector() {
+    const wasPinned = inspector?.pinned() ?? null;
+    inspector?.dispose();
+    inspector = attachRinkInspector(body, {
+      teams: state.cast?.game?.teams || {},
+      onPin: id => { if (id !== null) { state.selected = id; syncFeedSelection(); } }
+    });
+    if (wasPinned !== null) inspector.pin(wasPinned);
+  }
+
+  // Keep the feed's selected row in step with a rink pin without re-rendering
+  // the whole body, which would destroy the pin we just made.
+  function syncFeedSelection() {
+    body.querySelectorAll('.feed-item').forEach(li => {
+      const id = li.querySelector('[data-select]')?.dataset.select;
+      li.classList.toggle('is-selected', id !== undefined && Number(id) === state.selected);
+    });
   }
 
   // The body is re-rendered wholesale on every poll, so every marker is a new
@@ -601,6 +626,7 @@ export function mount(root, params, ctx) {
     oddsCtl.abort();
     poller?.stop();
     document.removeEventListener('keydown', onKey);
+    inspector?.dispose();
     disposers.forEach(d => d());
   };
 }

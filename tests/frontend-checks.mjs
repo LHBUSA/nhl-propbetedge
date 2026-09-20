@@ -170,13 +170,106 @@ assert.doesNotMatch(apiSource, /credentials: 'include'/, 'api.js (public data) n
   assert.ok(!/shot-trajectory/.test(rink), 'rink.js renders no trajectory from data we do not hold');
 
   // -- the existing contract is untouched
-  assert.match(rink, /class="mk-g" data-sort="\$\{play\.sort_order\}" data-shot-type="/, 'marker cross-filter metadata is unchanged');
+  // asserted on rendered output: the marker attribute list grew for the
+  // inspector, but the cross-filter contract itself must be identical
+  assert.ok(/class="mk-g"[^>]*data-sort="1"/.test(svg), 'markers still carry data-sort');
+  assert.ok(/class="mk-g"[^>]*data-shot-type="wrist"/.test(svg), 'markers still carry data-shot-type');
   assert.match(rink, /class="mk-hover-ring"/, 'the hover halo survives');
   assert.match(rink, /pool\.sort\(\(a, b\) => \(a\.type === 'goal'\) - \(b\.type === 'goal'\)\)/, 'goals still render above other attempts');
   assert.match(rink, /omitted\[pos\.why\] \+= 1/, 'omitted-shot accounting is unchanged');
   assert.match(rink, /const flip = Math\.sign\(s\.target_net_x\) !== Math\.sign\(wantNet\)/, 'the normalize-ends transform is unchanged');
   assert.match(castCss, /\.mk--away \{ fill: none/, 'away attempts stay outline-only so home/away survives without colour');
   assert.match(castCss, /\.mk--home \{ fill: var\(--pbe-gold-bright\)/, 'home attempts stay filled');
+}
+
+// 1f. Shot inspector: every plotted shot is inspectable, from real fields only.
+{
+  const rinkSrc = fs.readFileSync('src/components/rink.js', 'utf8');
+  const castSrc = fs.readFileSync('src/pages/cast.js', 'utf8');
+  const labSrc = fs.readFileSync('src/pages/shotlab.js', 'utf8');
+  const castCss2 = fs.readFileSync('src/styles/cast.css', 'utf8');
+  const { renderRink: rr, inspectorHtml, rinkInspector } = await import('../src/components/rink.js');
+
+  const play = {
+    sort_order: 42, type: 'shot-on-goal', side: 'home', period: 2, period_type: 'REG', time_in_period: '12:41',
+    players: [{ role: 'shooter', name: 'Kirill Kaprizov' }],
+    strength: { label: '5v4', state: 'PP' },
+    score_after: { away: 1, home: 2 },
+    shot: { has_coordinates: true, x: 55, y: -12, target_net_x: 89, shot_type: 'Wrist shot', on_goal: true, unblocked: true, goal: false, shootout: false, distance_ft: 24 }
+  };
+  const svg2 = rr([play], { teams: { home: { abbrev: 'MIN' }, away: { abbrev: 'STL' } } }).svg;
+
+  // -- real-data attributes, and nothing invented
+  for (const attr of ['data-sort="42"', 'data-shot-type="Wrist shot"', 'data-shooter="Kirill Kaprizov"',
+    'data-team="home"', 'data-result="Shot on goal"', 'data-clock="12:41"', 'data-distance="24"',
+    'data-strength="5v4"', 'data-score="1-2"']) {
+    assert.ok(svg2.includes(attr), `marker exposes ${attr}`);
+  }
+  for (const fake of ['xg', 'expected-goal', 'danger', 'quality', 'velocity', 'trajectory-path']) {
+    assert.ok(!new RegExp(`data-[a-z-]*${fake}`, 'i').test(svg2), `no fabricated ${fake} attribute`);
+  }
+
+  // -- exact coordinates survive the interaction work
+  assert.ok(svg2.includes('cx="55"'), 'source x is unchanged by the inspector work');
+  assert.ok(svg2.includes('cy="12"'), 'source y is only sign-flipped, never moved or jittered');
+
+  // -- accessible name equivalent to the spec example
+  // the FIRST aria-label in the document is the svg's own; read the marker's
+  const label = /class="mk-g"[^>]*aria-label="([^"]+)"/.exec(svg2)?.[1] || '';
+  for (const part of ['Kirill Kaprizov', 'Shot on goal', '12:41', 'Wrist shot', '24 ft']) {
+    assert.ok(label.includes(part), `accessible label carries ${part} (got: ${label})`);
+  }
+  assert.match(svg2, /<title>/, 'the <title> fallback survives');
+  assert.match(svg2, /role="button"/, 'markers are exposed as activatable');
+
+  // -- roving tabindex: focusable without 150 tab stops
+  const multi = rr([play, { ...play, sort_order: 43 }, { ...play, sort_order: 44 }], {}).svg;
+  assert.equal((multi.match(/tabindex="0"/g) || []).length, 1, 'the shot layer is ONE tab stop');
+  assert.equal((multi.match(/tabindex="-1"/g) || []).length, 2, 'the remaining markers are arrow-reachable');
+
+  // -- ONE shared popover, not a node per marker
+  assert.match(rinkInspector(), /id="shot-ins"/, 'a single shared inspector element exists');
+  assert.equal((rinkInspector().match(/id="shot-ins"/g) || []).length, 1, 'exactly one inspector node');
+  assert.ok(!/shot-ins/.test(svg2), 'no tooltip node is emitted per marker');
+  assert.match(rinkSrc, /export function attachRinkInspector/, 'one shared inspector controller exists');
+
+  // -- inspector content comes from the marker's real attributes
+  const fakeEl = { dataset: { team: 'home', result: 'Goal', period: '2nd', clock: '12:41', shotType: 'Wrist shot', distance: '24', strength: '5v4', score: '1-2', shooter: 'Kirill Kaprizov' } };
+  const html = inspectorHtml(fakeEl, { home: { abbrev: 'MIN' } });
+  for (const bit of ['MIN', 'Goal', 'Kirill Kaprizov', '12:41', 'Wrist shot', '24 ft', '5v4']) {
+    assert.ok(html.includes(bit), `inspector shows ${bit}`);
+  }
+  const bare = inspectorHtml({ dataset: { team: 'away', result: 'Blocked' } }, {});
+  assert.ok(!/ft<\/dd>/.test(bare), 'a shot with no recorded distance shows no distance row');
+  assert.ok(!/undefined|null|NaN/.test(bare), 'absent fields are omitted, never rendered as placeholders');
+
+  // -- delegated events, no listener per marker, no loops
+  assert.ok(!/querySelectorAll\([^)]*mk-g[^)]*\)[\s\S]{0,80}addEventListener/.test(rinkSrc), 'no per-marker listener binding');
+  assert.ok(!/setInterval|requestAnimationFrame/.test(rinkSrc), 'the inspector adds no animation or polling loop');
+  assert.equal((rinkSrc.match(/<filter /g) || []).length, 2, 'still exactly two SVG filters; the inspector reuses the shared glow');
+  assert.match(castCss2, /\.mk-g\.is-inspected \{[\s\S]{0,120}filter: url\(#pbe-mk-glow\)/, 'the inspected marker reuses the existing glow');
+
+  // -- keyboard: activate and escape
+  assert.match(rinkSrc, /e\.key === 'Enter' \|\| e\.key === ' '/, 'Enter and Space activate a marker');
+  assert.match(rinkSrc, /e\.key !== 'Escape'/, 'Escape is handled');
+  assert.match(rinkSrc, /focused\?\.focus\(\{ preventScroll: true \}\)/, 'Escape returns focus to the marker');
+  assert.match(rinkSrc, /ArrowRight' \|\| e\.key === 'ArrowDown'/, 'arrow keys walk the shot layer');
+
+  // -- dense areas: elevate, never relocate
+  assert.match(castCss2, /\.rk-marks:has\(\.mk-g\.is-inspected\) \.mk-g:not\(\.is-inspected\) \{ opacity/, 'neighbouring marks dim rather than move');
+  assert.ok(!/jitter|cluster|collide|spread/i.test(rinkSrc), 'no clustering or jitter of real coordinates');
+
+  // -- live behaviour: a pin survives polling and is never auto-opened
+  assert.match(castSrc, /const wasPinned = inspector\?\.pinned\(\) \?\? null;/, 'a pinned shot survives a re-render');
+  assert.match(rinkSrc, /function repin\(\)/, 'the controller can re-pin after the host re-renders');
+  assert.ok(!/markArrivingShots[\s\S]{0,400}\.pin\(/.test(castSrc), 'a newly arrived shot never auto-opens the inspector');
+
+  // -- cross-filter contract intact, and the data-sort collision is fixed
+  assert.match(labSrc, /on\(root, 'click', 'button\.lab-sort\[data-sort\]'/, 'table sorting is scoped to header buttons, not every [data-sort]');
+  assert.ok(!/on\(root, 'click', '\[data-sort\]'/.test(labSrc), 'the bare [data-sort] click handler is gone: rink markers carry data-sort too');
+  assert.match(labSrc, /on\(root, 'click', 'tr\[data-shot\]', \(_, tr\) => inspector\?\.pin/, 'a table row click pins the matching rink shot');
+  assert.match(labSrc, /crossHighlight\(\{ shotId: id, source: row \}\)/, 'pinning a rink shot cross-highlights its row');
+  assert.ok(/class="mk-g"[^>]*data-sort="42"[^>]*data-shot-type="Wrist shot"/.test(svg2), 'the cross-filter attributes survive alongside the new inspector data');
 }
 
 // 2. Truth rules: no randomness or stale launch copy in shipped source.

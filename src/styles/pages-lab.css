@@ -414,3 +414,9 @@
      the next block on a narrow column. */
   .lab .rink-legend { margin-top: 8px; gap: 5px 10px; }
 }
+
+/* The inspector sits above the Shot Lab rink without competing with the
+   cross-filter dimming the table already drives. */
+.lab-rink .rink-stage { position: relative; }
+.lab-rink__ice .mk-g.is-inspected { opacity: 1; }
+.lab-rink__ice .mk-g.is-cross-dim.is-inspected { opacity: 1; }
