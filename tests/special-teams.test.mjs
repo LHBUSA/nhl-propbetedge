@@ -15,7 +15,7 @@ const play = (over = {}) => ({
 const penalty = (over = {}) => play({
   type: 'penalty', kind: 'penalty',
   penalty: { severity: 'MIN', desc_key: 'tripping', duration_min: 2 },
-  players: [{ role: 'committed_by', id: 1, name: 'Jane Doe' }],
+  players: [{ role: 'committed_by', id: 1, name: 'Jane Doe', number: 27 }],
   ...over
 });
 
@@ -77,6 +77,7 @@ test('a minor puts exactly one player in the box with an exact countdown', () =>
   assert.equal(st.active_penalties.length, 1);
   const [pen] = st.active_penalties;
   assert.equal(pen.player_name, 'Jane Doe');
+  assert.equal(pen.player_number, 27, 'jersey number is carried into the visual penalty-box state');
   assert.equal(pen.infraction, 'tripping');
   assert.equal(pen.remaining_seconds, 80, '120s penalty, 40s elapsed on the official clock');
   assert.equal(pen.certainty, 'exact');
