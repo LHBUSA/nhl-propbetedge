@@ -19,7 +19,7 @@
 // dash; nothing is guessed, and no unavailable capability is dressed up as one
 // that works.
 import { $, $$, esc, on } from '../lib/dom.js';
-import { describeError, news, odds, picksHealth, picksSlate } from '../lib/api.js';
+import { describeError, news, odds, picksHealth, picksPreseason, picksSlate } from '../lib/api.js';
 import { freshStamp } from '../lib/freshness.js';
 import { addDays, countdownParts, dateLabel, dayET, daysUntil, gameTypeLabel, timeET, timeLocal, todayET, ageText } from '../lib/format.js';
 import { createPoller } from '../lib/poll.js';
@@ -223,15 +223,81 @@ export function countdownShort(iso) {
 function heroMatchup(g) {
   const a = g.teams?.away || {};
   const h = g.teams?.home || {};
-  return `<li class="hmatch" style="--away:${teamAccent(a.abbrev)};--home:${teamAccent(h.abbrev)}">
+  const st = stateOf(g);
+  const scored = ['LIVE', 'INTERMISSION', 'FINAL'].includes(st.key)
+    && a.score !== null && a.score !== undefined
+    && h.score !== null && h.score !== undefined;
+  const when = scored ? `${a.score}–${h.score} · ${st.text}` : timeET(g.start_time_utc);
+  return `<li class="hmatch" data-state="${esc(st.key)}" style="--away:${teamAccent(a.abbrev)};--home:${teamAccent(h.abbrev)}">
     <a href="#/matchup/${esc(g.id)}">
       <span class="hmatch__side">${teamMark(a, 26)}<b>${esc(a.abbrev || 'TBD')}</b></span>
       <span class="hmatch__at" aria-hidden="true">@</span>
       <span class="hmatch__side">${teamMark(h, 26)}<b>${esc(h.abbrev || 'TBD')}</b></span>
-      <span class="hmatch__when mono">${esc(timeET(g.start_time_utc))}</span>
+      <span class="hmatch__when mono">${esc(when)}</span>
       <span class="hmatch__venue truncate">${esc(g.venue || '')}</span>
     </a>
   </li>`;
+}
+
+const pickProbability = value => {
+  const n = Number(value);
+  return Number.isFinite(n) && n >= 0.5 && n <= 1 ? n : null;
+};
+
+export function heroSignal(state) {
+  const date = state.picks?.date || null;
+  const preseason = state.picks?.preseason;
+  const calls = preseason?.ok === true && Array.isArray(preseason.games)
+    ? preseason.games.filter(g => g?.is_call === true && g.pick_team)
+    : [];
+  const best = calls
+    .map(g => ({ ...g, _p: pickProbability(g.probability) }))
+    .sort((a, b) => (b._p ?? -1) - (a._p ?? -1))[0] || null;
+
+  if (best) {
+    const p = best._p;
+    return `<a class="hero-signal hero-signal--pick" href="#/pbe-picks${date ? `?date=${esc(date)}` : ''}">
+      <span class="hero-signal__k">PBE pick spotlight${date ? ` · ${esc(dateLabel(date))}` : ''}</span>
+      <strong>${esc(best.pick_team)}</strong>
+      ${p !== null ? `<b class="mono">${(p * 100).toFixed(1)}%</b>` : ''}
+      <small>Locked before puck drop · open the full PBE Picks slate →</small>
+    </a>`;
+  }
+
+  const officialLocked = (state.picks?.slate?.games || []).filter(g => g?.prediction_state === 'LOCKED_OFFICIAL').length;
+  if (officialLocked) {
+    return `<a class="hero-signal hero-signal--pick" href="#/pbe-picks${date ? `?date=${esc(date)}` : ''}">
+      <span class="hero-signal__k">PBE signal${date ? ` · ${esc(dateLabel(date))}` : ''}</span>
+      <strong>${officialLocked} locked pick${officialLocked === 1 ? '' : 's'}</strong>
+      <small>Official calls are frozen before puck drop · open PBE Picks →</small>
+    </a>`;
+  }
+
+  const liveGames = (state.today?.games || []).filter(g => ['LIVE', 'INTERMISSION'].includes(stateOf(g).key));
+  if (liveGames.length) {
+    const g = liveGames[0];
+    const a = g.teams?.away || {}; const h = g.teams?.home || {};
+    const scored = a.score !== null && a.score !== undefined && h.score !== null && h.score !== undefined;
+    return `<a class="hero-signal hero-signal--live" href="#/cast/${esc(g.id)}">
+      <span class="hero-signal__k">Live PBE Cast</span>
+      <strong>${esc(a.abbrev || 'TBD')} ${scored ? esc(a.score) : ''} <i>–</i> ${scored ? esc(h.score) : ''} ${esc(h.abbrev || 'TBD')}</strong>
+      <small>${esc(stateOf(g).text)} · jump into the live telemetry desk →</small>
+    </a>`;
+  }
+
+  const nextLock = (state.picks?.slate?.games || [])
+    .map(g => ({ g, t: g?.lock_window?.target_utc || null }))
+    .filter(x => x.t && Date.parse(x.t) > Date.now())
+    .sort((a, b) => Date.parse(a.t) - Date.parse(b.t))[0];
+  if (nextLock) {
+    const g = nextLock.g;
+    return `<a class="hero-signal" href="#/pbe-picks${date ? `?date=${esc(date)}` : ''}">
+      <span class="hero-signal__k">Next PBE lock</span>
+      <strong class="mono">${esc(timeET(nextLock.t))}</strong>
+      <small>${esc(g.away?.abbrev || 'TBD')} @ ${esc(g.home?.abbrev || 'TBD')} · model call freezes before puck drop →</small>
+    </a>`;
+  }
+  return '';
 }
 
 export function heroInner(state) {
@@ -242,9 +308,15 @@ export function heroInner(state) {
   const live = hs.key === 'LIVE';
 
   // The games shown in the rail are always labelled with the day they are on.
-  const railGames = live || hs.key === 'TODAY'
-    ? (today.games || []).slice(0, 4)
-    : (next?.atStart || []).slice(0, 4);
+  const todayGames = today?.games || [];
+  const railGames = live
+    ? [...todayGames].sort((a, b) => {
+        const rank = g => ['LIVE', 'INTERMISSION'].includes(stateOf(g).key) ? 0 : stateOf(g).key === 'FINAL' ? 2 : 1;
+        return rank(a) - rank(b) || String(a.start_time_utc || '').localeCompare(String(b.start_time_utc || ''));
+      }).slice(0, 4)
+    : hs.key === 'TODAY'
+      ? todayGames.slice(0, 4)
+      : (next?.atStart || []).slice(0, 4);
   const railDate = live || hs.key === 'TODAY' ? today?.date : next?.date;
   const railTotal = live || hs.key === 'TODAY' ? (today.counts?.total || 0) : (next?.gamesThatDay ?? railGames.length);
 
@@ -262,6 +334,7 @@ export function heroInner(state) {
       <span class="eyebrow hero__eyebrow" id="hero-phase">${esc(hs.eyebrow || 'NHL')}</span>
       <h1 class="pbe-display hero__title" id="hero-title">${esc(hs.title)}</h1>
       ${hs.deck ? `<p class="hero__deck">${esc(hs.deck)}</p>` : ''}
+      ${heroSignal(state)}
       <div class="hero__cta">${ctas.join('')}</div>
     </div>
     <div class="hero__rail" data-fresh-scope>
@@ -292,7 +365,7 @@ export function heroInner(state) {
 // a market row exists or the market is NOT POSTED; goalies are on record or
 // NOT CONFIRMED; the lock target comes from the picks lock policy.
 function teamRow(team = {}, game, winner) {
-  const showScore = ['LIVE', 'FINAL'].includes(game?.status?.semantics) && team.score !== null && team.score !== undefined;
+  const showScore = ['LIVE', 'INTERMISSION', 'FINAL'].includes(stateOf(game).key) && team.score !== null && team.score !== undefined;
   // The board payload carries `place` on some routes and not on others. The
   // static league directory (identity facts only) fills the club's full name
   // when the payload omits it; nothing else is read from it.
@@ -322,11 +395,11 @@ export function slateCard(game, { market = null, marketMeta = null, lock = null,
   const soon = c && !c.done && c.days < 2;
 
   const chips = [];
-  if (upcoming && oddsOn && !market) chips.push(['unavailable', 'MARKET NOT POSTED']);
-  if (upcoming) chips.push(['unknown', 'GOALIES NOT CONFIRMED']);
-  if (liveish || final) chips.push(['confirmed', 'STARTERS ON RECORD']);
+  if (upcoming && oddsOn && !market) chips.push(['unavailable', 'MARKET NOT POSTED', 'scard__market-wait']);
+  if (upcoming) chips.push(['unknown', 'GOALIES NOT CONFIRMED', '']);
+  if (liveish || final) chips.push(['confirmed', 'STARTERS ON RECORD', '']);
   if (upcoming && lock?.minutes !== null && lock?.minutes !== undefined) {
-    chips.push(['sched', `PBE PICK LOCK T-${lock.minutes}${lock.targetUtc ? ` · ${timeET(lock.targetUtc)}` : ''}`]);
+    chips.push(['sched', `PBE PICK LOCK T-${lock.minutes}${lock.targetUtc ? ` · ${timeET(lock.targetUtc)}` : ''}`, '']);
   }
 
   return `<article class="scard" data-state="${esc(st.key)}" data-game="${esc(game.id)}" style="--away:${teamAccent(a.abbrev)};--home:${teamAccent(h.abbrev)}">
@@ -348,11 +421,12 @@ export function slateCard(game, { market = null, marketMeta = null, lock = null,
       <div><dt>Venue</dt><dd>${esc(game.venue || 'Not listed')}${game.neutral_site ? ' · neutral site' : ''}</dd></div>
       <div><dt>TV</dt><dd>${esc(tv || 'Not listed')}</dd></div>
     </dl>
-    ${chips.length ? `<div class="scard__chips">${chips.map(([tone, text]) => `<span class="pbe-badge pbe-badge--${tone}">${esc(text)}</span>`).join('')}</div>` : ''}
+    ${chips.length ? `<div class="scard__chips">${chips.map(([tone, text, cls]) => `<span class="pbe-badge pbe-badge--${tone}${cls ? ` ${cls}` : ''}">${esc(text)}</span>`).join('')}</div>` : ''}
     <footer class="scard__actions">
-      <a class="scard__primary" href="#/matchup/${esc(game.id)}">Matchup</a>
-      <a href="#/pbe-picks${game.date ? `?date=${esc(game.date)}` : ''}">PBE Picks</a>
-      <a href="#/cast/${esc(game.id)}">PBE Cast</a>
+      <a class="scard__primary" href="#/${liveish ? 'cast' : 'matchup'}/${esc(game.id)}">${liveish ? 'Open PBE Cast' : 'Matchup'}</a>
+      ${liveish ? `<a href="#/matchup/${esc(game.id)}">Matchup</a>` : `<a href="#/cast/${esc(game.id)}">PBE Cast</a>`}
+      <a href="#/props?game=${esc(game.id)}&focus=market">Odds</a>
+      <a href="#/props?game=${esc(game.id)}&focus=props">Props</a>
     </footer>
   </article>`;
 }
@@ -649,7 +723,7 @@ export function mount(root, params, ctx) {
     board: null, meta: null, failed: false, error: null,
     today: null, todayMeta: null, todayFailed: false,
     next: null,
-    picks: { date: null, health: null, slate: null, healthError: null, slateError: null, locks: new Map() },
+    picks: { date: null, health: null, slate: null, preseason: null, healthError: null, slateError: null, preseasonError: null, locks: new Map(), loadedAt: 0 },
     news: null,
     market: null,
     env: null,
@@ -736,23 +810,26 @@ export function mount(root, params, ctx) {
   });
   poller.start();
 
-  // PBE Picks: the PUBLIC read API only, never /pro/*. A slate row's lock
-  // window is the only picks value that reaches a game card, and it is a
-  // policy timestamp — not a prediction.
+  // PBE Picks: PUBLIC read APIs only, never /pro/*. Game cards receive only
+  // lock-policy timestamps. The hero may surface a public preseason pick
+  // spotlight because that same call is already published on the free Picks
+  // surface; official protected pick values remain behind NHL Pro.
   const picksCtl = new AbortController();
   let picksToken = 0;
   function loadPicks() {
     const date = picksSlateDate(state);
-    if (!date || state.picks.date === date) return;
+    const now = Date.now();
+    if (!date || (state.picks.date === date && now - (state.picks.loadedAt || 0) < 60000)) return;
     const mine = ++picksToken;
-    state.picks = { ...state.picks, date, health: null, slate: null, healthError: null, slateError: null, locks: new Map() };
+    state.picks = { ...state.picks, date, healthError: null, slateError: null, preseasonError: null };
     const settle = p => p.then(v => ({ v, e: null }), e => ({ v: null, e }));
     Promise.all([
       settle(picksHealth({ signal: picksCtl.signal, timeout: 9000 })),
-      settle(picksSlate(date, { signal: picksCtl.signal, timeout: 9000 }))
-    ]).then(([health, slate]) => {
+      settle(picksSlate(date, { signal: picksCtl.signal, timeout: 9000 })),
+      settle(picksPreseason(date, { signal: picksCtl.signal, timeout: 9000 }))
+    ]).then(([health, slate, preseason]) => {
       if (mine !== picksToken) return;
-      if (health.e?.kind === 'aborted' || slate.e?.kind === 'aborted') return;
+      if (health.e?.kind === 'aborted' || slate.e?.kind === 'aborted' || preseason.e?.kind === 'aborted') return;
       const minutes = health.v?.data?.pipeline?.lock_policy?.target_lock_minutes_before_start ?? null;
       const locks = new Map();
       for (const g of slate.v?.data?.games || []) {
@@ -763,8 +840,11 @@ export function mount(root, params, ctx) {
         date,
         health: health.v?.data || null, healthError: health.e || null,
         slate: slate.v?.data || null, slateError: slate.e || null,
-        locks
+        preseason: preseason.v?.data || null, preseasonError: preseason.e || null,
+        locks,
+        loadedAt: Date.now()
       };
+      renderHero();
       renderPicks();
       renderBoard();
     });
