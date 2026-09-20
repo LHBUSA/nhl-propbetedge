@@ -78,6 +78,10 @@ assert.doesNotMatch(apiSource, /credentials: 'include'/, 'api.js (public data) n
   assert.match(replay, /kind: 'fight'/, 'replay emits a dedicated fight timeline marker');
   assert.match(css, /\.fightdesk \{/, 'Fight Desk has its own broadcast surface styling');
   assert.match(css, /\.rp-mark--fight/, 'fight timeline markers have a distinct treatment');
+  const center = fs.readFileSync('src/pages/cast-center.js', 'utf8');
+  assert.match(center, /ctile__fight/, 'Command Center game tiles surface games containing paired fights');
+  assert.match(center, /scout__item scout__item--fight/, 'Slate Scout surfaces live games containing fights');
+  assert.match(css, /\.ctile__fight \{/, 'Command Center fight chip has a dedicated treatment');
 }
 
 // 1d. Shot Lab is a first-class live spatial surface, not a PBE Cast alias.
