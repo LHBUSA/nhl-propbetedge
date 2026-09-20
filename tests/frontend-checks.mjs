@@ -41,6 +41,21 @@ assert.doesNotMatch(apiSource, /credentials: 'include'/, 'api.js (public data) n
   }
 }
 
+// 1c. PBE Cast live/replay polish must preserve the live edge and visual team identity.
+{
+  const cast = fs.readFileSync('src/pages/cast.js', 'utf8');
+  const replay = fs.readFileSync('src/components/replay.js', 'utf8');
+  const css = fs.readFileSync('src/styles/cast.css', 'utf8');
+
+  assert.match(cast, /replayBar\(state, full, \{ live: \['LIVE', 'INTERMISSION'\]\.includes\(st\.key\) \}\)/, 'live Cast tells replay controls when the source game is live');
+  assert.match(cast, /act === 'end' \|\| act === 'live'/, 'Jump to live returns to the canonical live/full cursor');
+  assert.match(replay, /data-rp="live">Jump to live<\/button>/, 'live replay exposes a dedicated Jump to live action');
+  assert.match(replay, /badgeText = atLiveEdge \? 'Live'/, 'live edge is labelled Live instead of Full game');
+  assert.match(cast, /--away:\$\{teamAccent\(g\.teams\.away\.abbrev\)\};--home:\$\{teamAccent\(g\.teams\.home\.abbrev\)\}/, 'Shot Share bars use team accents');
+  assert.match(css, /\.rink-legend \{[^\n]*color: var\(--pbe-paper-2\)/, 'shot-map legend uses high-contrast text');
+  assert.match(css, /\.replay__live \{/, 'Jump to live has a dedicated visible treatment');
+}
+
 // 2. Truth rules: no randomness or stale launch copy in shipped source.
 const files = [];
 const walk = dir => {
