@@ -111,10 +111,14 @@ function gameHeader(data, meta, failed) {
       ${scored ? `<div class="lab-head__score mono">${esc(t.score ?? '—')}</div>` : ''}
     </div>`;
   const season = seasonText(g.season);
+  const liveLab = ['LIVE', 'INTERMISSION'].includes(st.key)
+    ? '<div class="lab-live-state" role="status"><i aria-hidden="true"></i><span><b>LIVE SHOT LAB</b><small>Spatial attempts refresh every 5 seconds from official play-by-play</small></span></div>'
+    : '';
   return `<div class="lab-head" style="--away:${teamAccent(a.abbrev)};--home:${teamAccent(h.abbrev)}">
       ${team(a, 'away')}
       <div class="lab-head__mid">
         ${stateBadge(g)}
+        ${liveLab}
         <span class="lab-head__when mono">${esc(when)}</span>
         ${freshStamp(meta, { failed })}
       </div>
@@ -433,8 +437,8 @@ export function mount(root, params, ctx) {
   const aborter = new AbortController();
 
   root.innerHTML = `<section class="wrap section lab" data-fresh-scope>
-    <div class="section-head"><div><span class="eyebrow">Shot Lab</span><h2>Every attempt, where it happened</h2></div>
-      <p>Official play-by-play coordinates with geometric-v1 distance and angle. Attempts without coordinates are counted, never placed. Danger buckets are a geometric heuristic, not a model.</p></div>
+    <div class="section-head lab-intro"><div><span class="eyebrow">Shot Lab · live spatial telemetry</span><h2>Every attempt, where it happened</h2></div>
+      <p>Shot Lab is its own live analysis surface: during active games the rink, distance profile, strength splits, shot types and attempt ledger refresh every 5 seconds from official play-by-play. PBE Cast is the separate play-by-play desk. Attempts without coordinates are counted, never placed; danger buckets are geometric heuristics, not a model.</p></div>
     <div id="lab-picker"></div>
     <div id="lab-body"></div>
   </section>`;
@@ -643,7 +647,7 @@ export function mount(root, params, ctx) {
     }
     renderBody();
     const key = stateOf(res.data.game).key;
-    if (key === 'LIVE' || key === 'INTERMISSION') return 10000;
+    if (key === 'LIVE' || key === 'INTERMISSION') return 5000;
     if (key === 'FINAL' || key === 'POSTPONED' || key === 'CANCELLED') return null;
     const until = Date.parse(res.data.game.start_time_utc) - Date.now();
     if (!Number.isFinite(until)) return 60000;
