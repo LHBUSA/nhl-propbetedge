@@ -164,10 +164,18 @@ const gameDayHero = heroState(NEXT_BOARD);
 assert.equal(gameDayHero.key, 'TODAY');
 assert.equal(gameDayHero.title, '7 NHL preseason games today', 'game day says today, with the real count and game type');
 assert.match(gameDayHero.deck, /First puck drop 7:00 PM ET/);
-const liveBoard = at(NEXT_BOARD, { counts: { total: 7, LIVE: 2, FINAL: 1 } });
+const liveGame = {
+  ...NEXT_GAMES[0],
+  status: { ...scheduled, semantics: 'LIVE', state: 'LIVE', period: 2, period_type: 'REG', clock: '12:34', seconds_remaining: 754, clock_running: true },
+  teams: { away: { ...DAL, score: 2, sog: 18 }, home: { ...STL, score: 1, sog: 15 } }
+};
+const liveBoard = at(NEXT_BOARD, { counts: { total: 7, LIVE: 1, SCHEDULED: 6 }, games: [liveGame, ...NEXT_GAMES.slice(1)] });
 assert.equal(heroState(liveBoard).key, 'LIVE');
-assert.match(heroState(liveBoard).title, /^2 NHL games live right now$/);
-assert.match(heroInner({ ...gameDayState(), today: liveBoard, board: liveBoard }), /href="#\/cast">Open PBE Cast/, 'a live hero leads into PBE Cast');
+assert.match(heroState(liveBoard).title, /^1 NHL game live right now$/);
+const liveHeroHtml = heroInner({ ...gameDayState(), today: liveBoard, board: liveBoard });
+assert.match(liveHeroHtml, /href="#\/cast">Open PBE Cast/, 'a live hero leads into PBE Cast');
+assert.match(liveHeroHtml, /2–1 · LIVE · 2nd 12:34/, 'homepage hero rail shows the real live score, period and clock');
+assert.ok(liveHeroHtml.indexOf('2–1 · LIVE · 2nd 12:34') < liveHeroHtml.indexOf('MTL'), 'live game is promoted ahead of scheduled games in the hero rail');
 const finalBoard = at(NEXT_BOARD, { counts: { total: 7, FINAL: 7 } });
 assert.equal(heroState(finalBoard).key, 'FINAL');
 assert.match(heroState(finalBoard).title, /are final$/);
@@ -216,6 +224,9 @@ assert.match(card, /PBE PICK LOCK T-45 · 6:15 PM ET/, 'the lock target is the p
 assert.match(card, /href="#\/matchup\/2026010001"/);
 assert.match(card, /href="#\/cast\/2026010001"/);
 assert.match(card, /href="#\/pbe-picks\?date=2026-09-19"/);
+assert.match(card, /scard__market-wait/, 'market-not-posted receives the stronger scan-state treatment');
+assert.match(card, /Odds pending/, 'configured market service without a game quote is explicit and non-clickable');
+assert.ok(!/Betting Odds|View Props/.test(card), 'market actions are never offered without real stored rows');
 assert.ok(!/\d{1,3}(?:\.\d+)?\s*%/.test(card), 'no percentage on a card with no model');
 assert.ok(!/MARKET NOT POSTED/.test(slateCard(NEXT_GAMES[0], { odds: false })), 'with no market service configured the card claims nothing about a market');
 const finalGame = { ...NEXT_GAMES[0], status: { ...scheduled, semantics: 'FINAL', last_period_type: 'REG' }, teams: { away: { ...DAL, score: 3, sog: 31 }, home: { ...STL, score: 2, sog: 28 } } };
@@ -223,6 +234,34 @@ const finalCard = slateCard(finalGame, { odds: true });
 assert.match(finalCard, /STARTERS ON RECORD/, 'a finished game does have goalies on record');
 assert.ok(!/GOALIES NOT CONFIRMED/.test(finalCard));
 assert.match(finalCard, /is-winner/, 'the winner is marked from the real score');
+const liveCard = slateCard(liveGame, { odds: true });
+assert.match(liveCard, />2<\/div>/, 'live card shows the away score');
+assert.match(liveCard, />1<\/div>/, 'live card shows the home score');
+assert.match(liveCard, /LIVE · 2nd 12:34/, 'live card shows live period and clock');
+assert.match(liveCard, /href="#\/cast\/2026010001">Open PBE Cast<\/a>/, 'live card makes PBE Cast the primary action');
+
+const quotedMarket = {
+  game_id: '2026010001', away: 'DAL', home: 'STL',
+  pricing: { h2h: { quotes: [{ book: 'draftkings', away: 120, home: -140 }], best: { away: { book: 'draftkings', price: 120 }, home: { book: 'draftkings', price: -140 } }, consensus: null }, totals: [], spreads: [] },
+  props: [{ player: 'Test Skater', market: 'player_shots_on_goal', line: 2.5, over: -105, under: -115, book: 'draftkings' }]
+};
+const quotedCard = slateCard(NEXT_GAMES[0], { market: quotedMarket, marketMeta: META, odds: true });
+assert.match(quotedCard, /href="#\/props\?game=2026010001&focus=market">Betting Odds<\/a>/, 'stored game market unlocks the direct odds action');
+assert.match(quotedCard, /href="#\/props\?game=2026010001&focus=props">View Props<\/a>/, 'stored player rows unlock the direct props action');
+
+const spotlightState = gameDayState();
+spotlightState.picks = {
+  ...spotlightState.picks,
+  preseason: { ok: true, games: [
+    { game_id: '2026010001', is_call: true, pick_team: 'DAL', probability: 0.671 },
+    { game_id: '2026010003', is_call: true, pick_team: 'WPG', probability: 0.612 }
+  ] }
+};
+const spotlight = heroInner(spotlightState);
+assert.match(spotlight, /PBE pick spotlight/, 'hero uses open space for a real public locked-pick signal');
+assert.match(spotlight, /<strong>DAL<\/strong>/, 'highest-probability public preseason call leads the spotlight');
+assert.match(spotlight, /67\.1%/, 'spotlight probability comes from the published call');
+
 const nullScore = slateCard({ ...NEXT_GAMES[0], status: { ...scheduled, semantics: 'FINAL' }, teams: { away: { ...DAL, score: 2, sog: null }, home: { ...STL, score: 1, sog: null } } }, {});
 assert.match(nullScore, /—<small>SOG<\/small>/, 'a null SOG renders as an em dash, never 0');
 assert.equal(countdownShort(null), '', 'no start time, no countdown');
