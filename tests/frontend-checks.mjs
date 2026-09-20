@@ -67,6 +67,17 @@ assert.doesNotMatch(apiSource, /credentials: 'include'/, 'api.js (public data) n
   assert.match(cast, /pbox__number mono/, 'jersey number is visible in the penalty box when known');
   assert.match(css, /\.pbox__glass i:nth-child\(2\)/, 'glass stanchions visually divide the box');
   assert.match(css, /\.pbox__boards \{/, 'penalty-box dasher boards have a dedicated physical layer');
+
+  // Fights are first-class hockey events, not two generic penalty rows.
+  assert.match(cast, /\['fight', '🥊 Fights'\]/, 'PBE Cast exposes a dedicated Fights feed filter');
+  assert.match(cast, /function fightDesk\(cast\)/, 'PBE Cast has a first-class Fight Desk');
+  assert.match(cast, /FAN-VOTED RESULT · NOT OFFICIAL/, 'fight winner semantics are explicitly non-official');
+  assert.match(cast, /propsports\.proptechusa\.ai/, 'Fight Desk keeps PropSports as the consumer-facing data source');
+  assert.match(cast, /pbox__fight-tag/, 'fighters remain visibly connected to their penalty-box entries');
+  assert.match(replay, /data-rp-seek="fight"/, 'replay exposes a Fight jump');
+  assert.match(replay, /kind: 'fight'/, 'replay emits a dedicated fight timeline marker');
+  assert.match(css, /\.fightdesk \{/, 'Fight Desk has its own broadcast surface styling');
+  assert.match(css, /\.rp-mark--fight/, 'fight timeline markers have a distinct treatment');
 }
 
 // 1d. Shot Lab is a first-class live spatial surface, not a PBE Cast alias.
