@@ -5,6 +5,7 @@ import { mountCenter } from './cast-center.js';
 import { playerIdentity } from '../components/player.js';
 import { freshStamp } from '../lib/freshness.js';
 import { countdownParts, dateLabel, dayET, gameTypeLabel, num, pct, periodLabel, share, svPct, timeET, titleCase, todayET } from '../lib/format.js';
+import { fightEvents, isFightingMajor, latestFight } from '../lib/fights.js';
 import { createPoller } from '../lib/poll.js';
 import { resolveRecentCompleted } from '../lib/recent-games.js';
 import { teamAccent } from '../lib/teams.js';
@@ -15,7 +16,7 @@ import { SPEEDS, replayBar, seek, sliceCast } from '../components/replay.js';
 import { watchButton } from '../components/alerts-ui.js';
 
 const FEED_FILTERS = [
-  ['all', 'All'], ['goal', 'Goals'], ['shots', 'Shots'], ['penalty', 'Penalties'],
+  ['all', 'All'], ['goal', 'Goals'], ['shots', 'Shots'], ['fight', '🥊 Fights'], ['penalty', 'Penalties'],
   ['faceoff', 'Faceoffs'], ['hit', 'Hits'], ['other', 'Other']
 ];
 
@@ -23,6 +24,7 @@ function feedMatch(play, f) {
   if (f === 'all') return true;
   if (f === 'goal') return play.kind === 'goal';
   if (f === 'shots') return Boolean(play.shot);
+  if (f === 'fight') return isFightingMajor(play);
   if (f === 'penalty') return play.kind === 'penalty' || play.kind === 'delayed-penalty';
   if (f === 'faceoff') return play.kind === 'faceoff';
   if (f === 'hit') return play.kind === 'hit';
@@ -55,6 +57,9 @@ function playText(play) {
       const dur = Number.isFinite(mins) ? `${mins}:00` : '';
       // The raw event truth is unchanged; it is simply read as a hockey event
       // rather than a database row.
+      if (isFightingMajor(play)) {
+        return `<b class="feed-fight">🥊 FIGHTING MAJOR${play.side ? ` · ${esc(feedTeams?.[play.side]?.abbrev || '')}` : ''}</b> — ${nm(who(play, 'committed_by') || who(play, 'served_by'))}${dur ? ` · ${esc(dur)}` : ''}`;
+      }
       return `<b class="feed-pen">PENALTY${play.side ? ` · ${esc(feedTeams?.[play.side]?.abbrev || '')}` : ''}</b> — ${nm(who(play, 'committed_by') || who(play, 'served_by'))} · ${esc(titleCase(p.desc_key || 'penalty'))}${dur ? ` · ${esc(dur)}` : ''}${who(play, 'drawn_by') ? ` <span class="dim">· drawn by ${nm(who(play, 'drawn_by'))}</span>` : ''}${p.severity && p.severity !== 'MIN' ? ` <span class="dim">· ${esc(p.severity)}</span>` : ''}`;
     }
     case 'delayed-penalty': return `<b class="feed-pen feed-pen--delayed">DELAYED PENALTY</b>${play.side ? ` <span class="dim">· on ${esc(feedTeams?.[play.side]?.abbrev || '')}</span>` : ''}`;
@@ -129,19 +134,97 @@ function specialTeamsBanner(cast, st) {
     </div>`;
 }
 
+const sameName = (a, b) => String(a || '').trim().toLocaleLowerCase() === String(b || '').trim().toLocaleLowerCase();
+
+function fightResult(fight) {
+  const r = fight?.result;
+  if (r?.type === 'fan_vote' && r?.status === 'available' && r.winner_name) {
+    return `<div class="fightdesk__result fightdesk__result--available">
+      <span class="fightdesk__result-k">FAN-VOTED RESULT · NOT OFFICIAL</span>
+      <strong>${esc(r.winner_name)}</strong>
+      <span class="mono">${Number.isFinite(Number(r.winner_pct)) ? `${Number(r.winner_pct)}%` : 'winner'}${Number.isFinite(Number(r.vote_count)) ? ` · ${Number(r.vote_count)} vote${Number(r.vote_count) === 1 ? '' : 's'}` : ''}</span>
+      ${Number.isFinite(Number(r.rating)) ? `<span class="micro">Fight rating ${Number(r.rating).toFixed(2).replace(/\.00$/, '')}/10</span>` : ''}
+    </div>`;
+  }
+  return `<div class="fightdesk__result fightdesk__result--pending">
+    <span class="fightdesk__result-k">FAN-VOTE RESULT</span>
+    <strong>Result pending</strong>
+    <span class="micro">The NHL does not declare an official fight winner.</span>
+  </div>`;
+}
+
+function fightDesk(cast) {
+  const fight = latestFight(cast);
+  if (!fight || !Array.isArray(fight.fighters) || fight.fighters.length < 2) return '';
+  const [a, b] = fight.fighters;
+  const g = cast.game;
+  const r = fight.result;
+  const fighter = (p, side) => {
+    const winner = r?.type === 'fan_vote' && r?.status === 'available' && sameName(r.winner_name, p.name);
+    return `<div class="fightdesk__fighter fightdesk__fighter--${side}${winner ? ' is-fan-winner' : ''}" style="--fight-team:${teamAccent(p.team_abbrev)}">
+      ${playerIdentity({ id: p.player_id, name: p.name, team: p.team_abbrev, number: p.sweater_number, size: 'lg', href: p.player_id ? `#/player/${esc(p.player_id)}` : null })}
+      <div class="fightdesk__fighter-copy">
+        <span class="fightdesk__team mono">${esc(p.team_abbrev || '')}${p.sweater_number !== null && p.sweater_number !== undefined ? ` · #${esc(p.sweater_number)}` : ''}</span>
+        ${p.player_id ? `<a href="#/player/${esc(p.player_id)}">${esc(p.name || 'Unknown fighter')}</a>` : `<strong>${esc(p.name || 'Unknown fighter')}</strong>`}
+        ${winner ? '<span class="fightdesk__winner">Fan-vote winner</span>' : ''}
+      </div>
+    </div>`;
+  };
+  return `<section class="fightdesk" aria-label="Fight desk">
+    <div class="fightdesk__head">
+      <span class="fightdesk__icon" aria-hidden="true">🥊</span>
+      <span><b>FIGHT DESK</b><small>${esc(periodLabel(fight.period, fight.period_type))} · ${esc(fight.clock || '—')}${fight.penalty_minutes_each ? ` · ${fight.penalty_minutes_each}:00 majors` : ' · fighting majors'}</small></span>
+      <span class="fightdesk__source">via <b>propsports.proptechusa.ai</b></span>
+    </div>
+    <div class="fightdesk__body">
+      ${fighter(a, 'away')}
+      <div class="fightdesk__vs"><span>VS</span><i></i></div>
+      ${fighter(b, 'home')}
+      ${fightResult(fight)}
+    </div>
+    <p class="fightdesk__note micro">Fight detection comes from paired NHL fighting majors. Any winner shown is a HockeyFights fan vote delivered through PropSports, not an NHL decision.</p>
+  </section>`;
+}
+
+function fightFeed(cast) {
+  const fights = [...fightEvents(cast)].reverse();
+  if (!fights.length) return '<p class="dim feed-empty">No paired fighting majors in this game.</p>';
+  return `<ol class="feed-list feed-list--fights">${fights.map(fight => {
+    const [a, b] = fight.fighters || [];
+    const r = fight.result;
+    const result = r?.type === 'fan_vote' && r?.status === 'available'
+      ? `<span class="fight-feed__result"><b>Fan vote:</b> ${esc(r.winner_name || 'winner')}${Number.isFinite(Number(r.winner_pct)) ? ` ${Number(r.winner_pct)}%` : ''}${Number.isFinite(Number(r.vote_count)) ? ` · ${Number(r.vote_count)} votes` : ''}</span>`
+      : '<span class="fight-feed__result dim">Fan-vote result pending</span>';
+    return `<li class="feed-item feed-item--fight">
+      <span class="feed-loc feed-loc--none" aria-hidden="true">🥊</span>
+      <span class="feed-time mono">${esc(fight.clock || '')}</span>
+      <span class="feed-team">FIGHT</span>
+      <span class="feed-text"><b>${esc(a?.name || 'Unknown')}</b> <span class="dim">(${esc(a?.team_abbrev || '')})</span> vs <b>${esc(b?.name || 'Unknown')}</b> <span class="dim">(${esc(b?.team_abbrev || '')})</span> · ${fight.penalty_minutes_each ? `${fight.penalty_minutes_each}:00 each` : 'fighting majors'} · ${result}</span>
+    </li>`;
+  }).join('')}</ol>`;
+}
+
 // A physical penalty-box presentation, not a generic card list. The data stays
 // exactly the same: this is only a hockey-native way to show who is sitting.
 function penaltyBox(cast, st) {
   const box = st.active_penalties.filter(x => x.player_name || x.infraction);
   if (!box.length) return '';
   const g = cast.game;
+  const fights = fightEvents(cast);
   const sides = ['away', 'home'].filter(side => box.some(x => x.side === side));
   const card = x => {
     const total = (x.duration_min || 0) * 60;
     const pctLeft = x.remaining_seconds !== null && total ? Math.max(0, Math.min(100, (x.remaining_seconds / total) * 100)) : null;
     const team = g.teams[x.side]?.abbrev || '';
     const profile = x.player_id ? `#/player/${esc(x.player_id)}` : null;
-    return `<li class="pbox__pen">
+    const fight = fights.find(f => (f.fighters || []).some(p =>
+      Number.isFinite(Number(x.start_sort_order))
+        ? Number(p.penalty_sort_order) === Number(x.start_sort_order)
+        : String(p.player_id) === String(x.player_id)
+    )) || null;
+    const opponent = fight?.fighters?.find(p => String(p.player_id) !== String(x.player_id)) || null;
+    const fanWinner = fight?.result?.type === 'fan_vote' && fight.result.status === 'available' && sameName(fight.result.winner_name, x.player_name);
+    return `<li class="pbox__pen${fight ? ' pbox__pen--fight' : ''}${fanWinner ? ' is-fan-winner' : ''}">
       <div class="pbox__seat" aria-hidden="true"></div>
       <div class="pbox__player">
         ${x.player_id ? playerIdentity({
@@ -163,6 +246,7 @@ function penaltyBox(cast, st) {
             <span>${esc(titleCase(x.infraction || 'penalty'))}</span>
             <span class="dim">${x.duration_min ? `${x.duration_min}:00` : ''}${x.coincidental ? ' · coincidental' : ''}${x.affects_manpower ? '' : ' · no manpower change'}</span>
           </div>
+          ${fight ? `<div class="pbox__fight-tag">🥊 FIGHT${opponent?.name ? ` · vs ${esc(opponent.name)}` : ''}${fanWinner ? ' · FAN-VOTE WINNER' : ''}</div>` : ''}
         </div>
       </div>
       ${x.remaining_seconds !== null
@@ -234,6 +318,7 @@ function header(cast, meta, failed) {
       <span class="micro">${esc(gameTypeLabel(g.game_type))} · ${esc(g.venue || '')} · Game ${esc(g.id)}</span>
       ${['FINAL', 'REPLAY'].includes(st.key) ? '' : watchButton(g.id)}
     </div>
+    ${fightDesk(cast)}
     ${penaltyBox(cast, specialTeamsOf(cast))}`;
 }
 
@@ -343,6 +428,7 @@ function statsPanel(cast) {
 }
 
 function feedList(cast, filter, selected) {
+  if (filter === 'fight') return fightFeed(cast);
   const plays = [...cast.plays].filter(p => feedMatch(p, filter)).reverse();
   if (!plays.length) {
     return `<p class="dim feed-empty">${cast.plays.length ? 'No events of this type yet.' : 'The play-by-play stream starts at puck drop.'}</p>`;
@@ -358,7 +444,7 @@ function feedList(cast, filter, selected) {
     }
     const team = p.side ? g.teams[p.side] : null;
     const scoreAfter = p.score_after ? `<span class="feed-score mono">${p.score_after.away}–${p.score_after.home}</span>` : '';
-    out.push(`<li class="feed-item feed-item--${esc(p.kind)}${i === 0 && filter === 'all' ? ' is-latest' : ''}${selected === p.sort_order ? ' is-selected' : ''}"${p.shot?.has_coordinates ? ` data-select="${p.sort_order}"` : ''}>
+    out.push(`<li class="feed-item feed-item--${isFightingMajor(p) ? 'fight' : esc(p.kind)}${i === 0 && filter === 'all' ? ' is-latest' : ''}${selected === p.sort_order ? ' is-selected' : ''}"${p.shot?.has_coordinates ? ` data-select="${p.sort_order}"` : ''}>
       ${p.shot?.has_coordinates ? `<button type="button" class="feed-loc" data-select="${p.sort_order}" aria-label="Show this ${esc(p.time_in_period || '')} attempt on the rink" aria-pressed="${selected === p.sort_order}">⌖</button>` : '<span class="feed-loc feed-loc--none" aria-hidden="true"></span>'}
       <span class="feed-time mono">${esc(p.time_in_period || '')}</span>
       <span class="feed-team" style="--c:${team ? teamAccent(team.abbrev) : 'transparent'}">${team ? esc(team.abbrev) : ''}</span>
