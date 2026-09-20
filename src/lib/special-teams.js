@@ -219,6 +219,7 @@ function reconstruct(upTo, now, cls) {
       side: p.side || null,
       player_id: who?.id ?? null,
       player_name: who?.name || null,
+      player_number: who?.number ?? null,
       served_by_name: served && served.id !== who?.id ? served.name : null,
       infraction: pen.desc_key || null,
       severity: severity || null,
