@@ -104,6 +104,7 @@
 .mk-core--away { fill: var(--pbe-paper); }
 .mk-core--home { fill: var(--pbe-ink); }
 .mk-ring { fill: none; stroke: var(--pbe-paper); stroke-width: .5; stroke-dasharray: 1 .8; }
+.mk-hover-ring { fill: none; stroke: transparent; stroke-width: 0; pointer-events: none; }
 .mk-g:hover .mk { stroke-width: .9; }
 .rink-legend { list-style: none; display: flex; flex-wrap: wrap; gap: 7px 14px; margin: var(--s-3) 0 0; padding: 8px 10px; border: 1px solid var(--pbe-line-faint); border-radius: var(--r-xs); background: rgba(10,9,7,.42); font: 800 var(--fs-micro)/1 var(--pbe-font-data); letter-spacing: .06em; text-transform: uppercase; color: var(--pbe-paper); }
 .rink-legend li { display: inline-flex; align-items: center; gap: 6px; text-shadow: 0 1px 1px rgba(0,0,0,.5); }
