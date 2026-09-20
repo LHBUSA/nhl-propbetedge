@@ -72,6 +72,14 @@ assert.doesNotMatch(apiSource, /credentials: 'include'/, 'api.js (public data) n
   assert.match(lab, /LIVE SHOT LAB/, 'live games display an explicit Shot Lab live state');
   assert.match(lab, /return 5000;/, 'live Shot Lab polls on a five-second cadence');
   assert.match(lab, /ctx\.board\(today, \{ signal: aborter\.signal, maxAgeMs: 5000 \}\)/, 'bare Shot Lab landing rechecks today before using cached recent games');
+  assert.match(lab, /pickDate:[\s\S]*params\.gameId \? null : todayET\(\)/, 'bare Shot Lab date picker defaults to the current ET date');
+  assert.match(lab, /function preferredSlateGame\(games, now = Date\.now\(\)\)/, 'Shot Lab has an explicit same-day game priority resolver');
+  assert.ok(
+    lab.indexOf("['LIVE', 'INTERMISSION'].includes(stateOf(g).key)") < lab.indexOf("['PREGAME', 'SCHEDULED'].includes(stateOf(g).key)")
+      && lab.indexOf("['PREGAME', 'SCHEDULED'].includes(stateOf(g).key)") < lab.indexOf("stateOf(g).key === 'FINAL'"),
+    'Shot Lab prefers live, then upcoming, then final games on the current slate'
+  );
+  assert.match(lab, /const preferred = preferredSlateGame\(games\);/, 'bare Shot Lab opens the preferred game from today before historical fallback');
   assert.match(lab, /data-shot-type=/, 'Shot Lab rows expose shot-type cross-filter metadata');
   assert.match(rink, /class="mk-hover-ring"/, 'rink markers carry a dedicated hover halo');
   assert.match(lab, /crossHighlight\(\{ shotId:/, 'attempt rows cross-highlight their exact rink point');
