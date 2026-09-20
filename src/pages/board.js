@@ -425,8 +425,8 @@ export function slateCard(game, { market = null, marketMeta = null, lock = null,
     <footer class="scard__actions">
       <a class="scard__primary" href="#/${liveish ? 'cast' : 'matchup'}/${esc(game.id)}">${liveish ? 'Open PBE Cast' : 'Matchup'}</a>
       ${liveish ? `<a href="#/matchup/${esc(game.id)}">Matchup</a>` : `<a href="#/cast/${esc(game.id)}">PBE Cast</a>`}
-      <a href="#/props?game=${esc(game.id)}&focus=market">Odds</a>
-      <a href="#/props?game=${esc(game.id)}&focus=props">Props</a>
+      ${market ? `<a href="#/props?game=${esc(game.id)}&focus=market">Betting Odds</a>` : oddsOn ? '<span class="scard__action-off" aria-disabled="true">Odds pending</span>' : ''}
+      ${Array.isArray(market?.props) && market.props.length ? `<a href="#/props?game=${esc(game.id)}&focus=props">View Props</a>` : ''}
     </footer>
   </article>`;
 }
