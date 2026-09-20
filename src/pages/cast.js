@@ -129,8 +129,8 @@ function specialTeamsBanner(cast, st) {
     </div>`;
 }
 
-// The box rail. Cards stack per side, so 5-on-3 is two cards under one crest
-// with no special case.
+// A physical penalty-box presentation, not a generic card list. The data stays
+// exactly the same: this is only a hockey-native way to show who is sitting.
 function penaltyBox(cast, st) {
   const box = st.active_penalties.filter(x => x.player_name || x.infraction);
   if (!box.length) return '';
@@ -139,30 +139,63 @@ function penaltyBox(cast, st) {
   const card = x => {
     const total = (x.duration_min || 0) * 60;
     const pctLeft = x.remaining_seconds !== null && total ? Math.max(0, Math.min(100, (x.remaining_seconds / total) * 100)) : null;
+    const team = g.teams[x.side]?.abbrev || '';
+    const profile = x.player_id ? `#/player/${esc(x.player_id)}` : null;
     return `<li class="pbox__pen">
-      <div class="pbox__who">
-        ${x.player_id ? playerIdentity({ id: x.player_id, name: x.player_name, team: g.teams[x.side]?.abbrev, size: 'sm' }) : ''}
-        <span class="pbox__name">${esc(x.player_name || 'Unknown')}</span>
-      </div>
-      <div class="pbox__what">
-        <span>${esc(titleCase(x.infraction || 'penalty'))}</span>
-        <span class="dim">${x.duration_min ? `${x.duration_min} min` : ''}${x.coincidental ? ' · coincidental' : ''}${x.affects_manpower ? '' : ' · no manpower change'}</span>
+      <div class="pbox__seat" aria-hidden="true"></div>
+      <div class="pbox__player">
+        ${x.player_id ? playerIdentity({
+          id: x.player_id,
+          name: x.player_name,
+          team,
+          number: x.player_number,
+          size: 'md',
+          href: profile
+        }) : '<span class="pbox__silhouette" aria-hidden="true"></span>'}
+        <div class="pbox__identity">
+          <div class="pbox__name-row">
+            ${x.player_number !== null && x.player_number !== undefined ? `<span class="pbox__number mono">#${esc(x.player_number)}</span>` : ''}
+            ${profile
+              ? `<a class="pbox__name" href="${profile}">${esc(x.player_name || 'Unknown')}</a>`
+              : `<span class="pbox__name">${esc(x.player_name || 'Unknown')}</span>`}
+          </div>
+          <div class="pbox__what">
+            <span>${esc(titleCase(x.infraction || 'penalty'))}</span>
+            <span class="dim">${x.duration_min ? `${x.duration_min}:00` : ''}${x.coincidental ? ' · coincidental' : ''}${x.affects_manpower ? '' : ' · no manpower change'}</span>
+          </div>
+        </div>
       </div>
       ${x.remaining_seconds !== null
-        ? `<div class="pbox__time"><span class="mono">${esc(clockText(x.remaining_seconds))}</span><span class="micro">remaining</span>
+        ? `<div class="pbox__time"><span class="pbox__clock mono">${esc(clockText(x.remaining_seconds))}</span><span class="micro">remaining</span>
             <div class="pbox__bar" role="presentation"><i style="width:${pctLeft.toFixed(1)}%"></i></div>
            </div>`
-        : `<div class="pbox__time pbox__time--unknown"><span class="micro">time not shown</span><span class="micro dim">expiry not reconstructable here</span></div>`}
+        : `<div class="pbox__time pbox__time--unknown"><span class="micro">official box time unavailable</span><span class="micro dim">penalty is real; countdown withheld</span></div>`}
       ${x.served_by_name ? `<p class="micro dim">Served by ${esc(x.served_by_name)}</p>` : ''}
     </li>`;
   };
   return `<section class="pbox" aria-label="Penalty box">
-    <h3 class="pbox__title">PENALTY BOX</h3>
+    <div class="pbox__titlebar">
+      <span class="pbox__lamp" aria-hidden="true"></span>
+      <h3 class="pbox__title">PENALTY BOX</h3>
+      <span class="pbox__state mono">${esc(st.manpower || '')}</span>
+    </div>
     <div class="pbox__sides">
-      ${sides.map(side => `<div class="pbox__side pbox__side--${side}">
-          <div class="pbox__team"><b>${esc(g.teams[side]?.abbrev || side)}</b></div>
-          <ul class="pbox__list">${box.filter(x => x.side === side).map(card).join('')}</ul>
-        </div>`).join('')}
+      ${sides.map(side => {
+        const t = g.teams[side] || {};
+        const sideBox = box.filter(x => x.side === side);
+        const role = st.shorthanded_side === side ? 'PENALTY KILL' : (st.state === STATE.FOUR_ON_FOUR ? '4 ON 4' : 'IN THE BOX');
+        return `<div class="pbox__side pbox__side--${side}" style="--box-team:${teamAccent(t.abbrev)}" aria-label="${esc(t.abbrev || side)} penalty box">
+          <div class="pbox__glass" aria-hidden="true"><i></i><i></i><i></i></div>
+          <div class="pbox__team">
+            ${teamMark(t, 28)}
+            <span><b>${esc(t.abbrev || side)}</b><small>${esc(role)}</small></span>
+            <em class="mono">${sideBox.length}</em>
+          </div>
+          <ul class="pbox__list">${sideBox.map(card).join('')}</ul>
+          <div class="pbox__bench" aria-hidden="true"><span></span></div>
+          <div class="pbox__boards" aria-hidden="true"><i></i><i></i></div>
+        </div>`;
+      }).join('')}
     </div>
   </section>`;
 }
