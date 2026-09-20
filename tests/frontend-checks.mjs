@@ -90,6 +90,95 @@ assert.doesNotMatch(apiSource, /credentials: 'include'/, 'api.js (public data) n
   assert.match(css, /\.mk-g\.is-cross-hit \.mk-hover-ring/, 'cross-filtered rink points receive a visible halo');
 }
 
+// 1e. Rink: premium spatial surface, with the sports truth untouched.
+{
+  const rink = fs.readFileSync('src/components/rink.js', 'utf8');
+  const castCss = fs.readFileSync('src/styles/cast.css', 'utf8');
+  const cast = fs.readFileSync('src/pages/cast.js', 'utf8');
+
+  // -- geometry and precision are frozen
+  assert.match(rink, /viewBox="-101 -43\.5 202 87"/, 'rink keeps the regulation 200x85 viewBox');
+  assert.match(rink, /preserveAspectRatio="xMidYMid meet"/, 'rink cannot distort at any container size');
+  assert.match(castCss, /\.rink-wrap \{[^}]*aspect-ratio: 202 \/ 87/, 'the wrapper aspect ratio matches the viewBox');
+  assert.ok(!/toFixed\(|Math\.round\(/.test(rink), 'source shot coordinates are never rounded for display');
+
+  // -- crisp strokes from phone to 4K, asserted on RENDERED output rather than
+  //    on source text, because marker attributes are interpolated
+  const { renderRink } = await import('../src/components/rink.js');
+  const sample = [{
+    sort_order: 1, type: 'goal', side: 'home', period: 1, period_type: 'REG', time_in_period: '10:00',
+    players: [], strength: null,
+    shot: { has_coordinates: true, x: 60, y: 10, target_net_x: 89, shot_type: 'wrist', on_goal: true, unblocked: true, goal: true, shootout: false, distance_ft: 31 }
+  }, {
+    sort_order: 2, type: 'blocked-shot', side: 'away', period: 1, period_type: 'REG', time_in_period: '09:00',
+    players: [], strength: null,
+    shot: { has_coordinates: true, x: -40, y: -5, target_net_x: -89, shot_type: 'slap', on_goal: false, unblocked: false, goal: false, shootout: false, distance_ft: 50 }
+  }];
+  const out = renderRink(sample, { teams: { home: { abbrev: 'STL' }, away: { abbrev: 'DAL' } }, highlight: 1 });
+  const svg = out.svg;
+
+  assert.equal(out.plotted, 2, 'the sample renders both attempts');
+  for (const cls of ['rk-boards', 'rk-center', 'rk-circle', 'mk-hover-ring', 'mk-ring']) {
+    const re = new RegExp(`class="[^"]*${cls}[^"]*"[^>]*vector-effect="non-scaling-stroke"|vector-effect="non-scaling-stroke"[^>]*class="[^"]*${cls}`);
+    assert.ok(re.test(svg), `${cls} carries a non-scaling stroke in rendered output`);
+  }
+
+  // coordinates survive untouched: 60 stays 60, not 60.00 or 60.000001
+  assert.ok(svg.includes('cx="60"'), 'a source x coordinate is rendered verbatim');
+  assert.ok(svg.includes('cy="-10"'), 'a source y coordinate is only sign-flipped for SVG, never rounded');
+
+  // -- shared definitions, instantiated rather than duplicated
+  assert.match(rink, /<defs>/, 'rink declares a shared defs section');
+  assert.match(rink, /<radialGradient id="pbe-ice"/, 'ice surface is a shared gradient, not a flat fill');
+  assert.match(rink, /<filter id="pbe-board-depth"/, 'boards read as a physical edge through one shared filter');
+  assert.match(rink, /<filter id="pbe-mk-glow"/, 'one shared marker glow exists');
+  for (const id of ['pbe-faceoff', 'pbe-nz-dot', 'pbe-crease', 'pbe-net']) {
+    assert.match(rink, new RegExp(`<symbol id="${id}"`), `${id} is a reusable symbol`);
+  }
+  assert.equal((rink.match(/<use href="#pbe-faceoff"/g) || []).length, 4, 'four end-zone faceoff circles are instantiated by reference');
+  assert.equal((rink.match(/<use href="#pbe-nz-dot"/g) || []).length, 4, 'four neutral-zone dots are instantiated by reference');
+  assert.equal((rink.match(/<filter /g) || []).length, 2, 'exactly two filters exist; a filter is never created per shot');
+
+  // -- semantic zones for future interaction, with no invented analytics
+  assert.match(rink, /class="rk-zones"/, 'rink geometry is grouped into semantic zones');
+  assert.match(rink, /data-zone="neutral"/, 'the neutral zone is addressable');
+  assert.match(rink, /class="rk-markings"/, 'rink markings are their own layer');
+  assert.match(castCss, /\.rk-zone-hit \{[^}]*pointer-events: none/, 'zone rectangles never steal a pointer event from a marker');
+  assert.ok(!/pointer-events="bounding-box"/.test(rink), 'no unreliable bounding-box hit area is used');
+
+  // -- marker hierarchy and live animation hooks
+  assert.match(castCss, /@keyframes rk-arrive/, 'newly arriving attempts have an arrival animation');
+  assert.match(castCss, /\.mk-g--arriving \{/, 'the arrival hook is a dedicated class');
+  assert.match(castCss, /@keyframes rk-pulse/, 'the highlighted attempt has a controlled pulse');
+  assert.match(castCss, /\.mk-g:has\(\.mk--goal\) \{ filter: url\(#pbe-mk-glow\)/, 'goals carry the strongest emphasis via the shared glow');
+  assert.match(cast, /function markArrivingShots/, 'the live page decides what is actually new');
+  assert.match(cast, /if \(seenShots\.has\(id\)\) continue;/, 'already-drawn attempts never replay the arrival animation');
+  assert.ok(!/setInterval|requestAnimationFrame/.test(fs.readFileSync('src/components/rink.js', 'utf8')), 'the rink runs no JS animation loop');
+
+  // -- reduced motion is honoured
+  const rm = castCss.slice(castCss.indexOf('@media (prefers-reduced-motion: reduce)'));
+  assert.ok(castCss.includes('@media (prefers-reduced-motion: reduce)'), 'a reduced-motion fallback exists');
+  for (const sel of ['.mk-g--arriving', '.mk-ring', '.shot-trajectory.is-live']) {
+    assert.ok(rm.includes(sel), `${sel} is disabled under reduced motion`);
+  }
+
+  // -- trajectory ARCHITECTURE only: no fabricated puck paths
+  assert.match(castCss, /\.shot-trajectory \{/, 'a trajectory class architecture exists for future real path data');
+  assert.match(castCss, /\.shot-trajectory\.is-live \{/, 'the live trajectory variant exists');
+  assert.match(castCss, /stroke-dasharray/, 'trajectories animate by dash offset when real data arrives');
+  assert.match(rink, /<g class="rk-trajectories"><\/g>/, 'the trajectory layer ships EMPTY: no puck path is invented');
+  assert.ok(!/shot-trajectory/.test(rink), 'rink.js renders no trajectory from data we do not hold');
+
+  // -- the existing contract is untouched
+  assert.match(rink, /class="mk-g" data-sort="\$\{play\.sort_order\}" data-shot-type="/, 'marker cross-filter metadata is unchanged');
+  assert.match(rink, /class="mk-hover-ring"/, 'the hover halo survives');
+  assert.match(rink, /pool\.sort\(\(a, b\) => \(a\.type === 'goal'\) - \(b\.type === 'goal'\)\)/, 'goals still render above other attempts');
+  assert.match(rink, /omitted\[pos\.why\] \+= 1/, 'omitted-shot accounting is unchanged');
+  assert.match(rink, /const flip = Math\.sign\(s\.target_net_x\) !== Math\.sign\(wantNet\)/, 'the normalize-ends transform is unchanged');
+  assert.match(castCss, /\.mk--away \{ fill: none/, 'away attempts stay outline-only so home/away survives without colour');
+  assert.match(castCss, /\.mk--home \{ fill: var\(--pbe-gold-bright\)/, 'home attempts stay filled');
+}
+
 // 2. Truth rules: no randomness or stale launch copy in shipped source.
 const files = [];
 const walk = dir => {

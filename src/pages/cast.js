@@ -296,6 +296,9 @@ export function mount(root, params, ctx) {
     cursor: null, playing: false, speed: 'normal', startSort: /^\d+$/.test(params.t || '') ? Number(params.t) : null
   };
   let playTimer = null;
+  // Shot sort_orders already drawn for this game. null until the first paint so
+  // an initial load never animates a backlog of historical attempts.
+  let seenShots = null;
 
   root.innerHTML = `<section class="wrap section cast" data-fresh-scope>
     <div class="section-head"><div><span class="eyebrow">PBE Cast</span><h2>Live hockey intelligence broadcast</h2></div>
@@ -423,6 +426,26 @@ export function mount(root, params, ctx) {
       </div>`;
     const scroller = $('.feed-scroll', body);
     if (scroller) scroller.scrollTop = feedScroll;
+    markArrivingShots(body);
+  }
+
+  // The body is re-rendered wholesale on every poll, so every marker is a new
+  // node each time. Only attempts we have never drawn before are allowed to
+  // play the arrival animation — otherwise a live game would pulse its entire
+  // shot history on every tick, which is noise rather than information.
+  function markArrivingShots(scope) {
+    const nodes = scope.querySelectorAll('.rk-marks .mk-g[data-sort]');
+    if (!seenShots) { // first paint of this game: nothing is "new"
+      seenShots = new Set();
+      for (const n of nodes) seenShots.add(n.dataset.sort);
+      return;
+    }
+    for (const n of nodes) {
+      const id = n.dataset.sort;
+      if (seenShots.has(id)) continue;
+      seenShots.add(id);
+      n.classList.add('mk-g--arriving');
+    }
   }
 
   // ---- replay engine
@@ -434,6 +457,7 @@ export function mount(root, params, ctx) {
   };
   const goTo = index => {
     if (!state.cast) return;
+    seenShots = null; // replay jumps redraw history; that is not new arrival
     const n = state.cast.plays.length;
     state.cursor = index === null || index >= n - 1 ? (index === null ? null : n - 1) : Math.max(0, index);
     state.selected = null;

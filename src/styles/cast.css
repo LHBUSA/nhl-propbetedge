@@ -76,13 +76,26 @@
 .rink-controls { display: grid; gap: 8px; margin-bottom: var(--s-3); }
 .chip-select { appearance: none; padding-right: 14px; cursor: pointer; background: transparent; }
 .chip-select option { background: var(--pbe-ink-2); color: var(--pbe-paper); }
-.rink-wrap { width: 100%; aspect-ratio: 202 / 87; max-width: 100%; }
-.rink { width: 100%; height: 100%; }
-.rk-ice { fill: #1b1d1f; }
-.rk-boards { fill: none; stroke: rgba(255,245,220,.35); stroke-width: .8; }
+/* The wrapper owns the 202/87 aspect ratio and matches the viewBox exactly,
+   so the rink can never distort. min-width:0 lets it shrink inside a grid or
+   flex parent instead of forcing the page sideways at phone widths. */
+.rink-wrap { width: 100%; min-width: 0; aspect-ratio: 202 / 87; max-width: 100%; overflow: hidden; }
+.rink { width: 100%; height: 100%; display: block; }
+/* ---- ice surface -------------------------------------------------------
+   Dark analytics surface, not white ice: centre illumination with edge
+   falloff so the eye lands mid-rink where the data is. */
+.rk-ice { fill: url(#pbe-ice); }
+.rk-boards { fill: none; stroke: rgba(255,245,220,.32); stroke-width: 1.1; filter: url(#pbe-board-depth); }
+
+/* Zone rectangles exist for future interaction only. They must never eat a
+   pointer event from a marker, and they are invisible today. */
+.rk-zone-hit { fill: transparent; pointer-events: none; }
+
+/* Markings sit above the ice but stay subordinate to shot data. */
+.rk-markings { opacity: .92; }
 .rk-red { stroke: rgba(193,39,61,.85); stroke-width: 1; }
 .rk-center { stroke-width: 1; }
-.rk-thin { stroke-width: .35; fill: none; }
+.rk-thin { stroke: rgba(193,39,61,.85); stroke-width: .35; fill: none; }
 .rk-blue { stroke: rgba(92,138,196,.8); stroke-width: 1; }
 .rk-circle { fill: none; stroke: rgba(193,39,61,.55); stroke-width: .35; }
 .rk-blue-stroke { stroke: rgba(92,138,196,.6); }
@@ -91,6 +104,32 @@
 .rk-crease { fill: rgba(92,138,196,.25); stroke: rgba(193,39,61,.6); stroke-width: .3; }
 .rk-net { fill: none; stroke: rgba(255,245,220,.55); stroke-width: .4; }
 .rink-ends { display: flex; justify-content: space-between; margin-bottom: 6px; color: var(--pbe-dim); }
+
+/* ---- trajectory architecture -------------------------------------------
+   Styling only. rink.js renders NO path: we hold no start/end data, and an
+   invented arc would be a fabricated claim about where a puck travelled.
+   When real path data exists, a <path class="shot-trajectory"> will animate
+   here with no further CSS work. */
+.shot-trajectory {
+  fill: none;
+  stroke: var(--pbe-paper);
+  stroke-width: .5;
+  stroke-opacity: .55;
+  stroke-linecap: round;
+  stroke-dasharray: 3 2;
+  stroke-dashoffset: 0;
+}
+.shot-trajectory.is-live {
+  stroke-opacity: .9;
+  animation: rk-traj 1.1s linear infinite;
+}
+@keyframes rk-traj { to { stroke-dashoffset: -10; } }
+
+/* ---- shot markers ------------------------------------------------------
+   Hierarchy: a goal outranks an attempt, the highlighted attempt outranks
+   everything, and ordinary attempts stay crisp but quiet. Home and away are
+   separated by FILL vs OUTLINE as well as hue, so the distinction survives
+   without colour. */
 .mk { stroke-width: .45; }
 .mk--away { fill: none; stroke: var(--pbe-paper); }
 .mk--home { fill: var(--pbe-gold-bright); stroke: var(--pbe-gold-bright); fill-opacity: .9; }
@@ -98,14 +137,49 @@
 .mk--home.mk--x { stroke: var(--pbe-gold-bright); }
 .mk--tri { stroke-width: .4; }
 .mk--away.mk--tri { fill: none; }
-.mk--goal { stroke-width: .7; }
+.mk--goal { stroke-width: .8; }
 .mk--away.mk--goal { stroke: var(--pbe-crimson-bright); fill: rgba(230,57,70,.15); }
 .mk--home.mk--goal { stroke: var(--pbe-crimson-bright); fill: rgba(233,199,90,.9); }
 .mk-core--away { fill: var(--pbe-paper); }
 .mk-core--home { fill: var(--pbe-ink); }
-.mk-ring { fill: none; stroke: var(--pbe-paper); stroke-width: .5; stroke-dasharray: 1 .8; }
+
+/* One shared glow, applied to the group so a goal costs no extra filter
+   instance per marker. */
+.mk-g:has(.mk--goal) { filter: url(#pbe-mk-glow); }
+
+.mk-ring { fill: none; stroke: var(--pbe-paper); stroke-width: .5; stroke-dasharray: 1 .8; filter: url(#pbe-mk-glow); }
 .mk-hover-ring { fill: none; stroke: transparent; stroke-width: 0; pointer-events: none; }
-.mk-g:hover .mk { stroke-width: .9; }
+.mk-g { transition: opacity var(--t-fast); }
+.mk-g:hover .mk, .mk-g:focus-visible .mk { stroke-width: .9; }
+.mk-g:focus-visible { outline: none; }
+.mk-g:focus-visible .mk-hover-ring { stroke: var(--pbe-paper); stroke-width: .5; stroke-opacity: .9; }
+
+/* A newly arrived live attempt announces itself ONCE. Historical markers are
+   never animated: a rink of a hundred pulsing dots is noise, not a product. */
+@keyframes rk-arrive {
+  from { opacity: 0; transform: scale(.55); }
+  60%  { opacity: 1; transform: scale(1.12); }
+  to   { opacity: 1; transform: scale(1); }
+}
+.mk-g--arriving {
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: rk-arrive .42s cubic-bezier(.2,.9,.3,1) both;
+}
+
+/* The currently highlighted attempt gets a controlled pulse, one element. */
+@keyframes rk-pulse {
+  0%, 100% { stroke-opacity: .95; }
+  50%      { stroke-opacity: .45; }
+}
+.mk-ring { animation: rk-pulse 1.8s ease-in-out infinite; }
+
+@media (prefers-reduced-motion: reduce) {
+  .mk-g--arriving { animation: none; }
+  .mk-ring { animation: none; stroke-opacity: .95; }
+  .shot-trajectory.is-live { animation: none; }
+  .mk-g { transition: none; }
+}
 .rink-legend { list-style: none; display: flex; flex-wrap: wrap; gap: 7px 14px; margin: var(--s-3) 0 0; padding: 8px 10px; border: 1px solid var(--pbe-line-faint); border-radius: var(--r-xs); background: rgba(10,9,7,.42); font: 800 var(--fs-micro)/1 var(--pbe-font-data); letter-spacing: .06em; text-transform: uppercase; color: var(--pbe-paper); }
 .rink-legend li { display: inline-flex; align-items: center; gap: 6px; text-shadow: 0 1px 1px rgba(0,0,0,.5); }
 .rink-legend svg { width: 14px; height: 14px; flex: none; }

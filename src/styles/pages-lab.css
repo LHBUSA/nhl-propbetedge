@@ -397,3 +397,20 @@
   .mth-lede { font-size: 15px; }
   .mth-section { padding-bottom: var(--s-5); margin-bottom: var(--s-5); }
 }
+
+/* ---------- rink: Shot Lab keeps the data layer dominant.
+   The cross-filter contract (.mk-g / .is-cross-dim / .is-cross-hit /
+   .mk-hover-ring) is unchanged; these rules only sharpen the isolation so a
+   filtered point reads at a glance without moving one coordinate. */
+.lab-rink__ice .mk-g.is-cross-dim { filter: none; }
+.lab-rink__ice .mk-g.is-cross-hit .mk-hover-ring { vector-effect: non-scaling-stroke; }
+.lab-rink__ice .rk-markings { opacity: .8; }
+
+/* A rink with no shots should not advertise a highlight glow. */
+.lab-rink-empty .rk-marks:empty + .mk-ring { display: none; }
+
+@media (max-width: 480px) {
+  /* Legend stays attached to the rink it explains rather than drifting into
+     the next block on a narrow column. */
+  .lab .rink-legend { margin-top: 8px; gap: 5px 10px; }
+}
