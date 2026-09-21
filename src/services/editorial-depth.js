@@ -72,6 +72,9 @@ function normalize(article) {
     id: String(article.id || article.slug || article.title),
     slug: String(article.slug || '').trim(),
     title: String(article.title || '').trim(),
+    author: String(article.author || 'PropBetEdge NHL Desk').trim(),
+    category: String(article.category || 'analysis').trim().toLowerCase(),
+    editor_pick: Boolean(article.is_editor_pick),
     published_at: new Date(publishedAt).toISOString(),
     impact: Number(article?.take?.impact_score) || null,
     teams,
@@ -111,42 +114,115 @@ function provenance(article) {
   return `<div class="pbeo-provenance"><span>PBE analysis based on attributed reporting</span><a href="${esc(article.source_url)}" target="_blank" rel="noopener">Source: ${esc(article.source_label)} ↗</a></div>`;
 }
 
+function categoryLabel(article) {
+  const raw = String(article?.category || 'analysis').replace(/[-_]+/g, ' ').trim();
+  return raw ? raw.replace(/\b\w/g, ch => ch.toUpperCase()) : 'Analysis';
+}
+
+function teamWatermark(article) {
+  const team = primaryTeam(article);
+  const logo = team ? safeUrl(logoUrl({ abbrev: team })) : null;
+  if (!logo) return '<span class="pbeo-hero__watermark pbeo-hero__watermark--pbe" aria-hidden="true">PBE</span>';
+  return `<img class="pbeo-hero__watermark" src="${esc(logo)}" alt="" loading="eager" decoding="async" onerror="this.remove()">`;
+}
+
+function storyMeta(article, compact = false) {
+  return `<div class="pbeo-meta">
+    <span>${esc(categoryLabel(article))}</span>
+    ${article.editor_pick ? '<b class="pbeo-editor-pick">Editor pick</b>' : ''}
+    ${impact(article)}
+    <time datetime="${esc(article.published_at)}">${esc(relative(article.published_at))}</time>
+    ${compact ? '' : `<b class="pbeo-author">${esc(article.author || 'PropBetEdge NHL Desk')}</b>`}
+  </div>`;
+}
+
 function leadCard(article) {
-  return `<article class="pbeo-lead">
-    ${media(article, 'pbeo-media--lead')}
-    <div class="pbeo-lead__body">
-      <div class="pbeo-meta"><span>PROPBETEDGE NHL</span>${impact(article)}<time datetime="${esc(article.published_at)}">${esc(relative(article.published_at))}</time></div>
+  return `<article class="pbeo-hero-story">
+    <div class="pbeo-hero-story__art">
+      ${teamWatermark(article)}
+      <span class="pbeo-hero-story__edition">PROPBETEDGE NHL</span>
+    </div>
+    <div class="pbeo-hero-story__body">
+      ${storyMeta(article)}
       <a class="pbeo-story-link" href="${esc(article.url)}" target="_blank" rel="noopener"><h3>${esc(article.title)}</h3></a>
+      <p class="pbeo-hero-story__dek">Independent PBE analysis built from attributed reporting, connected to the same hockey intelligence layer powering the rest of this product.</p>
       ${provenance(article)}
-      <div class="pbeo-byline"><span>PropBetEdge NHL Desk</span><a href="${esc(article.url)}" target="_blank" rel="noopener">Read PBE analysis →</a></div>
+      <div class="pbeo-byline"><span>${esc(article.author || 'PropBetEdge NHL Desk')}</span><a href="${esc(article.url)}" target="_blank" rel="noopener">Read full analysis →</a></div>
     </div>
   </article>`;
 }
 
-function miniCard(article) {
-  return `<article class="pbeo-mini">
-    ${media(article, 'pbeo-media--mini')}
-    <div><div class="pbeo-meta"><span>PBE NHL</span><time datetime="${esc(article.published_at)}">${esc(relative(article.published_at))}</time></div>
+function railStory(article, index) {
+  const team = primaryTeam(article);
+  const logo = team ? safeUrl(logoUrl({ abbrev: team })) : null;
+  return `<article class="pbeo-rail-story">
+    <span class="pbeo-rail-story__num">${String(index + 1).padStart(2, '0')}</span>
+    <div class="pbeo-rail-story__copy">
+      ${storyMeta(article, true)}
       <a class="pbeo-story-link" href="${esc(article.url)}" target="_blank" rel="noopener"><h4>${esc(article.title)}</h4></a>
-      <div class="pbeo-mini__source"><a href="${esc(article.source_url)}" target="_blank" rel="noopener">Source: ${esc(article.source_label)} ↗</a></div>
+      <div class="pbeo-rail-story__foot"><span>${esc(article.author || 'PBE NHL Desk')}</span><a href="${esc(article.source_url)}" target="_blank" rel="noopener">Source: ${esc(article.source_label)} ↗</a></div>
+    </div>
+    ${logo ? `<img src="${esc(logo)}" alt="" loading="lazy" decoding="async">` : ''}
+  </article>`;
+}
+
+function shelfCard(article) {
+  const team = primaryTeam(article);
+  const logo = team ? safeUrl(logoUrl({ abbrev: team })) : null;
+  return `<article class="pbeo-shelf-card">
+    <div class="pbeo-shelf-card__art">${logo ? `<img src="${esc(logo)}" alt="" loading="lazy" decoding="async">` : '<span>PBE</span>'}</div>
+    <div class="pbeo-shelf-card__body">
+      ${storyMeta(article, true)}
+      <a class="pbeo-story-link" href="${esc(article.url)}" target="_blank" rel="noopener"><h4>${esc(article.title)}</h4></a>
+      <div class="pbeo-shelf-card__foot"><span>${esc(article.author || 'PBE NHL Desk')}</span><a href="${esc(article.url)}" target="_blank" rel="noopener">Read →</a></div>
     </div>
   </article>`;
 }
 
 function newsroomPanel(items, full = false) {
   if (!items.length) {
-    return `<section class="pbeo pbeo--empty" data-pbe-originals><div class="pbeo-head"><div><span class="eyebrow">PropBetEdge NHL Desk</span><h3>PBE analysis feed temporarily unavailable</h3></div></div><p class="dim">The verified source wire remains available below. No source story is relabeled as PBE analysis when the authored feed is unavailable.</p></section>`;
+    return `<section class="pbeo pbeo--empty pbeo-newsroom-v2" data-pbe-originals>
+      <div class="pbeo-newsroom-mast"><div><span class="eyebrow">PropBetEdge NHL Newsroom</span><h3>The desk is online. The authored feed is temporarily unavailable.</h3></div></div>
+      <p class="dim">The verified league wire remains available below. We do not relabel source-wire stories as PropBetEdge analysis.</p>
+    </section>`;
   }
+
   const [lead, ...rest] = items;
-  const visible = full ? rest.slice(0, 11) : rest.slice(0, 3);
-  return `<section class="pbeo${full ? ' pbeo--full' : ''}" data-pbe-originals>
-    <div class="pbeo-head">
-      <div><span class="eyebrow">PropBetEdge NHL Desk · PBE analysis</span><h3>${full ? 'Our NHL intelligence desk' : 'From the PBE NHL desk'}</h3></div>
-      <div class="pbeo-head__right"><span class="pbeo-live"><i></i> First-party analysis</span>${full ? '' : `<a href="${NEWS_SITE}/news/nhl" target="_blank" rel="noopener">All PBE NHL articles →</a>`}</div>
+  const rail = rest.slice(0, 3);
+  const shelf = rest.slice(3, full ? 12 : 7);
+
+  return `<section class="pbeo pbeo-newsroom-v2${full ? ' pbeo--full' : ''}" data-pbe-originals>
+    <header class="pbeo-newsroom-mast">
+      <div>
+        <span class="eyebrow">PROPBETEDGE NHL · NEWSROOM</span>
+        <h3>${full ? 'Original hockey intelligence. One desk.' : 'The stories shaping the ice right now.'}</h3>
+        <p>Original PropBetEdge analysis leads. Verified NHL source-wire reporting stays attached underneath for operational truth and corroboration.</p>
+      </div>
+      <div class="pbeo-newsroom-mast__right">
+        <span class="pbeo-live"><i></i> DESK LIVE</span>
+        <span class="micro">${items.length} current PBE analyses</span>
+      </div>
+    </header>
+
+    <nav class="pbeo-newsroom-links" aria-label="NHL intelligence shortcuts">
+      <a href="#/">Ice Board</a>
+      <a href="#/cast">PBE Cast</a>
+      <a href="#/pbe-picks">PBE Picks</a>
+      <a href="#/players">Players</a>
+      <a href="#/standings">Standings</a>
+    </nav>
+
+    <div class="pbeo-front">
+      ${leadCard(lead)}
+      ${rail.length ? `<aside class="pbeo-rail"><div class="pbeo-rail__head"><span class="eyebrow">Latest from the desk</span><span class="micro">PBE analysis</span></div>${rail.map(railStory).join('')}</aside>` : ''}
     </div>
-    <p class="pbeo-disclosure">PBE analysis leads this editorial surface. Every story keeps its underlying reporting source attached; operational NHL status remains source-wire driven.</p>
-    <div class="pbeo-grid">${leadCard(lead)}${visible.length ? `<div class="pbeo-stack">${visible.map(miniCard).join('')}</div>` : ''}</div>
-    ${full && visible.length > 3 ? `<div class="pbeo-more">${visible.slice(3).map(miniCard).join('')}</div>` : ''}
+
+    ${shelf.length ? `<div class="pbeo-shelf-head"><span class="eyebrow">More from PropBetEdge NHL</span><span class="micro">Analysis archive · newest first</span></div><div class="pbeo-shelf">${shelf.map(shelfCard).join('')}</div>` : ''}
+
+    <footer class="pbeo-newsroom-foot">
+      <div><b>Editorial discipline</b><span>PBE analysis is commentary and interpretation. Injuries, goalie status, lines, transactions and game state remain grounded in the verified operational wire.</span></div>
+      ${full ? '' : `<a href="#/news?cat=PBE">Open the full PBE NHL desk →</a>`}
+    </footer>
   </section>`;
 }
 
