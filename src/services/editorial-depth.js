@@ -194,7 +194,7 @@ function newsroomPanel(items, full = false) {
   return `<section class="pbeo pbeo-newsroom-v2${full ? ' pbeo--full' : ''}" data-pbe-originals>
     <header class="pbeo-newsroom-mast">
       <div>
-        <span class="eyebrow">PROPBETEDGE NHL · NEWSROOM</span>
+        <span class="eyebrow">PropBetEdge NHL Desk · PBE analysis</span>
         <h3>${full ? 'Original hockey intelligence. One desk.' : 'The stories shaping the ice right now.'}</h3>
         <p>Original PropBetEdge analysis leads. Verified NHL source-wire reporting stays attached underneath for operational truth and corroboration.</p>
       </div>
