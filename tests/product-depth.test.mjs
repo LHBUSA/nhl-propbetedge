@@ -64,6 +64,10 @@ assert.ok(!/bet_advice/.test(editorial), 'generated betting advice is not render
 // not allowed to become the injury/goalie/transaction source of record.
 assert.match(newsroom, /from '\.\.\/lib\/api\.js'/, 'Newsroom still uses the NHL API adapter');
 assert.match(newsroom, /news\(\{ limit: 100 \}/, 'source wire remains live on Newsroom');
+assert.match(newsroom, /WIRE_MAX_AGE_MS = 5 \* 24 \* 60 \* 60 \* 1000/, 'verified wire has a hard five-day freshness ceiling');
+assert.match(newsroom, /\(state\.data\?\.items \|\| \[\]\)\.filter\(inWireWindow\)/, 'old wire rows are removed before counts, filters and rendering');
+assert.match(newsroom, /safeUrl\(r\.url\) && inWireWindow\(r\)/, 'related alternate-source coverage is also capped at five days');
+assert.match(newsroom, /const count = list\.length;/, 'related-source count reflects only links still inside the five-day window');
 assert.match(newsroom, /class="dk-wire-health"/, 'wire source diagnostics are collapsed into a compact details surface');
 assert.match(newsroom, /class="dk-wire-shell"/, 'wire renders as one unified secondary desk');
 assert.doesNotMatch(newsroom, /<aside class="dk-n-side">/, 'wire no longer renders a competing sticky sidebar');
