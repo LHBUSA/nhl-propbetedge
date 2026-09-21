@@ -473,8 +473,10 @@ function enhanceNews() {
       const wire = document.createElement('div');
       wire.className = 'pbeo-wire-head';
       wire.dataset.pbeWireHead = '1';
-      wire.innerHTML = '<span class="eyebrow">Verified source wire</span><b>NHL.com + approved external metadata</b><small>Operational status and corroboration remain source-of-record driven.</small>';
-      body.parentNode.insertBefore(wire, body);
+      wire.innerHTML = '<div><span class="eyebrow">Verified NHL Wire</span><b>Live league movement & status</b></div><small>Source-linked · refreshes every 2 minutes</small>';
+      const healthTarget = root.querySelector('#dk-n-health');
+      if (healthTarget) healthTarget.parentNode.insertBefore(wire, healthTarget);
+      else body.parentNode.insertBefore(wire, body);
     }
   } else {
     feature?.remove();

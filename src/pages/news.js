@@ -84,24 +84,28 @@ function catBadge(item) {
 function leadMarkup(item, open) {
   const url = safeUrl(item.url);
   const r = related(item, open);
-  return `<article class="dk-lead-story">
-    <div class="dk-lead-story__tags">${catBadge(item)}${item.material ? '<span class="micro faint">Material update</span>' : ''}</div>
-    <h3 class="dk-lead-story__title">${url ? `<a href="${esc(url)}" target="_blank" rel="noopener nofollow">${esc(item.title)}<span class="dk-ext" aria-hidden="true">↗</span></a>` : esc(item.title)}</h3>
-    <p class="dk-lead-story__meta"><b>${esc(sourceText(item))}</b> · <time datetime="${esc(item.published_at)}">${esc(rel(item.published_at))}</time> · <span class="mono">${esc(absET(item.published_at))}</span></p>
-    ${chips(item)}
-    ${r.button ? `<div class="dk-lead-story__rel">${r.button}${r.list}</div>` : ''}
+  return `<article class="dk-wire-priority${item.breaking ? ' is-breaking' : ''}">
+    <div class="dk-wire-priority__eyebrow"><span>Priority update</span>${catBadge(item)}</div>
+    <h3 class="dk-wire-priority__title">${url ? `<a href="${esc(url)}" target="_blank" rel="noopener nofollow">${esc(item.title)}<span class="dk-ext" aria-hidden="true">↗</span></a>` : esc(item.title)}</h3>
+    <div class="dk-wire-priority__meta">
+      <span>${esc(sourceText(item))}</span>
+      <time datetime="${esc(item.published_at)}">${esc(rel(item.published_at))}</time>
+      <span class="mono">${esc(absET(item.published_at))}</span>
+    </div>
+    <div class="dk-wire-priority__foot">${chips(item)}${r.button}</div>
+    ${r.list}
   </article>`;
 }
 
 function rowMarkup(item, open) {
   const url = safeUrl(item.url);
   const r = related(item, open);
-  return `<li class="dk-row${item.breaking ? ' is-breaking' : ''}">
-    <div class="dk-row__time"><time datetime="${esc(item.published_at)}">${esc(rel(item.published_at))}</time><span class="mono">${esc(timeET(item.published_at))}</span></div>
-    <div class="dk-row__main">
-      <div class="dk-row__tags">${catBadge(item)}<span class="dk-row__src">${esc(sourceText(item))}</span></div>
-      <a class="dk-row__title" ${url ? `href="${esc(url)}" target="_blank" rel="noopener nofollow"` : ''}>${esc(item.title)}${url ? '<span class="dk-ext" aria-hidden="true">↗</span>' : ''}</a>
-      <div class="dk-row__foot">${chips(item)}${r.button}</div>
+  return `<li class="dk-wire-row${item.breaking ? ' is-breaking' : ''}">
+    <div class="dk-wire-row__when"><time datetime="${esc(item.published_at)}">${esc(rel(item.published_at))}</time><span class="mono">${esc(timeET(item.published_at))}</span></div>
+    <div class="dk-wire-row__main">
+      <div class="dk-wire-row__meta">${catBadge(item)}<span>${esc(sourceText(item))}</span></div>
+      <a class="dk-wire-row__title" ${url ? `href="${esc(url)}" target="_blank" rel="noopener nofollow"` : ''}>${esc(item.title)}${url ? '<span class="dk-ext" aria-hidden="true">↗</span>' : ''}</a>
+      <div class="dk-wire-row__foot">${chips(item)}${r.button}</div>
       ${r.list}
     </div>
   </li>`;
@@ -115,18 +119,28 @@ function listMarkup(items, expanded) {
     if (head !== last) { out.push(`<li class="dk-dayhead"><span class="eyebrow">${esc(head)}</span></li>`); last = head; }
     out.push(rowMarkup(item, expanded.has(item.id)));
   }
-  return `<ol class="dk-rows">${out.join('')}</ol>`;
+  return `<ol class="dk-wire-list">${out.join('')}</ol>`;
 }
 
 function healthStrip(data, meta, failed) {
   const sources = data?.sources || [];
-  return `<div class="dk-health" aria-label="Source health">
-    ${sources.map(s => `<div class="dk-health__cell${s.ok ? '' : ' is-down'}" title="${esc(s.url || '')}${s.error ? ` · ${esc(s.error)}` : ''}">
-      <i aria-hidden="true"></i><span class="dk-health__name">${esc(SOURCE_LABELS[s.key] || s.key)}</span>
-      <span class="mono">${s.ok ? `${esc(s.count)} items · ${esc(s.ms)} ms` : `down · ${esc(String(s.error || 'error').slice(0, 40))}`}</span>
-    </div>`).join('')}
-    <div class="dk-health__stamp">${freshStamp(meta, { failed, source: 'Newsroom' })}</div>
-  </div>`;
+  const online = sources.filter(s => s.ok).length;
+  const degraded = failed || sources.some(s => !s.ok);
+  return `<details class="dk-wire-health"${degraded ? ' open' : ''}>
+    <summary>
+      <span class="dk-wire-health__state${degraded ? ' is-degraded' : ''}"><i aria-hidden="true"></i>${degraded ? 'DEGRADED' : 'LIVE'}</span>
+      <b>${online}/${sources.length} sources online</b>
+      <span class="dk-wire-health__fresh">${freshStamp(meta, { failed, source: 'Newsroom' })}</span>
+      <span class="dk-wire-health__toggle">Source diagnostics</span>
+    </summary>
+    <div class="dk-wire-health__grid" aria-label="Source diagnostics">
+      ${sources.map(s => `<div class="dk-wire-health__source${s.ok ? '' : ' is-down'}" title="${esc(s.url || '')}${s.error ? ` · ${esc(s.error)}` : ''}">
+        <i aria-hidden="true"></i>
+        <span>${esc(SOURCE_LABELS[s.key] || s.key)}</span>
+        <span class="mono">${s.ok ? `${esc(s.count)} items · ${esc(s.ms)} ms` : `down · ${esc(String(s.error || 'error').slice(0, 40))}`}</span>
+      </div>`).join('')}
+    </div>
+  </details>`;
 }
 
 // ---------------------------------------------------------------- mount
@@ -187,7 +201,7 @@ export function mount(root, params) {
     if (!state.data) {
       els.body.innerHTML = state.error
         ? `<div class="pbe-error"><strong>${esc(describeError(state.error).title)}</strong>${esc(state.error.kind === 'not_deployed' || state.error.kind === 'legacy' ? 'The newsroom feed is not connected in this build. Nothing is shown rather than something invented.' : describeError(state.error).body)}</div>`
-        : '<div class="dk-n-grid"><div class="dk-n-main"><div class="pbe-skeleton" style="height:260px;margin-bottom:24px"></div><div class="pbe-skeleton" style="height:900px"></div></div><aside class="dk-n-side"><div class="pbe-skeleton" style="height:180px"></div><div class="pbe-skeleton" style="height:280px"></div></aside></div>';
+        : '<div class="dk-wire-shell"><div class="pbe-skeleton" style="height:124px;margin-bottom:10px"></div><div class="pbe-skeleton" style="height:620px"></div></div>';
       return;
     }
 
@@ -206,34 +220,24 @@ export function mount(root, params) {
         ${state.team || state.tab !== 'All' ? '<p style="margin-top:12px"><button class="pbe-btn pbe-btn--sm" data-reset>Show all headlines</button></p>' : ''}</div>`;
       return;
     }
-    const lead = filtered.find(i => i.material) || filtered[0];
+    const lead = filtered.find(i => i.breaking) || filtered.find(i => i.material) || filtered[0];
     const rest = filtered.filter(i => i !== lead);
-    els.body.innerHTML = `<div class="dk-n-grid">
-      <div class="dk-n-main">
-        ${leadMarkup(lead, state.expanded.has(lead.id))}
-        ${rest.length ? listMarkup(rest, state.expanded) : ''}
+    const materialCount = filtered.filter(i => i.material).length;
+    const breakingCount = filtered.filter(i => i.breaking).length;
+    els.body.innerHTML = `<section class="dk-wire-shell">
+      <div class="dk-wire-summary" aria-label="Current source-wire view">
+        <span><b>${filtered.length}</b> in view</span>
+        <span><b>${materialCount}</b> material</span>
+        <span class="${breakingCount ? ' has-breaking' : ''}"><b>${breakingCount}</b> breaking</span>
+        <span><b>${teamCounts.size}</b> teams tagged</span>
       </div>
-      <aside class="dk-n-side">
-        <section class="pbe-panel">
-          <div class="panel-head"><h3>In this window</h3></div>
-          <dl class="kv dk-n-kv">
-            <div><dt>Headlines</dt><dd>${items.length}</dd></div>
-            <div><dt>Material</dt><dd>${items.filter(i => i.material).length}</dd></div>
-            <div><dt>Breaking</dt><dd>${items.filter(i => i.breaking).length}</dd></div>
-            <div><dt>Teams tagged</dt><dd>${teamCounts.size}<small> / 32</small></dd></div>
-          </dl>
-        </section>
-        <section class="pbe-panel dk-n-rules">
-          <div class="panel-head"><h3>How items are labelled</h3></div>
-          <ul>
-            <li><b>Category</b> comes from the source's own tag, else a headline keyword rule — hover a badge to see which.</li>
-            <li><b>Material</b> = injuries, goalies, lines, trades and transactions. <b>Breaking</b> = material and under two hours old.</li>
-            <li><b>Team and player chips</b> come from NHL.com entity tags or a headline mention, never from article text.</li>
-            <li>Related coverage of the same story is folded under <b>+N sources</b>.</li>
-          </ul>
-        </section>
-      </aside>
-    </div>`;
+      ${leadMarkup(lead, state.expanded.has(lead.id))}
+      ${rest.length ? listMarkup(rest, state.expanded) : ''}
+      <details class="dk-wire-method">
+        <summary>How the wire is labelled</summary>
+        <p>Categories come from source tags when available, otherwise deterministic headline rules. Material means injuries, goalies, lines, trades or transactions. Breaking means a material update published inside two hours. Team/player links come from source entity tags or direct headline mentions; related coverage is folded under +N sources.</p>
+      </details>
+    </section>`;
   };
 
   render();
