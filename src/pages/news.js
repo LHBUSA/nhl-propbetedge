@@ -18,6 +18,8 @@ const TABS = [
   ['League news', 'League news'], ['PBE', 'PBE notes']
 ];
 const MATERIAL = new Set(['Injuries', 'Trades', 'Transactions', 'Goalies', 'Lines']);
+const WIRE_MAX_AGE_MS = 5 * 24 * 60 * 60 * 1000;
+const FUTURE_SKEW_MS = 2 * 60 * 1000;
 const SOURCE_LABELS = {
   nhl_general: 'NHL.com · stories',
   nhl_injury: 'NHL.com · injury tag',
@@ -51,6 +53,13 @@ const slug = s => String(s || '').toLowerCase().replace(/[^a-z]+/g, '-');
 const isYahoo = item => item.origin === 'yahoo sports' || item.source === 'Yahoo Sports';
 const sourceText = item => (isYahoo(item) ? `via Yahoo Sports${item.publisher ? ` · ${item.publisher}` : ''}` : (item.source || 'Source not stated'));
 
+function inWireWindow(item, now = Date.now()) {
+  const published = Date.parse(item?.published_at || '');
+  if (!Number.isFinite(published)) return false;
+  const age = now - published;
+  return age >= -FUTURE_SKEW_MS && age <= WIRE_MAX_AGE_MS;
+}
+
 function matchesTab(item, tab) {
   if (tab === 'All') return true;
   if (tab === 'Breaking') return Boolean(item.breaking);
@@ -66,7 +75,7 @@ function chips(item) {
 }
 
 function related(item, open) {
-  const list = (item.related || []).filter(r => safeUrl(r.url));
+  const list = (item.related || []).filter(r => safeUrl(r.url) && inWireWindow(r));
   const count = item.related_count || list.length;
   if (!count) return { button: '', list: '' };
   return {
@@ -184,7 +193,9 @@ export function mount(root, params) {
   };
 
   const render = () => {
-    const items = state.data?.items || [];
+    // Current-status wire only: no source row older than five days participates
+    // in counts, filters, priority selection, related coverage or rendering.
+    const items = (state.data?.items || []).filter(inWireWindow);
     const teamItems = state.team ? items.filter(i => (i.teams || []).includes(state.team)) : items;
     const counts = Object.fromEntries(tabKeys.map(k => [k, teamItems.filter(i => matchesTab(i, k)).length]));
 
@@ -216,7 +227,7 @@ export function mount(root, params) {
     if (!filtered.length) {
       const tabLabel = TABS.find(t => t[0] === state.tab)?.[1] || state.tab;
       els.body.innerHTML = `<div class="pbe-empty dk-empty"><h3>No ${state.tab === 'All' ? '' : `${esc(tabLabel.toLowerCase())} `}headlines${state.team ? ` for ${esc(TEAM_BY_ABBREV.get(state.team)?.full || state.team)}` : ''} in the current feed window.</h3>
-        <p>${state.tab === 'Breaking' ? 'Breaking marks a material update (injury, goalie, lines, trade, transaction) published inside the last two hours.' : `The window holds the newest ${items.length} headlines across ${(state.data.sources || []).length} sources.`}</p>
+        <p>${state.tab === 'Breaking' ? 'Breaking marks a material update (injury, goalie, lines, trade, transaction) published inside the last two hours.' : `The wire shows only the last 5 days: ${items.length} current headlines across ${(state.data.sources || []).length} sources.`}</p>
         ${state.team || state.tab !== 'All' ? '<p style="margin-top:12px"><button class="pbe-btn pbe-btn--sm" data-reset>Show all headlines</button></p>' : ''}</div>`;
       return;
     }
