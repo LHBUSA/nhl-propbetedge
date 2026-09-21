@@ -64,12 +64,12 @@ assert.ok(!/bet_advice/.test(editorial), 'generated betting advice is not render
 // not allowed to become the injury/goalie/transaction source of record.
 assert.match(newsroom, /from '\.\.\/lib\/api\.js'/, 'Newsroom still uses the NHL API adapter');
 assert.match(newsroom, /news\(\{ limit: 100 \}/, 'source wire remains live on Newsroom');
-assert.match(newsroom, /WIRE_MAX_AGE_MS = 5 \* 24 \* 60 \* 60 \* 1000/, 'verified wire has a hard five-day freshness ceiling');
-assert.match(newsroom, /function wireWindow\(items\)/, 'wire freshness is computed as a bounded five-day slice');
-assert.match(newsroom, /const anchor = Math\.max/, 'five-day wire slice anchors to the newest valid returned headline');
+assert.match(newsroom, /WIRE_MAX_AGE_MS = 5 \* 24 \* 60 \* 60 \* 1000/, 'verified wire has a hard two-day freshness ceiling');
+assert.match(newsroom, /function wireWindow\(items\)/, 'wire freshness is computed as a bounded two-day slice');
+assert.match(newsroom, /const anchor = Math\.max/, 'two-day wire slice anchors to the newest valid returned headline');
 assert.match(newsroom, /const wire = wireWindow\(state\.data\?\.items \|\| \[\]\)/, 'wire slice is applied before counts, filters and rendering');
-assert.match(newsroom, /safeUrl\(r\.url\) && inWireWindow\(r, anchor\)/, 'related alternate-source coverage uses the same five-day anchor');
-assert.match(newsroom, /const count = list\.length;/, 'related-source count reflects only links still inside the five-day window');
+assert.match(newsroom, /safeUrl\(r\.url\) && inWireWindow\(r, anchor\)/, 'related alternate-source coverage uses the same two-day anchor');
+assert.match(newsroom, /const count = list\.length;/, 'related-source count reflects only links still inside the two-day window');
 assert.match(newsroom, /class="dk-wire-health"/, 'wire source diagnostics are collapsed into a compact details surface');
 assert.match(newsroom, /class="dk-wire-shell"/, 'wire renders as one unified secondary desk');
 assert.doesNotMatch(newsroom, /<aside class="dk-n-side">/, 'wire no longer renders a competing sticky sidebar');

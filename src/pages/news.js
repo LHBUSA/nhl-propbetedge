@@ -18,7 +18,7 @@ const TABS = [
   ['League news', 'League news'], ['PBE', 'PBE notes']
 ];
 const MATERIAL = new Set(['Injuries', 'Trades', 'Transactions', 'Goalies', 'Lines']);
-const WIRE_MAX_AGE_MS = 5 * 24 * 60 * 60 * 1000;
+const WIRE_MAX_AGE_MS = 2 * 24 * 60 * 60 * 1000;
 const FUTURE_SKEW_MS = 2 * 60 * 1000;
 const SOURCE_LABELS = {
   nhl_general: 'NHL.com · stories',
@@ -62,7 +62,7 @@ function wireWindow(items) {
   const valid = (Array.isArray(items) ? items : []).filter(item => wireTimestamp(item) !== null);
   if (!valid.length) return { anchor: null, items: [] };
 
-  // Five days at most means a five-day slice of the freshest data the wire
+  // Two days at most means a two-day slice of the freshest data the wire
   // actually returned. Anchoring to Date.now() can blank the entire product
   // when an upstream publisher pauses for a few days.
   const anchor = Math.max(...valid.map(item => wireTimestamp(item)));
@@ -216,7 +216,7 @@ export function mount(root, params) {
   };
 
   const render = () => {
-    // Show at most five days of the freshest source-wire data returned. The
+    // Show at most two days of the freshest source-wire data returned. The
     // newest valid headline anchors the slice, so a short upstream publishing
     // pause cannot blank the entire wire.
     const wire = wireWindow(state.data?.items || []);
@@ -252,7 +252,7 @@ export function mount(root, params) {
     if (!filtered.length) {
       const tabLabel = TABS.find(t => t[0] === state.tab)?.[1] || state.tab;
       els.body.innerHTML = `<div class="pbe-empty dk-empty"><h3>No ${state.tab === 'All' ? '' : `${esc(tabLabel.toLowerCase())} `}headlines${state.team ? ` for ${esc(TEAM_BY_ABBREV.get(state.team)?.full || state.team)}` : ''} in the current feed window.</h3>
-        <p>${state.tab === 'Breaking' ? 'Breaking marks a material update (injury, goalie, lines, trade, transaction) published inside the last two hours.' : `The wire shows at most five days of the freshest available source coverage: ${items.length} headlines across ${(state.data.sources || []).length} sources.`}</p>
+        <p>${state.tab === 'Breaking' ? 'Breaking marks a material update (injury, goalie, lines, trade, transaction) published inside the last two hours.' : `The wire shows at most two days of the freshest available source coverage: ${items.length} headlines across ${(state.data.sources || []).length} sources.`}</p>
         ${state.team || state.tab !== 'All' ? '<p style="margin-top:12px"><button class="pbe-btn pbe-btn--sm" data-reset>Show all headlines</button></p>' : ''}</div>`;
       return;
     }
