@@ -76,7 +76,7 @@ function chips(item) {
 
 function related(item, open) {
   const list = (item.related || []).filter(r => safeUrl(r.url) && inWireWindow(r));
-  const count = item.related_count || list.length;
+  const count = list.length;
   if (!count) return { button: '', list: '' };
   return {
     button: `<button class="dk-rel" type="button" data-rel="${esc(item.id)}" aria-expanded="${open}">+${count} source${count === 1 ? '' : 's'}</button>`,
