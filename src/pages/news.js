@@ -53,10 +53,33 @@ const slug = s => String(s || '').toLowerCase().replace(/[^a-z]+/g, '-');
 const isYahoo = item => item.origin === 'yahoo sports' || item.source === 'Yahoo Sports';
 const sourceText = item => (isYahoo(item) ? `via Yahoo Sports${item.publisher ? ` · ${item.publisher}` : ''}` : (item.source || 'Source not stated'));
 
-function inWireWindow(item, now = Date.now()) {
+function wireTimestamp(item) {
   const published = Date.parse(item?.published_at || '');
-  if (!Number.isFinite(published)) return false;
-  const age = now - published;
+  return Number.isFinite(published) ? published : null;
+}
+
+function wireWindow(items) {
+  const valid = (Array.isArray(items) ? items : []).filter(item => wireTimestamp(item) !== null);
+  if (!valid.length) return { anchor: null, items: [] };
+
+  // Five days at most means a five-day slice of the freshest data the wire
+  // actually returned. Anchoring to Date.now() can blank the entire product
+  // when an upstream publisher pauses for a few days.
+  const anchor = Math.max(...valid.map(item => wireTimestamp(item)));
+  return {
+    anchor,
+    items: valid.filter(item => {
+      const published = wireTimestamp(item);
+      const age = anchor - published;
+      return age >= -FUTURE_SKEW_MS && age <= WIRE_MAX_AGE_MS;
+    })
+  };
+}
+
+function inWireWindow(item, anchor) {
+  const published = wireTimestamp(item);
+  if (published === null || !Number.isFinite(anchor)) return false;
+  const age = anchor - published;
   return age >= -FUTURE_SKEW_MS && age <= WIRE_MAX_AGE_MS;
 }
 
@@ -74,8 +97,8 @@ function chips(item) {
   return `<div class="dk-chips">${teams.map(t => `<a class="dk-chip" href="#/team/${esc(t)}" title="Team link · basis: ${esc(item.teams_basis || 'not stated')}">${mark({ abbrev: t }, 18)}<span>${esc(t)}</span></a>`).join('')}${players.map(p => `<a class="dk-chip dk-chip--player" href="#/player/${esc(p.id)}">${playerIdentity({ id: p.id, name: p.name, team: teams.length === 1 ? teams[0] : null, size: 'xs' })}<span>${esc(p.name || p.id)}</span></a>`).join('')}</div>`;
 }
 
-function related(item, open) {
-  const list = (item.related || []).filter(r => safeUrl(r.url) && inWireWindow(r));
+function related(item, open, anchor) {
+  const list = (item.related || []).filter(r => safeUrl(r.url) && inWireWindow(r, anchor));
   const count = list.length;
   if (!count) return { button: '', list: '' };
   return {
@@ -90,9 +113,9 @@ function catBadge(item) {
   return `${item.breaking ? '<span class="dk-cat dk-cat--breaking" title="Material update inside the last 2 hours">Breaking</span>' : ''}<span class="dk-cat${MATERIAL.has(cat) ? ' dk-cat--material' : ''} dk-cat--${slug(cat)}" title="${esc(tip)}">${esc(cat)}</span>`;
 }
 
-function leadMarkup(item, open) {
+function leadMarkup(item, open, anchor) {
   const url = safeUrl(item.url);
-  const r = related(item, open);
+  const r = related(item, open, anchor);
   return `<article class="dk-wire-priority${item.breaking ? ' is-breaking' : ''}">
     <div class="dk-wire-priority__eyebrow"><span>Priority update</span>${catBadge(item)}</div>
     <h3 class="dk-wire-priority__title">${url ? `<a href="${esc(url)}" target="_blank" rel="noopener nofollow">${esc(item.title)}<span class="dk-ext" aria-hidden="true">↗</span></a>` : esc(item.title)}</h3>
@@ -106,9 +129,9 @@ function leadMarkup(item, open) {
   </article>`;
 }
 
-function rowMarkup(item, open) {
+function rowMarkup(item, open, anchor) {
   const url = safeUrl(item.url);
-  const r = related(item, open);
+  const r = related(item, open, anchor);
   return `<li class="dk-wire-row${item.breaking ? ' is-breaking' : ''}">
     <div class="dk-wire-row__when"><time datetime="${esc(item.published_at)}">${esc(rel(item.published_at))}</time><span class="mono">${esc(timeET(item.published_at))}</span></div>
     <div class="dk-wire-row__main">
@@ -120,13 +143,13 @@ function rowMarkup(item, open) {
   </li>`;
 }
 
-function listMarkup(items, expanded) {
+function listMarkup(items, expanded, anchor) {
   let last = null;
   const out = [];
   for (const item of items) {
     const head = dayHead(item.published_at);
     if (head !== last) { out.push(`<li class="dk-dayhead"><span class="eyebrow">${esc(head)}</span></li>`); last = head; }
-    out.push(rowMarkup(item, expanded.has(item.id)));
+    out.push(rowMarkup(item, expanded.has(item.id), anchor));
   }
   return `<ol class="dk-wire-list">${out.join('')}</ol>`;
 }
@@ -193,9 +216,11 @@ export function mount(root, params) {
   };
 
   const render = () => {
-    // Current-status wire only: no source row older than five days participates
-    // in counts, filters, priority selection, related coverage or rendering.
-    const items = (state.data?.items || []).filter(inWireWindow);
+    // Show at most five days of the freshest source-wire data returned. The
+    // newest valid headline anchors the slice, so a short upstream publishing
+    // pause cannot blank the entire wire.
+    const wire = wireWindow(state.data?.items || []);
+    const items = wire.items;
     const teamItems = state.team ? items.filter(i => (i.teams || []).includes(state.team)) : items;
     const counts = Object.fromEntries(tabKeys.map(k => [k, teamItems.filter(i => matchesTab(i, k)).length]));
 
@@ -227,7 +252,7 @@ export function mount(root, params) {
     if (!filtered.length) {
       const tabLabel = TABS.find(t => t[0] === state.tab)?.[1] || state.tab;
       els.body.innerHTML = `<div class="pbe-empty dk-empty"><h3>No ${state.tab === 'All' ? '' : `${esc(tabLabel.toLowerCase())} `}headlines${state.team ? ` for ${esc(TEAM_BY_ABBREV.get(state.team)?.full || state.team)}` : ''} in the current feed window.</h3>
-        <p>${state.tab === 'Breaking' ? 'Breaking marks a material update (injury, goalie, lines, trade, transaction) published inside the last two hours.' : `The wire shows only the last 5 days: ${items.length} current headlines across ${(state.data.sources || []).length} sources.`}</p>
+        <p>${state.tab === 'Breaking' ? 'Breaking marks a material update (injury, goalie, lines, trade, transaction) published inside the last two hours.' : `The wire shows at most five days of the freshest available source coverage: ${items.length} headlines across ${(state.data.sources || []).length} sources.`}</p>
         ${state.team || state.tab !== 'All' ? '<p style="margin-top:12px"><button class="pbe-btn pbe-btn--sm" data-reset>Show all headlines</button></p>' : ''}</div>`;
       return;
     }
@@ -242,8 +267,8 @@ export function mount(root, params) {
         <span class="${breakingCount ? ' has-breaking' : ''}"><b>${breakingCount}</b> breaking</span>
         <span><b>${teamCounts.size}</b> teams tagged</span>
       </div>
-      ${leadMarkup(lead, state.expanded.has(lead.id))}
-      ${rest.length ? listMarkup(rest, state.expanded) : ''}
+      ${leadMarkup(lead, state.expanded.has(lead.id), wire.anchor)}
+      ${rest.length ? listMarkup(rest, state.expanded, wire.anchor) : ''}
       <details class="dk-wire-method">
         <summary>How the wire is labelled</summary>
         <p>Categories come from source tags when available, otherwise deterministic headline rules. Material means injuries, goalies, lines, trades or transactions. Breaking means a material update published inside two hours. Team/player links come from source entity tags or direct headline mentions; related coverage is folded under +N sources.</p>
