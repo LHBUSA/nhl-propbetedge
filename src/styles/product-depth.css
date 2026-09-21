@@ -654,3 +654,81 @@
   .pbeo-rail-story > img { display: none; }
   .pbeo-shelf-head .micro { display: none; }
 }
+
+
+/* ========================================================================
+   NHL NEWSROOM V3 — real PropBetEdge editorial media
+   Story photography leads. Player headshots are the first recovery path when
+   an authored article has no image. Logos are a final fallback, never the hero.
+   ======================================================================== */
+.pbeo-media.has-photo { background: #090909; }
+.pbeo-media.has-photo > .pbeo-media__fallback { opacity: 0; }
+.pbeo-media .pbeo-media__photo { position:relative; z-index:2; width:100%; height:100%; padding:0; object-fit:cover; object-position:center 24%; filter:none; }
+.pbeo-media.is-player-photo .pbeo-media__photo { object-fit:contain; object-position:center bottom; background:radial-gradient(circle at 50% 28%,rgba(214,166,72,.12),transparent 35%),linear-gradient(145deg,#171510,#090807); }
+.pbeo-media__video { position:absolute; z-index:4; left:10px; bottom:10px; display:inline-flex; align-items:center; gap:6px; padding:7px 9px; background:rgba(0,0,0,.78); border:1px solid rgba(255,255,255,.18); color:#fff; font:850 9px/1 var(--pbe-font-data); letter-spacing:.12em; backdrop-filter:blur(8px); }
+.pbeo-media__video b,.pbeo-video-meta { color:var(--pbe-gold-bright)!important; }
+
+.pbeo-front { grid-template-columns:minmax(0,1.7fr) minmax(330px,.78fr); }
+.pbeo-hero-story { grid-template-columns:minmax(0,1.08fr) minmax(0,.92fr); min-height:560px; }
+.pbeo-hero-story__art { min-height:560px; }
+.pbeo-hero-story__fallback { position:absolute; inset:0; z-index:0; }
+.pbeo-hero-story__art.has-photo::before { content:""; position:absolute; z-index:2; inset:0; background:linear-gradient(180deg,transparent 52%,rgba(0,0,0,.58)); pointer-events:none; }
+.pbeo-story-photo { position:absolute; z-index:1; inset:0; width:100%; height:100%; object-fit:cover; object-position:center 23%; transition:transform .55s ease; }
+.pbeo-hero-story:hover .pbeo-story-photo { transform:scale(1.018); }
+.pbeo-hero-story__art.is-player-photo .pbeo-story-photo { object-fit:contain; object-position:center bottom; background:radial-gradient(circle at 50% 30%,rgba(214,166,72,.15),transparent 35%),linear-gradient(145deg,#181610,#090807); }
+.pbeo-hero-story__art.has-photo .pbeo-hero__watermark { opacity:0; }
+.pbeo-hero-story__watch { position:absolute; z-index:5; left:18px; top:18px; display:inline-flex; align-items:center; gap:8px; padding:9px 11px; background:rgba(0,0,0,.76); border:1px solid rgba(255,255,255,.2); color:#fff; font:900 10px/1 var(--pbe-font-data); letter-spacing:.14em; backdrop-filter:blur(10px); }
+.pbeo-hero-story__watch b { color:var(--pbe-gold-bright); }
+.pbeo-hero-story__edition { z-index:5; }
+.pbeo-hero-story__dek { font-size:14px; line-height:1.62; }
+
+.pbeo-rail-story { grid-template-columns:28px 92px minmax(0,1fr); align-items:stretch; padding:14px 18px; }
+.pbeo-rail-story__visual { min-height:86px; overflow:hidden; border:1px solid var(--pbe-line-faint); }
+.pbeo-media--rail { width:100%; height:100%; min-height:86px; }
+.pbeo-rail-story__copy { min-width:0; align-self:center; }
+.pbeo-rail-story h4 { font-size:16px; }
+.pbeo-rail-story > img { display:none!important; }
+
+.pbeo-shelf-card { grid-template-rows:165px 1fr; }
+.pbeo-shelf-card__art { display:block; min-height:165px; padding:0; background:#090909; }
+.pbeo-media--shelf { width:100%; height:165px; }
+.pbeo-shelf-card__dek { display:-webkit-box; margin:-8px 0 16px; overflow:hidden; color:var(--pbe-dim); font-size:11px; line-height:1.45; -webkit-line-clamp:2; -webkit-box-orient:vertical; }
+
+.pbeo-watch { padding:20px clamp(20px,3vw,38px) 28px; border-top:1px solid var(--pbe-line); background:linear-gradient(180deg,rgba(214,166,72,.035),rgba(255,255,255,.006)); }
+.pbeo-watch__head { display:flex; align-items:end; justify-content:space-between; gap:18px; margin-bottom:14px; }
+.pbeo-watch__head h4 { margin-top:5px; color:var(--pbe-paper); font:800 24px/1 var(--pbe-font-display); letter-spacing:-.025em; }
+.pbeo-watch__grid { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:14px; }
+.pbeo-watch-card { position:relative; display:grid; grid-template-rows:150px 1fr; min-width:0; overflow:hidden; border:1px solid var(--pbe-line-faint); background:#0b0b0a; text-decoration:none; }
+.pbeo-media--watch { height:150px; }
+.pbeo-watch-card__copy { display:grid; gap:7px; padding:14px; }
+.pbeo-watch-card__copy > b { color:var(--pbe-gold-bright); font:900 9px/1 var(--pbe-font-data); letter-spacing:.14em; }
+.pbeo-watch-card__copy strong { color:var(--pbe-paper); font:750 16px/1.18 var(--pbe-font-display); }
+.pbeo-watch-card__copy small { color:var(--pbe-faint); font-size:9px; }
+
+@media (max-width:1080px) {
+  .pbeo-front { grid-template-columns:1fr; }
+  .pbeo-hero-story { grid-template-columns:minmax(0,1.05fr) minmax(0,.95fr); min-height:500px; }
+  .pbeo-hero-story__art { min-height:500px; }
+  .pbeo-rail { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); }
+  .pbeo-rail-story { grid-template-columns:1fr; gap:10px; }
+  .pbeo-rail-story__num { display:none; }
+  .pbeo-rail-story__visual,.pbeo-media--rail { min-height:150px; height:150px; }
+}
+@media (max-width:760px) {
+  .pbeo-hero-story { grid-template-columns:1fr; min-height:0; }
+  .pbeo-hero-story__art { min-height:320px; }
+  .pbeo-rail { display:block; }
+  .pbeo-rail-story { grid-template-columns:112px minmax(0,1fr); align-items:center; }
+  .pbeo-rail-story__visual,.pbeo-media--rail { min-height:92px; height:92px; }
+  .pbeo-watch__head { align-items:flex-start; flex-direction:column; }
+  .pbeo-watch__grid { grid-template-columns:1fr; }
+  .pbeo-watch-card { grid-template-columns:132px minmax(0,1fr); grid-template-rows:1fr; }
+  .pbeo-media--watch { height:100%; min-height:118px; }
+  .pbeo-shelf-card { grid-template-columns:118px minmax(0,1fr); grid-template-rows:auto; }
+  .pbeo-shelf-card__art,.pbeo-media--shelf { min-height:150px; height:100%; }
+}
+@media (max-width:430px) {
+  .pbeo-hero-story__art { min-height:280px; }
+  .pbeo-rail-story { grid-template-columns:98px minmax(0,1fr); padding-inline:var(--nhl-gutter); }
+  .pbeo-rail-story__visual,.pbeo-media--rail { min-height:86px; height:86px; }
+}

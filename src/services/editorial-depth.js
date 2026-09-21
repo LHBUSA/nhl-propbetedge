@@ -8,9 +8,10 @@ import '../styles/contextual-intel.css';
 //
 // Important boundary: the generic Sports News feed contains both raw source
 // metadata and PBE-authored analysis. This module publishes ONLY the authored
-// PBE-analysis subset and intentionally does not render upstream summaries,
-// upstream article images, source bodies, or generated bet advice. The source
-// outlet/link remains attached to every PBE card.
+// PBE-analysis subset. After that discriminator passes, it reuses the same
+// editorial summary, approved story imagery and official video metadata already
+// published by PropBetEdge.ai. Raw wire rows never gain rich-media privileges.
+// The underlying reporting outlet/link remains attached to every PBE card.
 //
 // Operational truth remains in the NHL source wire (injuries, goalies, lines,
 // transactions, schedules, alerts). Editorial never replaces source-of-record
@@ -20,6 +21,8 @@ const NEWS_SITE = 'https://propbetedge.ai';
 const REFRESH_MS = 5 * 60 * 1000;
 const FETCH_LIMIT = 50;
 const MAX_ITEMS = 12;
+const IMG_PROXY = 'https://propbet-img-proxy.sales-fd3.workers.dev/?url=';
+const MEDIA_RESOLVER = `${NEWS_SITE}/api/sports-media`;
 
 const SOURCE_LABELS = {
   'the-hockey-writers': 'The Hockey Writers',
@@ -58,6 +61,18 @@ function isPbeAnalysis(article) {
   return Boolean(author && body.length >= 500 && source && sourceUrl && title && slug);
 }
 
+function normalizeMediaEmbed(embed) {
+  if (!embed || String(embed.type || '').toLowerCase() !== 'youtube') return null;
+  const embedUrl = safeUrl(embed.embedUrl || embed.embed_url);
+  if (!embedUrl) return null;
+  return {
+    type: 'youtube',
+    embed_url: embedUrl,
+    title: String(embed.title || '').trim(),
+    channel: String(embed.channelName || embed.channel_name || 'Official video').trim()
+  };
+}
+
 function normalize(article) {
   if (!isPbeAnalysis(article)) return null;
   const publishedAt = String(article.published_at || '').trim();
@@ -68,10 +83,15 @@ function normalize(article) {
   const players = Array.isArray(article?.take?.players)
     ? article.take.players.map(v => String(v || '').trim()).filter(Boolean)
     : [];
+  const mediaEmbeds = Array.isArray(article.media_embeds)
+    ? article.media_embeds.map(normalizeMediaEmbed).filter(Boolean)
+    : [];
+  const imageUrl = safeUrl(article.image_url);
   return {
     id: String(article.id || article.slug || article.title),
     slug: String(article.slug || '').trim(),
     title: String(article.title || '').trim(),
+    summary: String(article?.take?.summary || article?.summary || '').replace(/\s+/g, ' ').trim(),
     author: String(article.author || 'PropBetEdge NHL Desk').trim(),
     category: String(article.category || 'analysis').trim().toLowerCase(),
     editor_pick: Boolean(article.is_editor_pick),
@@ -79,11 +99,66 @@ function normalize(article) {
     impact: Number(article?.take?.impact_score) || null,
     teams,
     players,
+    image_url: imageUrl,
+    media_embeds: mediaEmbeds,
+    resolved_image_url: null,
+    media_kind: imageUrl ? 'story' : null,
+    media_name: null,
     url: articleUrl(article),
     source: String(article.source || '').trim(),
     source_label: sourceLabel(article.source),
     source_url: safeUrl(article.source_url)
   };
+}
+
+function proxyImage(raw) {
+  const url = safeUrl(raw);
+  if (!url) return null;
+  if (url.startsWith(IMG_PROXY)) return url;
+  return `${IMG_PROXY}${encodeURIComponent(url)}`;
+}
+
+function storyImage(article) {
+  return proxyImage(article?.image_url || article?.resolved_image_url);
+}
+
+function hasVideo(article) {
+  return Array.isArray(article?.media_embeds) && article.media_embeds.some(embed => embed?.type === 'youtube');
+}
+
+async function resolveEditorialMedia(article) {
+  if (article.image_url) return article;
+  const candidates = [
+    ...article.players.slice(0, 4).map(name => ({ kind: 'player', name })),
+    ...article.teams.slice(0, 3).map(name => ({ kind: 'team', name }))
+  ];
+  for (const candidate of candidates) {
+    try {
+      const url = `${MEDIA_RESOLVER}?sport=nhl&kind=${encodeURIComponent(candidate.kind)}&name=${encodeURIComponent(candidate.name)}`;
+      const response = await fetch(url, {
+        credentials: 'omit',
+        mode: 'cors',
+        cache: 'force-cache',
+        headers: { Accept: 'application/json' }
+      });
+      if (!response.ok) continue;
+      const payload = await response.json();
+      const image = safeUrl(payload?.image);
+      if (!image) continue;
+      article.resolved_image_url = image;
+      article.media_kind = candidate.kind;
+      article.media_name = String(payload?.name || candidate.name).trim();
+      return article;
+    } catch {
+      // Media is enhancement-only. The article remains publishable without it.
+    }
+  }
+  return article;
+}
+
+async function hydrateEditorialMedia(items) {
+  await Promise.all(items.map(resolveEditorialMedia));
+  return items;
 }
 
 function relative(iso) {
@@ -96,11 +171,14 @@ function primaryTeam(article) {
 }
 
 function media(article, cls = '') {
+  const image = storyImage(article);
   const team = primaryTeam(article);
   const logo = team ? safeUrl(logoUrl({ abbrev: team })) : null;
-  return `<div class="pbeo-media ${cls}${logo ? ' pbeo-media--team' : ''}">
-    ${logo ? `<img src="${esc(logo)}" alt="" loading="lazy" decoding="async" onerror="this.remove();this.parentNode.classList.add('is-fallback')">` : ''}
+  const playerPhoto = image && article.media_kind === 'player';
+  return `<div class="pbeo-media ${cls}${image ? ' has-photo' : logo ? ' pbeo-media--team' : ''}${playerPhoto ? ' is-player-photo' : ''}">
     <span class="pbeo-media__fallback" aria-hidden="true"><i></i><b>PBE</b><small>${team ? esc(team) : 'NHL'}</small></span>
+    ${image ? `<img class="pbeo-media__photo" src="${esc(image)}" alt="${esc(article.title)}" loading="lazy" decoding="async" onerror="this.remove();this.parentNode.classList.remove('has-photo');this.parentNode.classList.add('is-fallback')">` : logo ? `<img src="${esc(logo)}" alt="" loading="lazy" decoding="async" onerror="this.remove();this.parentNode.classList.add('is-fallback')">` : ''}
+    ${hasVideo(article) ? '<span class="pbeo-media__video" aria-label="Story includes official video"><b>▶</b> WATCH</span>' : ''}
   </div>`;
 }
 
@@ -131,21 +209,31 @@ function storyMeta(article, compact = false) {
     <span>${esc(categoryLabel(article))}</span>
     ${article.editor_pick ? '<b class="pbeo-editor-pick">Editor pick</b>' : ''}
     ${impact(article)}
+    ${hasVideo(article) ? '<b class="pbeo-video-meta">▶ Video</b>' : ''}
     <time datetime="${esc(article.published_at)}">${esc(relative(article.published_at))}</time>
     ${compact ? '' : `<b class="pbeo-author">${esc(article.author || 'PropBetEdge NHL Desk')}</b>`}
   </div>`;
 }
 
+function heroArt(article) {
+  const image = storyImage(article);
+  const playerPhoto = image && article.media_kind === 'player';
+  return `<div class="pbeo-hero-story__art${image ? ' has-photo' : ''}${playerPhoto ? ' is-player-photo' : ''}">
+    <div class="pbeo-hero-story__fallback">${teamWatermark(article)}</div>
+    ${image ? `<img class="pbeo-story-photo" src="${esc(image)}" alt="${esc(article.title)}" loading="eager" fetchpriority="high" decoding="async" onerror="this.remove();this.parentNode.classList.remove('has-photo','is-player-photo')">` : ''}
+    ${hasVideo(article) ? '<span class="pbeo-hero-story__watch"><b>▶</b><span>WATCH</span></span>' : ''}
+    <span class="pbeo-hero-story__edition">PROPBETEDGE NHL</span>
+  </div>`;
+}
+
 function leadCard(article) {
+  const deck = article.summary || 'PropBetEdge NHL analysis built from attributed reporting and connected to the same hockey intelligence layer powering the rest of this product.';
   return `<article class="pbeo-hero-story">
-    <div class="pbeo-hero-story__art">
-      ${teamWatermark(article)}
-      <span class="pbeo-hero-story__edition">PROPBETEDGE NHL</span>
-    </div>
+    ${heroArt(article)}
     <div class="pbeo-hero-story__body">
       ${storyMeta(article)}
       <a class="pbeo-story-link" href="${esc(article.url)}" target="_blank" rel="noopener"><h3>${esc(article.title)}</h3></a>
-      <p class="pbeo-hero-story__dek">Independent PBE analysis built from attributed reporting, connected to the same hockey intelligence layer powering the rest of this product.</p>
+      <p class="pbeo-hero-story__dek">${esc(deck)}</p>
       ${provenance(article)}
       <div class="pbeo-byline"><span>${esc(article.author || 'PropBetEdge NHL Desk')}</span><a href="${esc(article.url)}" target="_blank" rel="noopener">Read full analysis →</a></div>
     </div>
@@ -153,30 +241,49 @@ function leadCard(article) {
 }
 
 function railStory(article, index) {
-  const team = primaryTeam(article);
-  const logo = team ? safeUrl(logoUrl({ abbrev: team })) : null;
   return `<article class="pbeo-rail-story">
     <span class="pbeo-rail-story__num">${String(index + 1).padStart(2, '0')}</span>
+    <a class="pbeo-rail-story__visual" href="${esc(article.url)}" target="_blank" rel="noopener">${media(article, 'pbeo-media--rail')}</a>
     <div class="pbeo-rail-story__copy">
       ${storyMeta(article, true)}
       <a class="pbeo-story-link" href="${esc(article.url)}" target="_blank" rel="noopener"><h4>${esc(article.title)}</h4></a>
       <div class="pbeo-rail-story__foot"><span>${esc(article.author || 'PBE NHL Desk')}</span><a href="${esc(article.source_url)}" target="_blank" rel="noopener">Source: ${esc(article.source_label)} ↗</a></div>
     </div>
-    ${logo ? `<img src="${esc(logo)}" alt="" loading="lazy" decoding="async">` : ''}
   </article>`;
 }
 
 function shelfCard(article) {
-  const team = primaryTeam(article);
-  const logo = team ? safeUrl(logoUrl({ abbrev: team })) : null;
   return `<article class="pbeo-shelf-card">
-    <div class="pbeo-shelf-card__art">${logo ? `<img src="${esc(logo)}" alt="" loading="lazy" decoding="async">` : '<span>PBE</span>'}</div>
+    <a class="pbeo-shelf-card__art" href="${esc(article.url)}" target="_blank" rel="noopener">${media(article, 'pbeo-media--shelf')}</a>
     <div class="pbeo-shelf-card__body">
       ${storyMeta(article, true)}
       <a class="pbeo-story-link" href="${esc(article.url)}" target="_blank" rel="noopener"><h4>${esc(article.title)}</h4></a>
+      ${article.summary ? `<p class="pbeo-shelf-card__dek">${esc(article.summary)}</p>` : ''}
       <div class="pbeo-shelf-card__foot"><span>${esc(article.author || 'PBE NHL Desk')}</span><a href="${esc(article.url)}" target="_blank" rel="noopener">Read →</a></div>
     </div>
   </article>`;
+}
+
+function pickLead(items) {
+  return [...items].sort((a, b) => {
+    const score = article => (article.editor_pick ? 100 : 0)
+      + (storyImage(article) ? 35 : 0)
+      + (hasVideo(article) ? 12 : 0)
+      + (Number(article.impact) || 0) * 4;
+    return score(b) - score(a) || b.published_at.localeCompare(a.published_at);
+  })[0] || null;
+}
+
+function watchStrip(items) {
+  const videos = items.filter(hasVideo).slice(0, 3);
+  if (!videos.length) return '';
+  return `<section class="pbeo-watch">
+    <div class="pbeo-watch__head"><div><span class="eyebrow">WATCH · PBE NHL</span><h4>Video in the newsroom</h4></div><span class="micro">Official embeds live inside each story</span></div>
+    <div class="pbeo-watch__grid">${videos.map(article => `<a class="pbeo-watch-card" href="${esc(article.url)}" target="_blank" rel="noopener">
+      ${media(article, 'pbeo-media--watch')}
+      <span class="pbeo-watch-card__copy"><b>▶ WATCH</b><strong>${esc(article.title)}</strong><small>${esc(article.media_embeds[0]?.channel || 'Official video')}</small></span>
+    </a>`).join('')}</div>
+  </section>`;
 }
 
 function newsroomPanel(items, full = false) {
@@ -187,7 +294,8 @@ function newsroomPanel(items, full = false) {
     </section>`;
   }
 
-  const [lead, ...rest] = items;
+  const lead = pickLead(items);
+  const rest = items.filter(article => article.id !== lead?.id);
   const rail = rest.slice(0, 3);
   const shelf = rest.slice(3, full ? 12 : 7);
 
@@ -216,6 +324,8 @@ function newsroomPanel(items, full = false) {
       ${leadCard(lead)}
       ${rail.length ? `<aside class="pbeo-rail"><div class="pbeo-rail__head"><span class="eyebrow">Latest from the desk</span><span class="micro">PBE analysis</span></div>${rail.map(railStory).join('')}</aside>` : ''}
     </div>
+
+    ${watchStrip(items)}
 
     ${shelf.length ? `<div class="pbeo-shelf-head"><span class="eyebrow">More from PropBetEdge NHL</span><span class="micro">Analysis archive · newest first</span></div><div class="pbeo-shelf">${shelf.map(shelfCard).join('')}</div>` : ''}
 
@@ -458,6 +568,7 @@ async function load() {
       ? payload.articles.map(normalize).filter(Boolean).slice(0, MAX_ITEMS)
       : [];
     items.sort((a, b) => b.published_at.localeCompare(a.published_at));
+    await hydrateEditorialMedia(items);
     state.items = items;
     state.error = null;
     state.loadedAt = Date.now();

@@ -43,12 +43,17 @@ assert.match(editorial, /import '\.\.\/styles\/contextual-intel\.css'/, 'context
 assert.match(contextCss, /\.pbec-grid/, 'context rail has responsive grid styling');
 assert.match(contextCss, /@media \(max-width: 700px\)/, 'context rail has a mobile layout contract');
 
-// Known-risk generic fields must not be rendered into the NHL vertical. The
-// upstream source audit specifically flags copied/derivative summaries,
-// third-party article images and generated bet advice.
-assert.ok(!/article\.summary/.test(editorial), 'upstream summary is not rendered');
-assert.ok(!/article\.image_url/.test(editorial), 'third-party article image is not rendered');
-assert.ok(!/take\?\.summary|take\.summary/.test(editorial), 'generated take summary is not rendered');
+// Rich media is permitted only inside the already-authored PBE article subset.
+// Raw source-wire rows must fail isPbeAnalysis() before summary/image/video access.
+const authoredGate = editorial.indexOf('if (!isPbeAnalysis(article)) return null;');
+const imageAccess = editorial.indexOf('article.image_url');
+assert.ok(authoredGate >= 0 && imageAccess > authoredGate, 'story imagery is read only after the authored PBE discriminator');
+assert.match(editorial, /article\?\.take\?\.summary \|\| article\?\.summary/, 'PBE editorial dek is reused after authorship verification');
+assert.match(editorial, /media_embeds/, 'official video metadata is carried into the NHL newsroom');
+assert.match(editorial, /api\/sports-media/, 'missing story art recovers through the shared PBE sports-media resolver');
+assert.match(editorial, /kind: 'player'/, 'player headshots are the first contextual-media recovery path');
+assert.match(editorial, /pbeo-watch/, 'video stories receive a dedicated newsroom surface');
+assert.match(css, /NHL NEWSROOM V3/, 'V3 photo-led newsroom styling ships with the editorial layer');
 assert.ok(!/bet_advice/.test(editorial), 'generated betting advice is not rendered');
 
 // Operational truth remains on the existing NHL newsroom adapter. Editorial is
