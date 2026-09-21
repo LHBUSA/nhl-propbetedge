@@ -23,6 +23,15 @@ const FETCH_LIMIT = 50;
 const MAX_ITEMS = 12;
 const IMG_PROXY = 'https://propbet-img-proxy.sales-fd3.workers.dev/?url=';
 const MEDIA_RESOLVER = `${NEWS_SITE}/api/sports-media`;
+const INTEGRITY_STOP = new Set([
+  'about','after','again','against','ahead','before','being','between','could',
+  'debut','during','first','from','game','games','have','having','into','latest',
+  'make','makes','more','news','night','over','report','season','sunday','monday',
+  'tuesday','wednesday','thursday','friday','saturday','than','that','their',
+  'there','these','they','this','those','through','today','tomorrow','tonight',
+  'under','update','week','will','with','year','years','your','mlb','nfl','nba',
+  'nhl','propbetedge'
+]);
 
 const SOURCE_LABELS = {
   'the-hockey-writers': 'The Hockey Writers',
@@ -49,6 +58,57 @@ function sourceLabel(source) {
   return SOURCE_LABELS[key] || key.replace(/[-_]+/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
 }
 
+function cleanIntegrity(value) {
+  return String(value || '').replace(/\s+/g, ' ').trim();
+}
+
+function integrityText(value) {
+  return cleanIntegrity(value)
+    .toLowerCase()
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[^a-z0-9]+/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function articleBodyText(article) {
+  const raw = article?.body || String(article?.body_html || '').replace(/<script[\s\S]*?<\/script>/gi, ' ').replace(/<style[\s\S]*?<\/style>/gi, ' ').replace(/<[^>]+>/g, ' ') || '';
+  return cleanIntegrity(
+    String(raw)
+      .replace(/!\[[^\]]*\]\([^)]*\)/g, ' ')
+      .replace(/\[([^\]]+)\]\([^)]*\)/g, '$1')
+      .replace(/^#{1,6}\s+/gm, '')
+      .replace(/^[-*+]\s+/gm, '')
+      .replace(/[*_~`]+/g, ' ')
+  );
+}
+
+function destinationPublishes(article) {
+  const author = cleanIntegrity(article?.author).toLowerCase();
+  if (author === 'donneal green') return false;
+
+  const title = cleanIntegrity(article?.title || article?.headline);
+  if (!title) return false;
+  const summary = cleanIntegrity(article?.summary || article?.description || article?.take?.summary);
+  const body = articleBodyText(article);
+
+  if (body.length >= 300) {
+    const anchors = [...new Set(
+      integrityText(title)
+        .split(' ')
+        .filter(token => token.length >= 5 && !INTEGRITY_STOP.has(token))
+    )].slice(0, 14);
+
+    if (anchors.length >= 2) {
+      const haystack = integrityText(`${summary} ${body.slice(0, 6000)}`);
+      const matches = anchors.filter(token => (` ${haystack} `).includes(` ${token} `));
+      if (matches.length === 0) return false;
+    }
+  }
+  return true;
+}
+
 function isPbeAnalysis(article) {
   const author = String(article?.author || '').trim();
   const body = String(article?.body || '').trim();
@@ -58,7 +118,9 @@ function isPbeAnalysis(article) {
   const slug = String(article?.slug || '').trim();
   // Raw ingested wire rows have no PBE byline/body. Requiring both gives this
   // surface a deterministic distinction between PBE analysis and source wire.
-  return Boolean(author && body.length >= 500 && source && sourceUrl && title && slug);
+  // The destination publication gate mirrors propbetedge.ai/article integrity,
+  // so a card is never rendered if the click target would become Page Not Found.
+  return Boolean(author && body.length >= 500 && source && sourceUrl && title && slug && destinationPublishes(article));
 }
 
 function normalizeMediaEmbed(embed) {

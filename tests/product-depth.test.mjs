@@ -21,6 +21,10 @@ assert.match(editorial, /propbet-news-api\.sales-fd3\.workers\.dev/, 'PBE NHL an
 assert.match(editorial, /\/news\/by-sport\/nhl\?limit=\$\{FETCH_LIMIT\}&page=1/, 'only the NHL channel is requested');
 assert.match(editorial, /function isPbeAnalysis\(article\)/, 'PBE-analysis discriminator is explicit');
 assert.match(editorial, /author && body\.length >= 500 && source && sourceUrl && title && slug/, 'raw source-wire rows cannot masquerade as PBE analysis');
+assert.match(editorial, /function destinationPublishes\(article\)/, 'NHL cards use the destination article publication gate');
+assert.match(editorial, /matches\.length === 0\) return false/, 'title/body mismatches are withheld before a broken article link can render');
+assert.match(editorial, /author === 'donneal green'/, 'retired-author rows are withheld consistently with the destination site');
+assert.match(editorial, /Page Not Found/, 'the link-safety reason is documented beside the gate');
 assert.match(editorial, /credentials: 'omit'/, 'editorial request carries no browser credential');
 assert.match(editorial, /PropBetEdge NHL Desk · PBE analysis/, 'PBE analysis is visibly first-party branded');
 assert.match(editorial, /PBE analysis based on attributed reporting/, 'underlying reporting provenance stays visible');
