@@ -1,3 +1,16 @@
+## 2026-09-21 — Newsroom V3: real PropBetEdge editorial media — PRODUCTION
+
+- **Frontend commit:** `81a5cfd863d2c4420f2dd1ab63502b509904e99c` — `Bring real PBE media into NHL newsroom`.
+- **Shared media resolver:** `LHBUSA/propbetedge-news-site@f86ae9c25b94b6db58ef217cdcd3b142f4e8eef8` exposes the existing read-only `/api/sports-media` resolver cross-origin for dedicated PBE products.
+- **Editorial boundary preserved:** raw source-wire rows still fail `isPbeAnalysis()`; only authored PBE articles can consume editorial summary, `image_url`, official YouTube metadata, or contextual media recovery.
+- **Visual hierarchy:** dominant photo-led lead story, photographed three-story rail, photo-led archive shelf, responsive desktop/tablet/mobile treatment. Team/PBE marks are fallback art only.
+- **Player-photo recovery:** when an authored story has no usable story image, the newsroom resolves named players before teams through the shared PBE sports-media resolver and routes the image through the existing PBE image proxy.
+- **Video:** authored stories carrying official YouTube metadata receive WATCH treatment in cards/hero plus a dedicated video row linking into the full PropBetEdge article experience.
+- **Editorial copy:** authored PBE summaries now supply real story decks instead of the generic placeholder explainer.
+- **Production receipt:** Vercel deployment `dpl_7QhTnNwYzEQ8QUsprdsBoqvCY65x` is `READY` / production and GitHub status context `Vercel` is success for `81a5cfd`.
+- **Resolver production canary:** `GET https://propbetedge.ai/api/sports-media?sport=nhl&kind=player&name=Connor%20McDavid` returned HTTP 200 with an NHL player headshot and `Access-Control-Allow-Origin: *`.
+- **Validation before push:** browser-module syntax check PASS; rich-media-after-authored-discriminator contract PASS; Vercel production build PASS. Full local `npm test` was not available through the connector runtime, so do not represent the entire Node test suite as executed by this receipt.
+
 # NHL PropBetEdge — build status
 
 Release line: **`main` is production** (Vercel deploys `main`; the Cloudflare `nhl-gateway` serves the browser). `nhl-ufc2-production` was merged and is an ancestor of `main`. Last updated 2026-09-12. Current work branch: `nhl-live-scores-photos-v1` (live scores + player photos), not merged.
