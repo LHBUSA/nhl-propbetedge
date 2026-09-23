@@ -434,7 +434,7 @@ function goalieBlock(goalies) {
   </div>`;
 }
 
-export function gameCardMarkup(game, { pipelineAvailable = true } = {}) {
+export function gameCardMarkup(game, { pipelineAvailable = true, splitSquad = false } = {}) {
   const pick = game.pick || null;
   const pickTeam = pick ? readKey(pick, ['pick_team']) : null;
   const pHome = pick ? readKey(pick, ['p_home']) : null;
@@ -452,7 +452,9 @@ export function gameCardMarkup(game, { pipelineAvailable = true } = {}) {
     pickTeam && pickTeam === homeAbbrev ? pHome : pickTeam && pickTeam === awayAbbrev ? pAway : null
   );
 
-  const pickStrip = pick
+  const pickStrip = splitSquad
+    ? `<p class="pkc-none pkc-none--split">No PBE pick — this is a split-squad game, so the team-level model cannot reliably separate the two rosters playing at the same time.</p>`
+    : pick
     ? `<div class="pkc-pick">
         <div class="pkc-pick__head"><span class="eyebrow">PBE Pick</span>
           <b class="pkc-pick__team">${esc(pickTeam || DASH)}</b>
@@ -479,14 +481,14 @@ export function gameCardMarkup(game, { pipelineAvailable = true } = {}) {
   return `<article class="pkc" data-game="${esc(game.id)}" style="--away:${teamAccent(awayAbbrev)};--home:${teamAccent(homeAbbrev)}">
     <header class="pkc__head">
       <span class="pbe-badge pbe-badge--${esc(stateCls)}">${esc(stateWord || 'STATE UNAVAILABLE')}</span>
-      <span class="pbe-badge pbe-badge--${esc(PREDICTION_TONE[prediction] || 'unavailable')}">${esc(prediction || 'PREDICTION STATE UNAVAILABLE')}</span>
+      <span class="pbe-badge pbe-badge--${esc(splitSquad ? 'quiet' : (PREDICTION_TONE[prediction] || 'unavailable'))}">${esc(splitSquad ? 'NO PICK · SPLIT SQUAD' : (prediction || 'PREDICTION STATE UNAVAILABLE'))}</span>
     </header>
     <div class="pkc__when mono">${esc(game.start_utc ? `${dayET(game.start_utc)} · ${timeET(game.start_utc)}` : 'Puck drop TBD')}${local ? ` · ${esc(local)}` : ''}${game.game_type && game.game_type !== 2 ? ` · ${esc(gameTypeLabel(game.game_type))}` : ''}</div>
     <div class="pkc__teams">
       ${teamRow(game.away, { probability: pAway, selected: Boolean(pickTeam) && pickTeam === awayAbbrev })}
       ${teamRow(game.home, { probability: pHome, selected: Boolean(pickTeam) && pickTeam === homeAbbrev })}
     </div>
-    <div class="pkc__lock"><span class="micro">Lock window</span><span class="mono">${esc(lockText || (pipelineAvailable ? 'Not published' : 'Unavailable'))}</span></div>
+    <div class="pkc__lock"><span class="micro">${splitSquad ? 'Pick status' : 'Lock window'}</span><span class="mono">${esc(splitSquad ? 'Excluded · split squad' : (lockText || (pipelineAvailable ? 'Not published' : 'Unavailable')))}</span></div>
     ${pickStrip}
     <footer class="pkc__actions">
       <a href="#/matchup/${esc(game.id)}">Matchup</a>
@@ -700,21 +702,20 @@ export function preseasonRecordStrip(rec, visibleCount = 0, seasonHint = null) {
 export function rehearsalSection(state) {
   const data = state.preseason;
   const games = data && data.ok === true && Array.isArray(data.games) ? data.games : [];
-  const splits = state.splitSquad || [];
-  if (!games.length && !splits.length) return '';
+  if (!games.length) return '';
   const rec = state.preseasonRecord && state.preseasonRecord.ok === true ? state.preseasonRecord : null;
   const calls = games.filter(g => g.is_call === true);
   return `<section class="pks-preseason" id="pks-preseason" data-fresh-scope>
     ${calls.length ? preseasonRecordStrip(rec, calls.length, calls[0]?.season ?? games[0]?.season ?? null) : ''}
     ${consumerModelStatus(state)}
-    ${games.length ? `<div class="pks-picks">${games.map(rehearsalCard).join('')}</div>` : ''}
-    ${splitSquadNotice(splits)}
+    <div class="pks-picks">${games.map(rehearsalCard).join('')}</div>
   </section>`;
 }
 
 // ------------------------------------------------------------------ header
 function slateSection(state, games, { quiet = false } = {}) {
   const pipelineAvailable = Boolean(state.slate);
+  const splitIds = new Set((state.splitSquad || []).map((g) => String(g?.game_id ?? g?.id ?? '')).filter(Boolean));
   const isToday = state.date === todayET();
   const next = state.board?.next_puck_drop || null;
   let body;
@@ -729,7 +730,10 @@ function slateSection(state, games, { quiet = false } = {}) {
         : 'The source schedule lists no upcoming game in its current window.'}</p>
       ${next?.date ? `<p style="margin-top:14px"><button class="pbe-btn pbe-btn--primary" data-goto="${esc(next.date)}">Open the ${esc(dateLabel(next.date))} slate</button></p>` : ''}</div>`;
   } else {
-    body = `<div class="pks-grid">${games.map(g => gameCardMarkup(g, { pipelineAvailable })).join('')}</div>`;
+    body = `<div class="pks-grid">${games.map(g => gameCardMarkup(g, {
+      pipelineAvailable,
+      splitSquad: splitIds.has(String(g.id)),
+    })).join('')}</div>`;
   }
   return `<div class="section-head">
       <div><span class="eyebrow">Slate${isToday ? ' · Today' : ''}</span><h2>${esc(dateLabel(state.date, { long: true }))}</h2></div>

@@ -178,6 +178,42 @@ test('the section still never labels a preseason pick official', () => {
   assert.match(html, /do not count toward the regular-season PBE record/);
 });
 
-test('no preseason data and no split squads renders nothing', () => {
-  assert.equal(rehearsalSection({ preseason: null, splitSquad: [] }), '');
+test('preseason section does not duplicate split-squad fixtures above the slate', () => {
+  const state = {
+    preseason: null,
+    splitSquad: [{ home: 'TOR', away: 'OTT', game_id: '2026010101' }]
+  };
+  assert.equal(rehearsalSection(state), '');
+});
+
+test('split-squad fixtures render once in the slate with the no-pick explanation on the card', () => {
+  const splitGame = {
+    game_id: '2026010101',
+    start_utc: '2026-09-23T23:00:00Z',
+    state: 'FUT',
+    home: { abbrev: 'TOR', name: 'Maple Leafs' },
+    away: { abbrev: 'OTT', name: 'Senators' },
+    prediction_state: 'NONE',
+    lock_window: {
+      opens_utc: '2026-09-23T21:15:00Z',
+      target_utc: '2026-09-23T22:15:00Z',
+      closes_utc: '2026-09-23T22:45:00Z'
+    }
+  };
+  const state = {
+    date: '2026-09-23',
+    preseason: null,
+    preseasonRecord: null,
+    splitSquad: [{ home: 'TOR', away: 'OTT', game_id: '2026010101' }],
+    slate: { games: [splitGame] },
+    health: null,
+    board: null,
+    pro: null,
+    account: { state: 'unknown' }
+  };
+  const html = picksView(state);
+  assert.equal((html.match(/data-game="2026010101"/g) || []).length, 1, 'the fixture appears once');
+  assert.equal((html.match(/NO PICK · SPLIT SQUAD/g) || []).length, 1, 'the split-squad label appears once');
+  assert.match(html, /Excluded · split squad/);
+  assert.match(html, /team-level model cannot reliably separate the two rosters/);
 });
