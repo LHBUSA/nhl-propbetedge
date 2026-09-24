@@ -24,15 +24,15 @@ html.pbepro-lock{overflow:hidden}
 
 .pbepro__signin,.pbepro__account{margin-top:18px;padding-top:16px;border-top:1px solid rgba(255,255,255,.075)}
 .pbepro__signin[hidden],.pbepro__account[hidden]{display:none!important}
-.pbepro__signin-head span,.pbepro__account span{font:800 10px/1 'JetBrains Mono',monospace;letter-spacing:.12em;color:#d4af37}
+.pbepro__signin-head span,.pbepro__account > span{font:800 10px/1 'JetBrains Mono',monospace;letter-spacing:.12em;color:#d4af37}
 .pbepro__signin-head p{margin:6px 0 0;color:#8f8a82;font-size:11.5px;line-height:1.45}
 .pbepro__signin-form{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px;margin-top:10px}
 .pbepro__signin-form input{box-sizing:border-box;min-width:0;height:44px;padding:0 12px;border:1px solid rgba(255,255,255,.11);border-radius:10px;background:#0e0e0d;color:#fff;font:600 13px/1 Inter,sans-serif;outline:none}
 .pbepro__signin-form input:focus{border-color:rgba(212,175,55,.6)}
 .pbepro__signin-btn,.pbepro__signout{height:44px;padding:0 14px;border:1px solid rgba(212,175,55,.45);border-radius:10px;background:rgba(212,175,55,.08);color:#e8c452;font:800 10.5px/1 'JetBrains Mono',monospace;letter-spacing:.05em;text-transform:uppercase;cursor:pointer;white-space:nowrap}
 .pbepro__signin-btn:hover,.pbepro__signout:hover{background:rgba(212,175,55,.16)}
-.pbepro__account strong{display:block;margin-top:8px;color:#fff;font-size:15px}
-.pbepro__account p{margin:4px 0 12px;color:#8f8a82;font-size:11.5px}
+.pbepro__account > strong{display:block;margin-top:8px;color:#fff;font-size:15px}
+.pbepro__account > p{margin:4px 0 12px;color:#8f8a82;font-size:11.5px}
 .pbepro__open.is-pro{background:rgba(212,175,55,.18);border-color:rgba(212,175,55,.6)}
 @media(max-width:430px){.pbepro__signin-form{grid-template-columns:1fr}}
 .auth-verify{display:grid;place-items:center;min-height:60vh}
@@ -46,3 +46,15 @@ html.pbepro-lock{overflow:hidden}
 .pbepro__note[hidden]{display:none!important}
 .pbepro__note span{font:800 10px/1 'JetBrains Mono',monospace;letter-spacing:.12em;color:#d4af37}
 .pbepro__note p{margin:6px 0 0;color:#8f8a82;font-size:11.5px;line-height:1.5}
+/* Membership (shared contract). Members hide every NHL purchase control; the
+   header control becomes the shared badge. Body is never styled here. */
+.pbepro[data-membership]:not([data-membership='free']) .pbepro__purchase-only{display:none!important}
+.pbepro__open.is-pro{padding:0;border:0;background:transparent}
+.pbepro__open.is-pro:hover{background:transparent}
+.pbepro__open .pbe-mbr-badge{cursor:pointer}
+.pbepro__all-access{margin-top:16px}.pbepro__all-access:empty{display:none}
+.pbepro__account .pbe-mbr-panel{margin-top:2px}
+.pbepro__account .pbe-mbr-aa{margin-top:14px}
+.pbepro__renewal{margin:8px 0 0;color:#8f8a82;font-size:11.5px}
+.pbepro__account .pbepro__signout{margin-top:14px}
+.pks-pro .pbe-mbr-badge{align-self:flex-start}

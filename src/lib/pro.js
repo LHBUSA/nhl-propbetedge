@@ -1,12 +1,18 @@
 import '../styles/pro.css';
 import { onAccount, refreshAccount, requestSignIn, signInAvailable, signOut } from './account.js';
+import { accountMembership, freeOfferHtml, isMember, memberPanelHtml, planCardsHtml, proButtonHtml, proButtonLabel } from './pro-membership-ui.js';
 
 /**
- * PropBetEdge NHL Pro — Founding Season purchase UI.
+ * PropBetEdge NHL Pro — purchase + membership surface.
  *
- * Vercel serves this frontend. Billing + entitlement remains closed until the
- * Cloudflare -> Supabase multi-sport entitlement path passes production gates.
- * localStorage remembers plan preference only; it never grants Pro access.
+ * Vercel serves this frontend. NHL checkout remains closed until the
+ * Cloudflare -> Supabase multi-sport entitlement path passes production gates;
+ * the PropBetEdge All Access checkout (shared contract) is live and is offered
+ * to FREE readers beneath the NHL cards. Members see the shared membership
+ * panel (NHL PRO ACTIVE / ALL ACCESS ACTIVE / OWNER) and, for All Access and
+ * owner, no purchase CTA anywhere. Membership state comes only from the
+ * gateway (lib/account.js); localStorage remembers plan preference only and
+ * never grants Pro access.
  */
 const OPEN_FOR_PURCHASE = false;
 const STORAGE_KEY = 'pbe_nhl_founding_plan_v1';
@@ -74,38 +80,32 @@ function markup() {
       <section class="pbepro__dialog" role="dialog" aria-modal="true" aria-labelledby="nhl-pro-title">
         <button class="pbepro__close" type="button" data-pro-close aria-label="Close NHL Pro">×</button>
         <div class="pbepro__story">
-          <div class="pbepro__eyebrow">FOUNDING SEASON · NHL PRO</div>
+          <div class="pbepro__eyebrow">PROPBETEDGE · NHL PRO</div>
           <h2 id="nhl-pro-title">See the market.<br><em>Own the ice.</em></h2>
           <p class="pbepro__lede">The full PropBetEdge hockey intelligence layer at introductory pricing. Built for bettors who want to know what changed and why the number matters.</p>
           <div class="pbepro__features">
             ${FEATURES.map(([title, copy], i) => `<article class="pbepro__feature"><span>0${i + 1}</span><div><strong>${title}</strong><p>${copy}</p></div></article>`).join('')}
           </div>
-          <div class="pbepro__truth">No free trial. No fake urgency. Cancel anytime.</div>
+          <div class="pbepro__truth pbepro__purchase-only">No free trial. No fake urgency. Cancel anytime.</div>
         </div>
         <div class="pbepro__purchase">
-          <div class="pbepro__purchase-head">
+          <div class="pbepro__purchase-head pbepro__purchase-only">
             <span>FOUNDING SEASON PRICING</span>
             <strong>Choose NHL Pro</strong>
             <p>Monthly is the best value and is selected by default.</p>
           </div>
-          <div class="pbepro__plans" role="radiogroup" aria-label="NHL Pro plans">
-            ${Object.entries(NHL_PRO_PLANS).map(([key, plan]) => `
-              <button type="button" class="pbepro__plan" data-pro-plan="${key}" role="radio" aria-checked="false">
-                <div class="pbepro__plan-top"><span>${plan.label}</span><b>${plan.badge}</b></div>
-                <div class="pbepro__price"><strong>${plan.price}</strong><span>${plan.cadence}</span></div>
-                <small>${plan.detail}</small>
-                <div class="pbepro__select">Choose ${plan.label.toLowerCase()}</div>
-              </button>`).join('')}
+          <div class="pbepro__plans pbepro__purchase-only" role="radiogroup" aria-label="NHL Pro plans">
+            ${planCardsHtml(NHL_PRO_PLANS)}
           </div>
-          <label class="pbepro__email" id="nhl-pro-email-label"${OPEN_FOR_PURCHASE ? '' : ' hidden'}>
+          <label class="pbepro__email pbepro__purchase-only" id="nhl-pro-email-label"${OPEN_FOR_PURCHASE ? '' : ' hidden'}>
             <span>Access email</span>
             <small>This email will become your NHL Pro identity.</small>
             <input id="nhl-pro-email" type="email" autocomplete="email" inputmode="email" placeholder="you@example.com" />
           </label>
-          <button class="pbepro__cta" id="nhl-pro-checkout" type="button"></button>
-          <div class="pbepro__charge">Charged today · No free trial · Cancel anytime</div>
+          <button class="pbepro__cta pbepro__purchase-only" id="nhl-pro-checkout" type="button"></button>
           <div class="pbepro__message" id="nhl-pro-message" aria-live="polite"></div>
-          <div class="pbepro__secure">◆ Secure checkout by Stripe · Access controlled by PropBetEdge</div>
+          <div class="pbepro__all-access pbepro__purchase-only" id="nhl-pro-all-access">${freeOfferHtml(accountMembership(null))}</div>
+          <div class="pbepro__secure pbepro__purchase-only">◆ Access controlled by PropBetEdge</div>
           <div class="pbepro__note" id="nhl-pro-signin-unavailable" hidden>
             <span>ACCOUNT SIGN-IN</span>
             <p>Member sign-in is not available yet. Everything above is what NHL Pro includes; nothing is charged and no account is created here today.</p>
@@ -118,12 +118,7 @@ function markup() {
             </form>
             <div class="pbepro__message" id="nhl-pro-signin-message" aria-live="polite"></div>
           </div>
-          <div class="pbepro__account" id="nhl-pro-account" hidden>
-            <span>NHL PRO · ACTIVE</span>
-            <strong id="nhl-pro-account-email"></strong>
-            <p id="nhl-pro-account-plan"></p>
-            <button type="button" class="pbepro__signout" data-pro-signout>Sign out</button>
-          </div>
+          <div class="pbepro__account" id="nhl-pro-account" hidden></div>
         </div>
       </section>
     </div>`;
@@ -148,8 +143,8 @@ function paintSelection() {
     cta.setAttribute('aria-disabled', 'true');
   }
   if (cta) cta.textContent = OPEN_FOR_PURCHASE
-    ? `Continue to Stripe · ${plan.price}${selected === 'monthly' ? '/mo' : '/wk'}`
-    : 'Founding Season checkout coming online';
+    ? `Continue to checkout · ${plan.price}${selected === 'monthly' ? '/mo' : '/wk'}`
+    : 'NHL Pro checkout opens soon · Founding Season rate';
 }
 
 function message(text, tone = '') {
@@ -186,28 +181,32 @@ function startCheckout() {
   window.location.assign(checkoutUrl(NHL_PRO_PLANS[selected], email));
 }
 
+// Paints the surface for the gateway-decided account. Members (any of
+// sport_pro / all_access / owner) see the shared membership panel and none of
+// the NHL purchase controls; FREE readers keep the NHL cards + All Access card.
 function renderAccount(account) {
   const button = document.querySelector('[data-open-nhl-pro].pbepro__open');
-  const pro = account.state === 'pro';
+  const pro = isMember(account);
+  const m = accountMembership(account);
   if (button) {
     button.classList.toggle('is-pro', pro);
-    button.innerHTML = pro ? '<span>NHL</span> PRO ✓' : '<span>NHL</span> PRO';
-    button.setAttribute('aria-label', pro ? 'NHL Pro account' : 'Open NHL Pro Founding Season pricing');
+    const html = proButtonHtml(account);
+    if (button.innerHTML !== html) button.innerHTML = html;
+    button.setAttribute('aria-label', proButtonLabel(account, true));
   }
+  const root = document.getElementById('nhl-pro-modal');
+  if (root) root.dataset.membership = m.state;
   const panel = document.getElementById('nhl-pro-account');
   if (panel) {
     panel.hidden = !pro;
-    if (pro) {
-      document.getElementById('nhl-pro-account-email').textContent = account.email || '';
-      const s = account.subscription || {};
-      const end = s.current_period_end ? new Date(s.current_period_end).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }) : '';
-      document.getElementById('nhl-pro-account-plan').textContent = s.plan
-        ? `${s.plan === 'weekly' ? 'Weekly' : 'Monthly'} · ${s.cancel_at_period_end ? `ends ${end}` : `renews ${end}`}`
-        : '';
-    }
+    panel.innerHTML = pro ? memberPanelHtml(m) : '';
   }
+  const offer = document.getElementById('nhl-pro-all-access');
+  if (offer) offer.innerHTML = freeOfferHtml(m);
   const signin = document.getElementById('nhl-pro-signin');
   if (signin && pro) signin.hidden = true;
+  const note = document.getElementById('nhl-pro-signin-unavailable');
+  if (note && pro) note.hidden = true;
 }
 
 async function wireAccount() {
@@ -253,7 +252,7 @@ function install() {
     button.className = 'pbepro__open';
     button.dataset.openNhlPro = '';
     button.innerHTML = '<span>NHL</span> PRO';
-    button.setAttribute('aria-label', 'Open NHL Pro Founding Season pricing');
+    button.setAttribute('aria-label', 'See what NHL Pro includes');
     tools.prepend(button);
   }
 
@@ -275,7 +274,7 @@ function install() {
   if (new URLSearchParams(location.search).get('checkout') === 'success') {
     // Success is informational only. Query params never grant entitlement.
     open();
-    message('Payment received. Sign in below with the same email you used at checkout — access appears once Stripe confirms your subscription.', 'success');
+    message('Payment received. Sign in below with the same email you used at checkout — access appears once your subscription is confirmed.', 'success');
   }
 
   wireAccount();

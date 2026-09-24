@@ -4,6 +4,7 @@
 // server-side session and the billing ledger on each call. Nothing is kept in
 // browser storage, and no query parameter or stored value can change the state.
 import { GATEWAY_URL } from './api.js';
+import { readMembership } from './pbe-membership.js';
 
 const listeners = new Set();
 let current = { state: 'unknown' };
@@ -71,7 +72,11 @@ export async function refreshAccount() {
     try {
       const { status, data } = await authCall('/auth/session');
       if (status !== 200 || !data || typeof data.state !== 'string') return publish({ state: 'signed_out' });
-      return publish({ state: data.state, email: data.email || null, subscription: data.subscription || null });
+      // membership is the shared PropBetEdge contract object the gateway derived
+      // from the billing verdict. readMembership accepts only a well-formed
+      // object and never widens it: a non-pro state is always FREE here.
+      const membership = readMembership(data.state === 'pro' ? data.membership : null, 'nhl');
+      return publish({ state: data.state, email: data.email || null, subscription: data.subscription || null, membership });
     } catch {
       return publish({ state: 'signed_out' });
     } finally {

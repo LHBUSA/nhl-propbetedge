@@ -3,6 +3,7 @@ import { TEAMS } from '../lib/teams.js';
 import { timeET, dayET } from '../lib/format.js';
 import { PBE_NETWORK } from '../lib/network.js';
 import { onAccount, refreshAccount, signInAvailable } from '../lib/account.js';
+import { isMember, proButtonHtml, proButtonLabel } from '../lib/pro-membership-ui.js';
 
 // Keep the desktop header focused on the five highest-value product surfaces,
 // with PBE Picks — the flagship — directly after the Ice Board. Everything else
@@ -317,9 +318,14 @@ export function bindShell(ctx) {
 //
 //   auth not configured -> the button never appears (a dead control is worse
 //                          than no control);
-//   signed out          -> opens the sign-in / Founding Season surface;
+//   signed out          -> opens the sign-in / NHL Pro pricing surface;
 //   pro                 -> opens the same surface on the account panel, which
-//                          carries the live subscription state.
+//                          carries the live membership state. The control
+//                          itself shows the shared membership badge (NHL PRO
+//                          ACTIVE / ALL ACCESS ACTIVE / OWNER).
+//
+// Unresolved and free sessions paint the identical neutral "NHL PRO" markup,
+// so nothing flickers while the gateway answers.
 //
 // Account state comes only from lib/account.js, which asks the gateway. Chrome
 // never calls a /pro/* route and never infers access from the browser.
@@ -333,14 +339,11 @@ export function bindProButton({ timeoutMs = 6000 } = {}) {
   const paint = account => {
     const state = account?.state || 'unknown';
     button.dataset.account = state;
-    const pro = state === 'pro';
+    const pro = isMember(account);
     button.classList.toggle('is-pro', pro);
-    button.innerHTML = pro ? '<span>NHL</span> PRO ✓' : '<span>NHL</span> PRO';
-    button.setAttribute('aria-label', pro
-      ? 'NHL Pro account and subscription'
-      : authReady
-        ? 'Sign in to NHL Pro or see Founding Season access'
-        : 'See what NHL Pro includes');
+    const html = proButtonHtml(account);
+    if (button.innerHTML !== html) button.innerHTML = html;
+    button.setAttribute('aria-label', proButtonLabel(account, authReady));
   };
   paint(null);
 

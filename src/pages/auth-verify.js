@@ -8,7 +8,7 @@ import { confirmSignIn, signInAvailable } from '../lib/account.js';
 
 const ERRORS = {
   expired: ['This sign-in link has expired or was already used.', 'Links work once and expire after 15 minutes. Request a fresh one.'],
-  not_authorized: ['No active NHL Pro subscription for this email.', 'Sign in with the same email you used at checkout. If your plan ended, renew to continue.'],
+  not_authorized: ['This email has no active NHL Pro or All Access membership.', 'Sign in with the same email you used at checkout. If your plan ended, renew to continue.'],
   unavailable: ['Sign-in is temporarily unavailable.', 'Nothing was changed. Try the link again in a minute, or request a new one.']
 };
 

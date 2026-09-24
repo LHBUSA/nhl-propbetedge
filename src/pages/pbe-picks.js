@@ -20,6 +20,7 @@
 import { esc, on } from '../lib/dom.js';
 import { describeError, picksHealth, picksPreseason, picksPreseasonRecord, picksSlate } from '../lib/api.js';
 import { onAccount, proData, refreshAccount, signInAvailable } from '../lib/account.js';
+import { accountMembership, membershipBadgeHtml, picksProHeading } from '../lib/pro-membership-ui.js';
 import { freshStamp } from '../lib/freshness.js';
 import { addDays, ageText, dateLabel, dayET, gameTypeLabel, pct, timeET, timeLocal, todayET } from '../lib/format.js';
 import { stateOf, teamMark } from '../components/game.js';
@@ -527,12 +528,15 @@ function explainBlock() {
   </section>`;
 }
 
-function proBlock(state) {
+// Members are described by the shared membership object the gateway derived
+// (NHL PRO ACTIVE / ALL ACCESS ACTIVE / OWNER); the heading follows the label.
+export function proBlock(state) {
   const pro = proEligible(state.account);
-  return `<section class="pks-block pks-pro" aria-labelledby="pks-pro-h">
+  const m = accountMembership(state.account);
+  return `<section class="pks-block pks-pro" aria-labelledby="pks-pro-h" data-pbe-membership="${esc(m.state)}">
     <div class="pks-block__head">
-      <div><span class="eyebrow">NHL Pro</span><h2 id="pks-pro-h">${pro ? 'NHL Pro is active on this account' : 'What NHL Pro adds to this page'}</h2></div>
-      <span class="pbe-badge pbe-badge--${pro ? 'confirmed' : 'sched'}">${pro ? 'ACTIVE' : 'PRO'}</span>
+      <div><span class="eyebrow">NHL Pro</span><h2 id="pks-pro-h">${pro ? esc(picksProHeading(m)) : 'What NHL Pro adds to this page'}</h2></div>
+      ${pro ? membershipBadgeHtml(m) : '<span class="pbe-badge pbe-badge--sched">PRO</span>'}
     </div>
     <ul class="pks-pro__list">
       <li><b>The selection itself</b><span>Which team an official model took, with its probability and the opponent's.</span></li>
@@ -544,7 +548,7 @@ function proBlock(state) {
       ? `<p class="dim">${state.proError
         ? `Pro values are not on screen: ${esc(state.proError)}.`
         : 'Pro values appear on the cards above as soon as an official model locks a pick. There is nothing withheld from you today — there is nothing yet.'}</p>`
-      : `<p class="dim">Entitlement is decided by the gateway on every request. This page never asks for Pro data unless the gateway has already confirmed an active NHL Pro subscription, so a free session carries no pick values at all.</p>
+      : `<p class="dim">Entitlement is decided by the gateway on every request. This page never asks for Pro data unless the gateway has already confirmed an active NHL Pro or All Access membership, so a free session carries no pick values at all.</p>
          <div class="pks-pro__cta"><button type="button" class="pbe-btn pbe-btn--primary" data-open-nhl-pro>See NHL Pro</button>
          <a class="pbe-btn pbe-btn--ghost" href="#/methodology">How the model is held to account</a></div>`}
   </section>`;

@@ -128,7 +128,7 @@ test('with readiness false the explainer is real content and carries no dead sig
 
 test('OPEN_FOR_PURCHASE false never exposes checkout', () => {
   assert.match(pro, /const OPEN_FOR_PURCHASE = false/);
-  assert.match(pro, /Founding Season checkout coming online/);
+  assert.match(pro, /NHL Pro checkout opens soon · Founding Season rate/, 'the closed CTA names the rate, never a checkout provider');
   const start = pro.match(/function startCheckout\(\)[\s\S]*?\n\}/)[0];
   assert.match(start, /if \(!OPEN_FOR_PURCHASE\) \{[\s\S]*?return message\(/,
     'the CTA refuses before it can ever reach a Stripe URL');
@@ -160,8 +160,12 @@ test('when readiness is true the legitimate sign-in path returns', () => {
   assert.match(wire, /const available = await signInAvailable\(\)/);
   assert.match(wire, /signin\.hidden = false/, 'the real form appears only when sign-in exists');
   assert.match(wire, /requestSignIn\(email\)/, 'and it posts through the one credentialed module');
-  assert.match(shell, /Sign in to NHL Pro or see Founding Season access/,
+  // The label text lives in the shared membership UI helper; the shell paints
+  // through it so the header control and the pro.js surface never disagree.
+  const membershipUi = read('src/lib/pro-membership-ui.js');
+  assert.match(shell, /button\.setAttribute\('aria-label', proButtonLabel\(account, authReady\)\)/,
     'the control relabels itself for the signed-out, auth-ready state');
+  assert.match(membershipUi, /authReady \? 'Sign in to NHL Pro or see NHL Pro pricing' : 'See what NHL Pro includes'/);
   assert.match(shell, /See what NHL Pro includes/,
     'and reads as an explainer when sign-in does not exist');
 });

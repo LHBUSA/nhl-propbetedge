@@ -17,6 +17,9 @@ import './styles/identity.css';
 import './styles/product-depth.css';
 import './styles/score-ticker.css';
 import './styles/chrome-upgrade.css';
+// Shared PropBetEdge membership vocabulary (badge, panel, All Access card).
+// Identity chrome only: it never styles body, so the atmosphere field stays visible.
+import './styles/pbe-membership.css';
 
 import { ApiError, dataLayer, nhl } from './lib/api.js';
 import { legacyBoard } from './lib/legacy.js';
