@@ -139,7 +139,12 @@ html.is-locked, html.is-locked body { overflow: hidden; }
 }
 @media (max-width: 768px) {
   .mainnav { display: none; }
-  .topbar__tools { margin-left: auto; }
+  /* The tools row may shrink (min-width:0 down the chain to the NHL Pro badge,
+     which truncates); the brand, bell and search keep their size. The page
+     itself never grows wider than the viewport. */
+  .topbar__in { min-width: 0; }
+  .topbar__tools { margin-left: auto; flex: 0 1 auto; min-width: 0; }
+  .topbar__tools .pbepro__open { flex: 0 1 auto; min-width: 0; }
   .search-btn { width: 44px; height: 44px; }
 }
 /* 360px: brand + NHL Pro + bell + search were 10px wider than the gutter box,
@@ -148,7 +153,9 @@ html.is-locked, html.is-locked body { overflow: hidden; }
 @media (max-width: 400px) {
   .topbar__in { gap: var(--s-2); }
   .brand { gap: 6px; }
-  .brand__word { font-size: 14px; }
+  /* 320-400px: the mark + NHL chip carry the brand; the wordmark would push a
+     member badge (ALL ACCESS / NHL PRO / OWNER) past the viewport edge. */
+  .brand__word { display: none; }
   .topbar__tools { gap: var(--s-2); }
 }
 

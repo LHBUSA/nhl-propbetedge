@@ -140,6 +140,18 @@ html.pbepro-lock{overflow:hidden;overscroll-behavior:none}
 .pbepro__open.is-pro{padding:0;border:0;background:transparent}
 .pbepro__open.is-pro:hover{background:transparent}
 .pbepro__open .pbe-mbr-badge{cursor:pointer}
+/* Phone topbar: the header badge can shrink (min-width:0 down the flex chain,
+   see shell.css) and shows its short label; the full label collapses to zero
+   width (font-size:0) rather than pushing the document wider. Ellipsis is the
+   last resort if a label still cannot fit; the page never overflows. */
+.pbe-mbr-badge-short{display:none}
+@media(max-width:480px){
+  .pbepro__open.is-pro{max-width:100%;min-width:0;overflow:hidden}
+  .pbepro__open .pbe-mbr-badge{display:block;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:0;letter-spacing:0;gap:0}
+  .pbepro__open .pbe-mbr-badge::before{display:inline-block;vertical-align:1px;margin-right:6px}
+  .pbepro__open .pbe-mbr-badge.is-free::before{display:none}
+  .pbepro__open .pbe-mbr-badge-short{display:inline;font:800 10px/1 'JetBrains Mono',monospace;letter-spacing:.12em;text-transform:uppercase}
+}
 .pbepro__account .pbe-mbr-panel{margin-top:2px}
 .pbepro__account .nhl-aa-hero{margin-top:14px}
 .pbepro__renewal{margin:8px 0 0;color:#8f8a82;font-size:11.5px}

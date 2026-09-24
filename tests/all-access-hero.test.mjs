@@ -16,7 +16,7 @@ import { fileURLToPath } from 'node:url';
 
 import { ALL_ACCESS_OFFER, ALL_ACCESS_URL, deriveMembership } from '../src/lib/pbe-membership.js';
 import { SPORTS_LINE, SPORTS_NEXT, dividerHtml, heroHtml, shouldRenderHero } from '../src/lib/all-access-hero.js';
-import { freeOfferHtml, memberPanelHtml } from '../src/lib/pro-membership-ui.js';
+import { freeOfferHtml, memberPanelHtml, proButtonHtml, shortBadgeLabel } from '../src/lib/pro-membership-ui.js';
 import { ALL_ACCESS_NAV } from '../src/components/shell.js';
 
 const read = p => fs.readFileSync(new URL(`../${p}`, import.meta.url), 'utf8');
@@ -151,4 +151,24 @@ test('chrome: gold ALL ACCESS link in the header tools, bottom tab + sheet row o
   assert.match(shellCss, /\.topbar__aa \{[\s\S]*?background: linear-gradient\(135deg, var\(--pbe-gold-bright\), var\(--pbe-gold\)\)/, 'gold');
   assert.match(shellCss, /\.sheet__aa \{[\s\S]*?min-height: 56px/, 'a real target in the sheet');
   assert.match(read('src/styles/chrome-upgrade.css'), /\.footer-premium__links a\.footer-premium__aa \{ color:var\(--pbe-gold-bright\)/);
+});
+
+test('phone topbar: the header badge carries a short label and the chrome can shrink, so the page never overflows horizontally', () => {
+  const acct = state => ({ state: 'pro', email: 'x@y.z', membership: m[state] });
+  assert.equal(shortBadgeLabel(m.all_access), 'ALL ACCESS');
+  assert.equal(shortBadgeLabel(m.sport_pro), 'NHL PRO');
+  assert.equal(shortBadgeLabel(m.owner), 'OWNER');
+  assert.equal(shortBadgeLabel(m.free), '');
+  assert.match(proButtonHtml(acct('all_access')), /^<span class="pbe-mbr-badge is-all_access" data-pbe-membership="all_access">ALL ACCESS ACTIVE<b class="pbe-mbr-badge-short" aria-hidden="true">ALL ACCESS<\/b><\/span>$/);
+  assert.match(proButtonHtml(acct('sport_pro')), /NHL PRO ACTIVE<b class="pbe-mbr-badge-short" aria-hidden="true">NHL PRO<\/b><\/span>$/);
+  assert.match(proButtonHtml(acct('owner')), /OWNER<b class="pbe-mbr-badge-short" aria-hidden="true">OWNER<\/b><\/span>$/);
+  assert.equal(proButtonHtml({ state: 'signed_out', membership: m.free }), '<span>NHL</span> PRO', 'free stays the neutral control');
+  const pro = read('src/styles/pro.css');
+  assert.match(pro, /\.pbe-mbr-badge-short\{display:none\}/, 'the short label is invisible above phone widths');
+  assert.match(pro, /@media\(max-width:480px\)\{[\s\S]*?\.pbepro__open \.pbe-mbr-badge\{display:block;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:0/, 'on phones the full label collapses and the badge truncates instead of the page');
+  assert.match(pro, /\.pbepro__open \.pbe-mbr-badge-short\{display:inline;font:800 10px/, 'the short label is the visible one on phones');
+  const shellCss = read('src/styles/shell.css');
+  assert.match(shellCss, /@media \(max-width: 768px\) \{[\s\S]*?\.topbar__tools \{ margin-left: auto; flex: 0 1 auto; min-width: 0; \}[\s\S]*?\.topbar__tools \.pbepro__open \{ flex: 0 1 auto; min-width: 0; \}/, 'min-width:0 down the flex chain');
+  assert.match(shellCss, /@media \(max-width: 400px\) \{[\s\S]*?\.brand__word \{ display: none; \}/, 'the wordmark yields under 400px; the mark + NHL chip remain');
+  assert.doesNotMatch(read('src/lib/pbe-membership.js'), /badge-short/, 'the shared contract is untouched');
 });

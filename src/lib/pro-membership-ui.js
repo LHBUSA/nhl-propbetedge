@@ -31,12 +31,28 @@ export function accountMembership(account) {
 
 export const isMember = account => account?.state === 'pro';
 
+// The phone-width label for the header badge. The full contract label
+// ("ALL ACCESS ACTIVE", 17 characters of tracked mono) is wider than a 320-390px
+// topbar can hold next to the brand, bell and search; on phones the badge shows
+// this short form instead (styles/pro.css swaps them under 480px). The button's
+// aria-label still carries the full label.
+export function shortBadgeLabel(m) {
+  if (!m?.entitled) return '';
+  if (m.state === 'owner') return 'OWNER';
+  if (m.state === 'all_access') return 'ALL ACCESS';
+  if (m.legacy_tier === 'founding') return 'FOUNDING';
+  if (m.legacy_tier === 'season_pass') return 'SEASON PASS';
+  return 'NHL PRO';
+}
+
 // Header control. Members get the compact membership badge (NHL PRO ACTIVE /
-// ALL ACCESS ACTIVE / OWNER); free AND unresolved sessions get the same neutral
-// "NHL PRO" markup, so the control never flickers while the gateway answers.
+// ALL ACCESS ACTIVE / OWNER) with the short phone label appended inside it;
+// free AND unresolved sessions get the same neutral "NHL PRO" markup, so the
+// control never flickers while the gateway answers.
 export function proButtonHtml(account) {
   const m = accountMembership(account);
-  return m.entitled ? membershipBadgeHtml(m) : '<span>NHL</span> PRO';
+  if (!m.entitled) return '<span>NHL</span> PRO';
+  return membershipBadgeHtml(m).replace(/<\/span>$/, `<b class="pbe-mbr-badge-short" aria-hidden="true">${esc(shortBadgeLabel(m))}</b></span>`);
 }
 
 export function proButtonLabel(account, authReady = false) {
