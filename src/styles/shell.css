@@ -180,7 +180,9 @@ html.is-locked, html.is-locked body { overflow: hidden; }
   .bottomnav a.bottomnav__aa { color: var(--pbe-gold-bright); font-weight: 900; background: linear-gradient(180deg, rgba(212,175,55,.16), rgba(212,175,55,.03)); }
   .bottomnav a.bottomnav__aa .ico { stroke: var(--pbe-gold-bright); fill: rgba(233,199,90,.28); }
   @media (max-width: 400px) {
-    /* six 10px labels across 360-400px: no tracking, no side padding */
+    /* six 10px labels across 360-400px: no tracking, no side padding, and the
+       ten-character ALL ACCESS label gets a slightly wider track */
+    .bottomnav { grid-template-columns: repeat(4, minmax(0, 1fr)) minmax(0, 1.14fr) minmax(0, 1fr); }
     .bottomnav a, .bottomnav button { letter-spacing: 0; padding-inline: 0; }
   }
   @media (max-width: 359px) {

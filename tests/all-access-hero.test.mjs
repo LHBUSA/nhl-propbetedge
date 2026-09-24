@@ -128,7 +128,8 @@ test('HARD RULE: no stylesheet leaves .pbepro__dialog with an internal scrollbar
   const pro = read('src/styles/pro.css');
   assert.match(pro, /\.pbepro\{[^}]*overflow-y:auto/, 'the backdrop is the one scroll context when a state ever outgrows the viewport');
   assert.match(pro, /html\.pbepro-lock\{overflow:hidden/, 'the page is locked behind it');
-  assert.match(pro, /@media\(max-width:900px\)\{[\s\S]*?\.pbepro\{display:block;padding:0\}[\s\S]*?\.pbepro__dialog\{width:100%;min-height:100%;margin:0;border:0;border-radius:0/, 'at <=900px the surface is a full-screen sheet on the single page scroll container');
+  assert.match(pro, /@media\(max-width:900px\)\{[\s\S]*?\.pbepro\{display:block;padding:0\}[\s\S]*?\.pbepro__dialog\{display:flex;flex-direction:column;width:100%;min-height:100%;margin:0;border:0;border-radius:0/, 'at <=900px the surface is a full-screen sheet (flex column, so the sticky close can travel) on the single page scroll container');
+  assert.match(pro, /\.pbepro__close\{position:sticky;[^}]*order:-2;align-self:flex-end/, 'the close rides the sheet scroll');
   assert.match(pro, /@media\(min-width:901px\) and \(max-height:820px\)/, 'short desktop viewports get the compact geometry');
 });
 

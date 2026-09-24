@@ -84,11 +84,13 @@ html.pbepro-lock{overflow:hidden;overscroll-behavior:none}
    seam, NHL cards, sign-in); the story reads after it. ---- */
 @media(max-width:900px){
   .pbepro{display:block;padding:0}
-  .pbepro__dialog{width:100%;min-height:100%;margin:0;border:0;border-radius:0;box-shadow:none;grid-template-columns:1fr}
+  /* a flex column, not the desktop grid: a sticky grid item is confined to
+     its own (0px) grid area, while a sticky flex item's containing block is
+     the whole dialog, so the close can ride the full scroll */
+  .pbepro__dialog{display:flex;flex-direction:column;width:100%;min-height:100%;margin:0;border:0;border-radius:0;box-shadow:none}
   .pbepro__dialog::before{border-radius:0}
-  /* the close control rides at the top of the one scroll container (sticky
-     grid item, overlapping the offer beneath it) */
-  .pbepro__close{position:sticky;top:calc(8px + env(safe-area-inset-top,0px));right:auto;order:-2;justify-self:end;width:44px;height:44px;margin:8px 8px -52px 0;background:rgba(20,17,13,.92);border-color:rgba(255,245,220,.22);color:#fff}
+  .pbepro__close{position:sticky;top:calc(8px + env(safe-area-inset-top,0px));right:auto;order:-2;align-self:flex-end;flex:0 0 auto;width:44px;height:44px;margin:8px 8px -52px 0;background:rgba(20,17,13,.92);border-color:rgba(255,245,220,.22);color:#fff}
+  .pbepro__story,.pbepro__purchase{flex:0 0 auto;width:100%;box-sizing:border-box}
   /* 56px top padding clears the sticky close for every state (free or member) */
   .pbepro__purchase{order:-1;align-self:auto;padding:56px 16px 16px;border-bottom:1px solid rgba(255,255,255,.08)}
   .nhl-aa-hero{padding:14px}
