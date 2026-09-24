@@ -64,7 +64,7 @@ assert.ok(!/bet_advice/.test(editorial), 'generated betting advice is not render
 // not allowed to become the injury/goalie/transaction source of record.
 assert.match(newsroom, /from '\.\.\/lib\/api\.js'/, 'Newsroom still uses the NHL API adapter');
 assert.match(newsroom, /news\(\{ limit: 100 \}/, 'source wire remains live on Newsroom');
-assert.match(newsroom, /WIRE_MAX_AGE_MS = 5 \* 24 \* 60 \* 60 \* 1000/, 'verified wire has a hard two-day freshness ceiling');
+assert.match(newsroom, /WIRE_MAX_AGE_MS = 2 \* 24 \* 60 \* 60 \* 1000/, 'verified wire has a hard two-day freshness ceiling');
 assert.match(newsroom, /function wireWindow\(items\)/, 'wire freshness is computed as a bounded two-day slice');
 assert.match(newsroom, /const anchor = Math\.max/, 'two-day wire slice anchors to the newest valid returned headline');
 assert.match(newsroom, /const wire = wireWindow\(state\.data\?\.items \|\| \[\]\)/, 'wire slice is applied before counts, filters and rendering');
