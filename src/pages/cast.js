@@ -474,12 +474,24 @@ function pregamePanel(cast, market = null) {
   </div>`;
 }
 
+const PICKER_ORDER = { LIVE: 0, INTERMISSION: 0, PREGAME: 1, SCHEDULED: 2, FINAL: 3 };
+
+function sortPickerGames(games) {
+  return [...games].sort((a, b) => {
+    const ak = stateOf(a).key; const bk = stateOf(b).key;
+    const rank = (PICKER_ORDER[ak] ?? 4) - (PICKER_ORDER[bk] ?? 4);
+    if (rank) return rank;
+    return String(a.start_time_utc || '').localeCompare(String(b.start_time_utc || '')) ||
+      String(a.id).localeCompare(String(b.id));
+  });
+}
+
 function pickerMarkup(games, currentId, label) {
   if (!games.length) return '';
   return `<nav class="cast-picker" aria-label="${esc(label || 'Games')}">
-    ${games.map(g => {
+    ${sortPickerGames(games).map(g => {
       const st = stateOf(g);
-      return `<a class="pick${String(g.id) === String(currentId) ? ' is-active' : ''}" href="#/cast/${esc(g.id)}" data-state="${st.key}">
+      return `<a class="pick${String(g.id) === String(currentId) ? ' is-active' : ''}" href="#/cast/${esc(g.id)}" data-game-id="${esc(g.id)}" data-state="${st.key}">
         <span class="pick__teams mono">${esc(g.teams.away.abbrev)} <span class="faint">@</span> ${esc(g.teams.home.abbrev)}</span>
         <span class="pick__state">${['LIVE', 'INTERMISSION', 'FINAL'].includes(st.key) ? `${g.teams.away.score ?? ''}–${g.teams.home.score ?? ''} · ` : ''}${esc(st.text)}</span>
       </a>`;
@@ -524,10 +536,32 @@ export function mount(root, params, ctx) {
   };
 
   const renderPicker = () => {
+    const oldRail = $('.cast-picker', picker);
+    const oldRect = oldRail?.getBoundingClientRect();
+    const oldCards = oldRail ? [...oldRail.querySelectorAll('.pick')] : [];
+    const anchor = oldRail && oldRect
+      ? oldCards.find(card => card.getBoundingClientRect().right > oldRect.left + 1) || oldCards[0]
+      : null;
+    const anchorId = anchor?.dataset.gameId || null;
+    const anchorOffset = anchor && oldRect ? anchor.getBoundingClientRect().left - oldRect.left : 0;
+    const fallbackScroll = oldRail?.scrollLeft || 0;
+
     picker.innerHTML = `${pickerMarkup(state.pickGames, state.gameId, state.pickLabel)}
       <div class="cast-replay"><a class="pbe-btn pbe-btn--sm" href="#/cast?view=all${state.replayDate ? `&date=${esc(state.replayDate)}` : ''}">Command center</a>${replayShortcut()}<label class="micro" for="replay-date">Replay a date</label>
         <input id="replay-date" class="datenav__input" type="date" value="${esc(state.replayDate || '')}" max="${todayET()}">
         ${state.pickLabel ? `<span class="micro">${esc(state.pickLabel)}</span>` : ''}</div>`;
+
+    const newRail = $('.cast-picker', picker);
+    if (!newRail) return;
+    if (anchorId) {
+      const nextAnchor = newRail.querySelector(`.pick[data-game-id="${CSS.escape(String(anchorId))}"]`);
+      if (nextAnchor) {
+        const railRect = newRail.getBoundingClientRect();
+        newRail.scrollLeft += nextAnchor.getBoundingClientRect().left - railRect.left - anchorOffset;
+        return;
+      }
+    }
+    newRail.scrollLeft = fallbackScroll;
   };
 
   async function loadPicker(signal) {
