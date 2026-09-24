@@ -185,7 +185,7 @@ test('exactly one NHL Pro control can exist', () => {
 
 // ----------------------------------------------------------- nav + menus
 
-test('nav membership set by the nav lane is preserved', () => {
+test('nav membership set by the nav lane is preserved; All Access is a first-class external item, not a route', () => {
   const nav = shell.match(/export const NAV = \[([\s\S]*?)\];/)[1];
   assert.deepEqual([...nav.matchAll(/label: '([^']+)'/g)].map(m => m[1]),
     ['Ice Board', 'PBE Picks', 'PBE Cast', 'Props', 'Shot Lab']);
@@ -193,6 +193,24 @@ test('nav membership set by the nav lane is preserved', () => {
   assert.deepEqual([...more.matchAll(/label: '([^']+)'/g)].map(m => m[1]),
     ['News', 'Goalies', 'Lines', 'Injuries', 'Matchups', 'Players', 'Standings', 'Track Record', 'Methodology']);
   assert.match(shell, /const BOTTOM = \['board', 'picks', 'cast', 'props'\]/);
+  // ALL ACCESS: a link to the network page (https://propbetedge.ai/pro), in
+  // the desktop header beside NHL PRO (never inside More), a bottom tab and a
+  // prominent first row of the mobile sheet, and two footer links. It is not
+  // in NAV/MORE because those are hash routes the palette navigates by hash.
+  assert.match(shell, /export const ALL_ACCESS_NAV = Object\.freeze\(\{ id: 'all-access', href: ALL_ACCESS_URL, label: 'All Access', short: 'All Access' \}\)/);
+  assert.match(shell, /import \{ ALL_ACCESS_URL \} from '\.\.\/lib\/pbe-membership\.js'/);
+  assert.doesNotMatch(more, /All Access|propbetedge\.ai\/pro/i, 'not buried in More');
+  assert.doesNotMatch(nav, /All Access/i, 'not a hash route');
+  const tools = shell.match(/<div class="topbar__tools">([\s\S]*?)<\/div>\s*<\/div>\s*<\/header>/)[1];
+  assert.match(tools, /<a class="topbar__aa" id="nhl-all-access-link" href="\$\{ALL_ACCESS_NAV\.href\}" rel="noopener" data-all-access="header"[^>]*>[\s\S]*?ALL ACCESS<\/a>\s*<button class="pbepro__open"/, 'gold ALL ACCESS link in the header tools, right beside NHL PRO');
+  const bottom = shell.match(/<nav class="bottomnav"[\s\S]*?<\/nav>/)[0];
+  assert.match(bottom, /<a class="bottomnav__aa" id="nhl-bottom-all-access" href="\$\{ALL_ACCESS_NAV\.href\}" rel="noopener" data-all-access="bottom">\$\{icon\('star'\)\}<span>\$\{esc\(ALL_ACCESS_NAV\.short\)\}<\/span><\/a>\s*<button type="button" data-sheet/, 'a bottom tab before More');
+  const sheet = shell.match(/<div class="sheet__panel"[\s\S]*?<div class="sheet__grid">/)[0];
+  assert.match(sheet, /<a class="sheet__aa" id="nhl-sheet-all-access" href="\$\{ALL_ACCESS_NAV\.href\}" rel="noopener" data-all-access="sheet">/, 'the first row of the sheet, above the section grid');
+  assert.match(shellCss, /\.bottomnav \{[^}]*grid-template-columns: repeat\(6, minmax\(0, 1fr\)\)/, 'six tabs');
+  assert.match(shellCss, /\.bottomnav a\.bottomnav__aa \{[^}]*min-height: 44px|\.bottomnav a, \.bottomnav button \{[\s\S]*?min-height: 44px/, '44px target');
+  assert.match(shellCss, /@media \(max-width: 359px\) \{[\s\S]*?\.bottomnav \{ grid-template-columns: repeat\(5, minmax\(0, 1fr\)\); \}[\s\S]*?\.bottomnav a\.bottomnav__aa \{ display: none; \}/, 'below 360px the sheet row carries it (a sixth tab would clip the flagship label)');
+  assert.match(shellCss, /@media \(max-width: 768px\) \{ \.topbar__aa \{ display: none; \} \}/, 'the header pill yields to the tab on phones');
 });
 
 test('every More destination is a routed page', () => {

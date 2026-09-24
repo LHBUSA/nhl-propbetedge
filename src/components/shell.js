@@ -4,6 +4,7 @@ import { timeET, dayET } from '../lib/format.js';
 import { PBE_NETWORK } from '../lib/network.js';
 import { onAccount, refreshAccount, signInAvailable } from '../lib/account.js';
 import { isMember, proButtonHtml, proButtonLabel } from '../lib/pro-membership-ui.js';
+import { ALL_ACCESS_URL } from '../lib/pbe-membership.js';
 
 // Keep the desktop header focused on the five highest-value product surfaces,
 // with PBE Picks — the flagship — directly after the Ice Board. Everything else
@@ -30,6 +31,14 @@ export const MORE = [
 ];
 const ALL_NAV = [...NAV, ...MORE];
 const BOTTOM = ['board', 'picks', 'cast', 'props'];
+// PropBetEdge All Access is the network's primary offer: a first-class gold
+// link to the network page in the desktop header, a bottom tab on phones (a
+// prominent first row of the More sheet below 360px, where a sixth tab would
+// clip the flagship label) and two footer links. It is a link to the network
+// page, never a checkout, so it renders for every membership state. It is
+// deliberately NOT part of NAV/ALL_NAV: those are hash routes the palette
+// and router own, and this destination is external.
+export const ALL_ACCESS_NAV = Object.freeze({ id: 'all-access', href: ALL_ACCESS_URL, label: 'All Access', short: 'All Access' });
 
 const ICONS = {
   board: '<path d="M3 5h18v14H3z M3 12h18 M12 5v14" />',
@@ -39,6 +48,7 @@ const ICONS = {
   news: '<path d="M4 5h13v14H6a2 2 0 0 1-2-2z M17 9h3v8a2 2 0 0 1-2 2 M7 9h7 M7 13h7"/>',
   more: '<circle cx="5" cy="12" r="1.6"/><circle cx="12" cy="12" r="1.6"/><circle cx="19" cy="12" r="1.6"/>',
   search: '<circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/>',
+  star: '<path d="M12 3.4l2.6 5.5 6 .8-4.4 4.2 1.1 6-5.3-2.9-5.3 2.9 1.1-6L3.4 9.7l6-.8z"/>',
   bell: '<path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15z M10 20a2 2 0 0 0 4 0"/>'
 };
 const icon = name => `<svg class="ico" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${ICONS[name] || ''}</svg>`;
@@ -68,6 +78,7 @@ export function renderShell(app) {
           <!-- NHL Pro is ALWAYS present: the premium product does not vanish
                because one auth dependency is down. What it OPENS adapts -
                explainer, sign-in, or the member panel (see bindProButton). -->
+          <a class="topbar__aa" id="nhl-all-access-link" href="${ALL_ACCESS_NAV.href}" rel="noopener" data-all-access="header" aria-label="PropBetEdge All Access: every Pro sport"><i aria-hidden="true">★</i>ALL ACCESS</a>
           <button class="pbepro__open" type="button" id="nhl-pro-btn" data-open-nhl-pro data-account="unknown" aria-label="See what NHL Pro includes"><span>NHL</span> PRO</button>
           <span class="season-chip" id="season-chip" data-tone="" hidden><i class="season-chip__dot" aria-hidden="true"></i><span class="season-chip__text" id="season-chip-text" aria-live="polite"></span></span>
           <div class="alerts-wrap">
@@ -95,7 +106,7 @@ export function renderShell(app) {
         </div>
         <div class="footer__cols">
           <div><span class="micro">Data</span><p>Game, play-by-play and player data: NHL (api-web.nhle.com) via PropSports API. Every volatile panel shows its source and age.</p></div>
-          <div><span class="micro">PropBetEdge</span><p><a href="${PBE_NETWORK.news}">Sports News</a><br><a href="${PBE_NETWORK.store}">Store</a><br><a href="https://billing.stripe.com/p/login/cNi3cv2vY7em3lr4oj7wA00" target="_blank" rel="noopener noreferrer">Manage billing ↗</a><br><a href="mailto:sales@proptechusa.ai">Contact us</a><br><a href="${PBE_NETWORK.discord}" target="_blank" rel="noopener">Discord ↗</a><br>${PBE_NETWORK.sports.map(s => `<a href="${s.href}">${s.label}</a>`).join(' · ')}</p></div>
+          <div><span class="micro">PropBetEdge</span><p><a class="footer__aa" href="${ALL_ACCESS_NAV.href}" rel="noopener" data-pbe-footer-all-access>ALL ACCESS</a><br><a class="footer__aa" href="${ALL_ACCESS_NAV.href}" rel="noopener" data-pbe-footer-all-access-included>WHAT'S INCLUDED</a><br><a href="${PBE_NETWORK.news}">Sports News</a><br><a href="${PBE_NETWORK.store}">Store</a><br><a href="https://billing.stripe.com/p/login/cNi3cv2vY7em3lr4oj7wA00" target="_blank" rel="noopener noreferrer">Manage billing ↗</a><br><a href="mailto:sales@proptechusa.ai">Contact us</a><br><a href="${PBE_NETWORK.discord}" target="_blank" rel="noopener">Discord ↗</a><br>${PBE_NETWORK.sports.map(s => `<a href="${s.href}">${s.label}</a>`).join(' · ')}</p></div>
           <div><span class="micro">Rules</span><p><a href="#/methodology">Methodology &amp; data truth rules</a><br><a href="#/track-record">Track record</a></p></div>
           <div><span class="micro">Imagery</span><p>Photography via Pexels; player portraits via Wikimedia Commons, each credited. <a href="#/methodology?section=credits">Image credits</a></p></div>
         </div>
@@ -103,12 +114,14 @@ export function renderShell(app) {
     </footer>
     <nav class="bottomnav" aria-label="Primary (mobile)">
       ${ALL_NAV.filter(item => BOTTOM.includes(item.id)).map(item => `<a href="${item.href}" data-nav="${item.id}"${item.pro ? ' data-pro="1"' : ''}>${icon(item.icon)}<span>${esc(item.short)}</span></a>`).join('')}
+      <a class="bottomnav__aa" id="nhl-bottom-all-access" href="${ALL_ACCESS_NAV.href}" rel="noopener" data-all-access="bottom">${icon('star')}<span>${esc(ALL_ACCESS_NAV.short)}</span></a>
       <button type="button" data-sheet aria-expanded="false" aria-controls="nav-sheet">${icon('more')}<span>More</span></button>
     </nav>
     <div class="sheet" id="nav-sheet" hidden>
       <div class="sheet__scrim" data-close-sheet></div>
       <div class="sheet__panel" role="dialog" aria-modal="true" aria-label="All sections">
         <div class="sheet__head"><span class="eyebrow">All sections</span><span class="sheet__season micro" id="sheet-season" hidden></span><button type="button" class="pbe-btn pbe-btn--ghost pbe-btn--sm" data-close-sheet aria-label="Close menu">Close</button></div>
+        <a class="sheet__aa" id="nhl-sheet-all-access" href="${ALL_ACCESS_NAV.href}" rel="noopener" data-all-access="sheet">${icon('star')}<span class="sheet__aa-title">ALL ACCESS</span><span class="sheet__aa-copy">Every PropBetEdge Pro sport, one membership</span><span class="sheet__aa-arrow" aria-hidden="true">↗</span></a>
         <div class="sheet__grid">
           ${ALL_NAV.map(item => `<a href="${item.href}" data-nav="${item.id}"${item.pro ? ' data-pro="1"' : ''}>${esc(item.label)}</a>`).join('')}
         </div>

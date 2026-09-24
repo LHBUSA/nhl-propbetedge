@@ -384,6 +384,8 @@
 }
 .footer-premium__link-grid a:hover,
 .footer-premium__links a:hover { color:#fff; }
+.footer-premium__links a.footer-premium__aa { color:var(--pbe-gold-bright); font-weight:800; letter-spacing:.06em; }
+.footer-premium__links a.footer-premium__aa span { color:var(--pbe-gold); }
 .footer-premium__link-grid a span,
 .footer-premium__links a span { color:rgba(232,196,82,.44); }
 .footer-premium__links { display:grid; }

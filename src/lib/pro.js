@@ -6,13 +6,18 @@ import { accountMembership, freeOfferHtml, isMember, memberPanelHtml, planCardsH
  * PropBetEdge NHL Pro — purchase + membership surface.
  *
  * Vercel serves this frontend. NHL checkout remains closed until the
- * Cloudflare -> Supabase multi-sport entitlement path passes production gates;
- * the PropBetEdge All Access checkout (shared contract) is live and is offered
- * to FREE readers beneath the NHL cards. Members see the shared membership
- * panel (NHL PRO ACTIVE / ALL ACCESS ACTIVE / OWNER) and, for All Access and
- * owner, no purchase CTA anywhere. Membership state comes only from the
- * gateway (lib/account.js); localStorage remembers plan preference only and
- * never grants Pro access.
+ * Cloudflare -> Supabase multi-sport entitlement path passes production gates.
+ * The PropBetEdge All Access checkout (shared contract) is live and is the
+ * PRIMARY offer: FREE readers see the All Access hero first, then the
+ * "ONLY WANT NHL?" seam, then the NHL cards (lib/all-access-hero.js renders
+ * the hero in NHL's own visual identity). Members see the shared membership
+ * panel (NHL PRO ACTIVE / ALL ACCESS ACTIVE / OWNER); NHL PRO ACTIVE gets the
+ * UPGRADE TO ALL ACCESS hero and, for All Access and owner, there is no
+ * purchase CTA anywhere. Membership state comes only from the gateway
+ * (lib/account.js); localStorage remembers plan preference only and never
+ * grants Pro access.
+ *
+ * Geometry rule (styles/pro.css): the dialog never scrolls internally.
  */
 const OPEN_FOR_PURCHASE = false;
 const STORAGE_KEY = 'pbe_nhl_founding_plan_v1';
@@ -20,7 +25,7 @@ const STORAGE_KEY = 'pbe_nhl_founding_plan_v1';
 export const NHL_PRO_PLANS = Object.freeze({
   monthly: {
     label: 'Monthly',
-    badge: 'Best value',
+    badge: 'Popular',
     price: '$9.99',
     cadence: '/ month',
     detail: 'Founding Season rate · Renews monthly · Cancel anytime',
@@ -89,10 +94,11 @@ function markup() {
           <div class="pbepro__truth pbepro__purchase-only">No free trial. No fake urgency. Cancel anytime.</div>
         </div>
         <div class="pbepro__purchase">
+          <div class="pbepro__offer pbepro__purchase-only" id="nhl-pro-all-access">${freeOfferHtml(accountMembership(null))}</div>
           <div class="pbepro__purchase-head pbepro__purchase-only">
             <span>FOUNDING SEASON PRICING</span>
-            <strong>Choose NHL Pro</strong>
-            <p>Monthly is the best value and is selected by default.</p>
+            <strong>NHL Pro on its own</strong>
+            <p>Monthly is selected by default. Cancel anytime.</p>
           </div>
           <div class="pbepro__plans pbepro__purchase-only" role="radiogroup" aria-label="NHL Pro plans">
             ${planCardsHtml(NHL_PRO_PLANS)}
@@ -104,7 +110,6 @@ function markup() {
           </label>
           <button class="pbepro__cta pbepro__purchase-only" id="nhl-pro-checkout" type="button"></button>
           <div class="pbepro__message" id="nhl-pro-message" aria-live="polite"></div>
-          <div class="pbepro__all-access pbepro__purchase-only" id="nhl-pro-all-access">${freeOfferHtml(accountMembership(null))}</div>
           <div class="pbepro__secure pbepro__purchase-only">◆ Access controlled by PropBetEdge</div>
           <div class="pbepro__note" id="nhl-pro-signin-unavailable" hidden>
             <span>ACCOUNT SIGN-IN</span>
@@ -183,7 +188,7 @@ function startCheckout() {
 
 // Paints the surface for the gateway-decided account. Members (any of
 // sport_pro / all_access / owner) see the shared membership panel and none of
-// the NHL purchase controls; FREE readers keep the NHL cards + All Access card.
+// the NHL purchase controls; FREE readers keep the All Access hero + NHL cards.
 function renderAccount(account) {
   const button = document.querySelector('[data-open-nhl-pro].pbepro__open');
   const pro = isMember(account);

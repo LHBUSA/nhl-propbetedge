@@ -9,8 +9,9 @@
 import { esc } from './dom.js';
 import {
   ALL_ACCESS_OFFER, ALL_ACCESS_URL, MANAGE_URL,
-  accountPanelHtml, allAccessCardHtml, membershipBadgeHtml, planText, readMembership
+  accountPanelHtml, membershipBadgeHtml, planText, readMembership
 } from './pbe-membership.js';
+import { dividerHtml, heroHtml } from './all-access-hero.js';
 
 export const SPORT = 'nhl';
 
@@ -65,21 +66,22 @@ export function planCardsHtml(plans) {
     </button>`).join('');
 }
 
-// Beneath the NHL cards for FREE readers only: the network umbrella, whose
-// checkout is live even while NHL checkout is closed. Empty for every member.
+// ABOVE the NHL cards for FREE readers only: the All Access hero (the primary
+// offer, whose checkout is live even while NHL checkout is closed) followed by
+// the "ONLY WANT NHL?" seam. Empty for every member.
 export function freeOfferHtml(m) {
-  return m?.state === 'free' ? allAccessCardHtml(m, { compact: true }) : '';
+  return m?.state === 'free' ? `${heroHtml(m)}${dividerHtml()}` : '';
 }
 
 // The member panel inside the NHL Pro surface: shared badge + email + plan line
 // + manage link + network row, then the renewal date, then (sport_pro only)
-// the All Access upgrade card. all_access / owner get no purchase CTA at all.
+// the UPGRADE TO ALL ACCESS hero. all_access / owner get no purchase CTA at all.
 export function memberPanelHtml(m) {
   if (!m?.entitled) return '';
   const renewal = renewalText(m);
   return `${accountPanelHtml(m, { sport: SPORT })}
     ${renewal ? `<p class="pbepro__renewal">${esc(renewal)}</p>` : ''}
-    ${m.show_all_access_upgrade ? allAccessCardHtml(m, { compact: true }) : ''}
+    ${m.show_all_access_upgrade ? heroHtml(m) : ''}
     <button type="button" class="pbepro__signout" data-pro-signout>Sign out</button>`;
 }
 
