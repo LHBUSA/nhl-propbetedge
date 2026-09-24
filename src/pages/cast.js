@@ -530,10 +530,10 @@ export function mount(root, params, ctx) {
         ${state.pickLabel ? `<span class="micro">${esc(state.pickLabel)}</span>` : ''}</div>`;
   };
 
-  async function loadPicker() {
+  async function loadPicker(signal) {
     try {
       let date = state.replayDate || todayET();
-      let res = await ctx.board(date);
+      let res = await ctx.board(date, { signal, maxAgeMs: 8000 });
       let games = res.data.games || [];
       let label = date === todayET() ? 'Today' : dateLabel(date, { long: true });
       let emptyToday = false;
@@ -564,6 +564,8 @@ export function mount(root, params, ctx) {
       state.pickLabel = describeError(error).title;
     }
     renderPicker();
+    const live = state.pickGames.some(g => ['LIVE', 'INTERMISSION'].includes(stateOf(g).key));
+    return live ? 10000 : state.pickGames.length ? 60000 : 300000;
   }
 
   function renderBody() {
@@ -733,6 +735,17 @@ export function mount(root, params, ctx) {
   const poller = state.gameId ? createPoller(async signal => {
     const res = await nhl(`/nhl/game/${state.gameId}/cast`, {}, { signal, timeout: 12000 });
     state.cast = res.data; state.meta = res.meta; state.failed = false; state.error = null;
+
+    // Keep the active game card in the top rail locked to the same live game
+    // payload that drives the broadcast. The full rail is refreshed separately
+    // from the board, but this guarantees the selected card can never say
+    // PREGAME while the cast directly below it is already LIVE.
+    const pickIndex = state.pickGames.findIndex(g => String(g.id) === String(res.data.game?.id));
+    if (pickIndex >= 0) {
+      state.pickGames[pickIndex] = res.data.game;
+      renderPicker();
+    }
+
     if (state.startSort !== null) {
       const idx = res.data.plays.findIndex(p => p.sort_order === state.startSort);
       if (idx >= 0) state.cursor = idx;
@@ -753,9 +766,14 @@ export function mount(root, params, ctx) {
     }
   }) : null;
 
+  const pickerPoller = createPoller(async signal => loadPicker(signal), {
+    onError: () => 60000,
+    maxBackoff: 300000
+  });
+
   renderPicker();
   renderBody();
-  loadPicker();
+  pickerPoller.start();
   poller?.start();
 
   // Market snapshot for this game, if the odds service exists here.
@@ -813,7 +831,8 @@ export function mount(root, params, ctx) {
       state.replayDate = input.value;
       state.pickGames = [];
       renderPicker();
-      loadPicker();
+      pickerPoller.stop();
+      pickerPoller.start();
     })
   ];
 
@@ -829,6 +848,7 @@ export function mount(root, params, ctx) {
   return () => {
     stopPlay();
     oddsCtl.abort();
+    pickerPoller.stop();
     poller?.stop();
     document.removeEventListener('keydown', onKey);
     inspector?.dispose();
