@@ -1,3 +1,11 @@
+## 2026-09-25 — NHL-only checkout OPEN
+
+Owner re-activated the two existing NHL-only Payment Links (no new links/prices). Headless render before the push:
+`plink_1UEWmLF3CaVzg4ORwxmpwjSz` → "Subscribe to PropBetEdge NHL Pro $9.99 per month"; `plink_1UEWmSF3CaVzg4ORdWk3Yqcj` → "$3.99 per week".
+`OPEN_FOR_PURCHASE = true`; All Access stays the primary offer; the "checkout paused" copy is removed (the kill-switch CTA
+now reads "Get NHL Pro with All Access above"). Rollback: Vercel deployment `BLLoFPniokqxan3EqqmNuWMfaMkr` (commit `64a2399`)
+or `git revert` of this commit. Production receipts in the commit following this entry's push (see report).
+
 ## 2026-09-25 — NHL Pro sale audit + player fight-record consistency
 
 **NHL Pro sale.** No launch-date, preseason or "coming soon" gate exists in the gateway (`requirePro()` = session + billing

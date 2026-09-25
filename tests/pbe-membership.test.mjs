@@ -112,7 +112,7 @@ test('free readers: the All Access hero FIRST, then ONLY WANT NHL?, then both NH
   const cardsAt = proSource.indexOf('planCardsHtml(NHL_PRO_PLANS)');
   assert.ok(offerAt > 0 && offerAt < cardsAt, 'the All Access hero + seam render ABOVE the NHL cards at first paint');
   assert.match(proSource, /class="pbepro__offer pbepro__purchase-only" id="nhl-pro-all-access">\$\{freeOfferHtml\(accountMembership\(null\)\)\}/);
-  assert.match(proSource, /const OPEN_FOR_PURCHASE = false/);
+  assert.match(proSource, /const OPEN_FOR_PURCHASE = true/);
   assert.doesNotMatch(proSource, /Charged today/);
   assert.doesNotMatch(proSource, /Secure checkout/i);
   assert.doesNotMatch(proSource, /best value/i, 'no NHL plan card (or its head copy) says "Best value"');

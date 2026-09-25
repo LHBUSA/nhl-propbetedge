@@ -11,8 +11,8 @@ test('NHL Pro Founding Season is $9.99 monthly and $3.99 weekly', () => {
   assert.match(source, /return NHL_PRO_PLANS\[value\] \? value : 'monthly'/);
 });
 
-test('NHL Pro has no trial; NHL-only checkout stays off while its payment links are inactive', () => {
-  assert.match(source, /const OPEN_FOR_PURCHASE = false/);
+test('NHL Pro has no trial and NHL-only checkout is open', () => {
+  assert.match(source, /const OPEN_FOR_PURCHASE = true/);
   assert.match(source, /url\.searchParams\.set\('locked_prefilled_email', email\)/, 'the checkout email is locked to the NHL Pro identity');
   assert.match(source, /No free trial/);
   assert.doesNotMatch(source, /trial_period_days|free trial for|start trial/i);

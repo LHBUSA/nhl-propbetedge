@@ -98,7 +98,7 @@ test('the purchase surface renders hero -> seam -> NHL cards -> NHL CTA in that 
   assert.match(pro, /price: '\$9\.99'/); assert.match(pro, /price: '\$3\.99'/);
   assert.match(pro, /plink_1UEWmLF3CaVzg4ORwxmpwjSz/); assert.match(pro, /plink_1UEWmSF3CaVzg4ORdWk3Yqcj/);
   assert.match(pro, /https:\/\/buy\.stripe\.com\/14AbJ13A2fKS3lr8Ez7wA0B/); assert.match(pro, /https:\/\/buy\.stripe\.com\/6oUfZh6MegOW9JP4oj7wA0C/);
-  assert.match(pro, /const OPEN_FOR_PURCHASE = false/);
+  assert.match(pro, /const OPEN_FOR_PURCHASE = true/);
   assert.doesNotMatch(pro, /best value/i, 'All Access owns "Best value"');
   assert.match(pro, /badge: 'Popular'/, 'the monthly card says Popular');
   assert.doesNotMatch(pro, rx(STRIPE), 'pro.js never hardcodes the All Access link; it comes from the contract through the hero');

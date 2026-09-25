@@ -5,15 +5,12 @@ import { accountMembership, freeOfferHtml, isMember, memberPanelHtml, planCardsH
 /**
  * PropBetEdge NHL Pro — purchase + membership surface.
  *
- * Vercel serves this frontend. NHL Pro is sold and usable today through All
- * Access (live checkout; the billing ledger grants nhl_pro to every All Access
- * member). The NHL-only checkout (OPEN_FOR_PURCHASE) stays off only because
- * both NHL-only payment links are deactivated at the payment provider
- * (verified 2026-09-25: they show "checkout is not open yet"). The entitlement
- * path behind them passed its production canaries (propsports-api-worker
+ * Vercel serves this frontend. NHL Pro checkout is OPEN: All Access (primary)
+ * and the NHL-only monthly/weekly payment links (secondary) are live, the
+ * entitlement path passed its production canaries (propsports-api-worker
  * docs/receipts/2026-09-15-nhl-pro-plumbing.json) and sign-in email is
- * configured, so re-activating the two links and setting this to true is the
- * whole switch. The PropBetEdge All Access checkout (shared contract) is live and is the
+ * configured. OPEN_FOR_PURCHASE stays as a kill switch. The PropBetEdge All
+ * Access checkout (shared contract) is live and is the
  * PRIMARY offer: FREE readers see the All Access hero first, then the
  * "ONLY WANT NHL?" seam, then the NHL cards (lib/all-access-hero.js renders
  * the hero in NHL's own visual identity). Members see the shared membership
@@ -25,7 +22,7 @@ import { accountMembership, freeOfferHtml, isMember, memberPanelHtml, planCardsH
  *
  * Geometry rule (styles/pro.css): the dialog never scrolls internally.
  */
-const OPEN_FOR_PURCHASE = false;
+const OPEN_FOR_PURCHASE = true;
 const STORAGE_KEY = 'pbe_nhl_founding_plan_v1';
 
 export const NHL_PRO_PLANS = Object.freeze({
@@ -147,15 +144,15 @@ function paintSelection() {
   });
   const plan = NHL_PRO_PLANS[selected];
   const cta = document.getElementById('nhl-pro-checkout');
-  // NHL-only checkout off (OPEN_FOR_PURCHASE false): the CTA states the truth,
-  // points to All Access (which includes NHL Pro), and cannot be actioned.
+  // Kill switch (OPEN_FOR_PURCHASE false): the CTA states the truth, points to
+  // All Access (which includes NHL Pro), and cannot be actioned.
   if (cta && !OPEN_FOR_PURCHASE) {
     cta.disabled = true;
     cta.setAttribute('aria-disabled', 'true');
   }
   if (cta) cta.textContent = OPEN_FOR_PURCHASE
     ? `Continue to checkout · ${plan.price}${selected === 'monthly' ? '/mo' : '/wk'}`
-    : 'NHL-only checkout paused · All Access above includes NHL Pro';
+    : 'Get NHL Pro with All Access above';
 }
 
 function message(text, tone = '') {
@@ -187,7 +184,7 @@ function startCheckout() {
   const email = String(document.getElementById('nhl-pro-email')?.value || '').trim().toLowerCase();
   if (!validEmail(email)) return message('Enter the email you want tied to NHL Pro.', 'error');
   if (!OPEN_FOR_PURCHASE) {
-    return message('NHL-only checkout is paused. All Access above includes NHL Pro and is open now. Nothing was charged.', 'hold');
+    return message('All Access above includes NHL Pro. Nothing was charged.', 'hold');
   }
   window.location.assign(checkoutUrl(NHL_PRO_PLANS[selected], email));
 }

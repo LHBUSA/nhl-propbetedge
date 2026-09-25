@@ -126,10 +126,11 @@ test('with readiness false the explainer is real content and carries no dead sig
     'no submit handler is bound when sign-in does not exist');
 });
 
-test('NHL-only checkout off: CTA routes to All Access and the guard precedes navigation', () => {
-  assert.match(pro, /const OPEN_FOR_PURCHASE = false/);
+test('NHL-only checkout is open; the kill switch still guards navigation', () => {
+  assert.match(pro, /const OPEN_FOR_PURCHASE = true/);
   assert.match(pro, /Continue to checkout · \$\{plan\.price\}/, 'the open CTA names the price');
-  assert.match(pro, /NHL-only checkout paused · All Access above includes NHL Pro/, 'the paused CTA points to the live All Access offer, never a checkout provider');
+  assert.match(pro, /'Get NHL Pro with All Access above'/, 'the kill-switch CTA points to All Access, never a checkout provider');
+  assert.doesNotMatch(pro, /checkout paused|is paused|opens soon|coming soon|coming online|not open yet|security cutover/i, 'no paused or closed-checkout copy');
   assert.doesNotMatch(pro, /opens soon|coming online|security cutover/i, 'no stale closed-checkout copy');
   const start = pro.match(/function startCheckout\(\)[\s\S]*?\n\}/)[0];
   assert.match(start, /if \(!OPEN_FOR_PURCHASE\) \{[\s\S]*?return message\(/,
