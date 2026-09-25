@@ -155,8 +155,6 @@
 .tm-card span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 /* ---- Grouped nav menu */
-.more__group { padding: 8px 12px 2px; font-family: var(--pbe-font-data); font-size: var(--fs-micro); letter-spacing: var(--ls-micro); color: var(--pbe-faint); text-transform: uppercase; }
-.more__menu .more__group:first-child { padding-top: 2px; }
 .sheet__group { grid-column: 1 / -1; margin-top: 6px; font-family: var(--pbe-font-data); font-size: var(--fs-micro); letter-spacing: var(--ls-micro); color: var(--pbe-faint); text-transform: uppercase; }
 
 /* Props "two products" panel: status badges may wrap on the narrowest phones. */

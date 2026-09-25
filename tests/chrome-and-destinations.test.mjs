@@ -233,10 +233,35 @@ test('every More destination is a routed page', () => {
 
 test('the More menu follows the menu keyboard pattern', () => {
   assert.match(shell, /role="menuitem" tabindex="-1"/, 'menu items stay out of the tab order');
-  assert.match(shell, /moreItems\(\)\[0\]\?\.focus\(\)/, 'opening moves focus into the menu');
+  assert.match(shell, /\(focus === 'last' \? items\[items\.length - 1\] : items\[0\]\)\?\.focus\(\)/, 'opening moves focus into the menu (ArrowUp opens on the last row)');
   assert.match(shell, /ArrowDown/);
+  assert.match(shell, /event\.key === 'ArrowRight' \|\| event\.key === 'ArrowLeft'/, 'arrows move between columns');
+  assert.match(shell, /a\[role="menuitem"\]', moreMenu\)\.filter\(a => a\.offsetParent !== null\)/, 'the keyboard walks only visible rows');
   assert.match(shell, /closeMore\(\{ restoreFocus: true \}\)/, 'Escape returns focus to the button');
   assert.match(shell, /if \(event\.key === 'Tab'\) \{ closeMore\(\); return; \}/);
+  assert.match(shell, /aria-haspopup="true" aria-expanded="false" aria-controls="more-menu" data-more/);
+});
+
+// Nav redesign (2026-09-25): the More panel is a three-column mega panel with
+// no inner scrollbar, and header items collapse into it one breakpoint at a time.
+test('the More panel never scrolls at laptop heights and collapses header items without duplicating them', () => {
+  const menu = shellCss.match(/\n\.more__menu \{([\s\S]*?)\}/)[1];
+  assert.doesNotMatch(menu, /overflow|max-height/, 'no inner scroll on the panel itself');
+  assert.match(shellCss, /@media \(max-height: 440px\) and \(min-width: 769px\) \{\s*\.more__menu \{ max-height:[^}]*overflow-y: auto; \}/, 'scroll only as a last resort below 440px tall');
+  assert.match(shellCss, /\.more__cols \{ display: grid; grid-template-columns: repeat\(3, minmax\(0, 1fr\)\); \}/);
+  assert.match(shell, /const MORE_COLUMNS = \[\['live', 'prediction'\], \['intelligence'\], \['research'\]\];/);
+  // Each collapse level hides the header item and shows its More row at the SAME width.
+  for (const [level, px] of [['lg', 1280], ['md', 1024]]) {
+    assert.match(shellCss, new RegExp(`@media \\(min-width: ${px}px\\) \\{ \\.more__menu a\\[role="menuitem"\\]\\[data-collapsed-from="${level}"\\] \\{ display: none; \\} \\}`));
+    assert.match(shellCss, new RegExp(`@media \\(max-width: ${px - 1}px\\) \\{\\s*\\.mainnav > a\\[data-collapse="${level}"\\] \\{ display: none; \\}`));
+  }
+  const nav = shell.match(/export const NAV = \[([\s\S]*?)\];/)[1];
+  assert.match(nav, /id: 'winhl'[^}]*collapse: 'lg'/);
+  assert.match(nav, /id: 'props'[^}]*collapse: 'md'/);
+  // The season chip is status inside the More panel, not a topbar slot.
+  const tools = shell.match(/<div class="topbar__tools">([\s\S]*?)<\/div>\s*<\/div>\s*<\/header>/)[1];
+  assert.doesNotMatch(tools, /season-chip/);
+  assert.match(shell, /<div class="more__head">[\s\S]*?id="season-chip"/);
 });
 
 test('search, sheet and bell are all wired to real handlers', () => {

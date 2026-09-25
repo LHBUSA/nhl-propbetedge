@@ -12,12 +12,16 @@ import { ALL_ACCESS_URL } from '../lib/pbe-membership.js';
 // in More, grouped into the four product sections below. Mobile carries Board,
 // PBE Picks, Cast and Props in its persistent bottom navigation; the sheet
 // carries every section, grouped the same way.
+//
+// `collapse` names the width below which a header item yields its slot and
+// shows in its own section of the More panel instead (never both at once):
+// WinHL below 1280px ('lg'), Props below 1024px ('md'). Breakpoints: shell.css.
 export const NAV = [
   { id: 'board', href: '#/', label: 'Ice Board', short: 'Board', icon: 'board', group: 'live' },
   { id: 'picks', href: '#/pbe-picks', label: 'PBE Picks', short: 'PBE Picks', icon: 'picks', pro: true, group: 'prediction' },
   { id: 'cast', href: '#/cast', label: 'PBE Cast', short: 'Cast', icon: 'cast', group: 'live' },
-  { id: 'props', href: '#/props', label: 'Props', short: 'Props', icon: 'props', group: 'prediction' },
-  { id: 'winhl', href: '#/winhl', label: 'WinHL', short: 'WinHL', group: 'intelligence' }
+  { id: 'props', href: '#/props', label: 'Props', short: 'Props', icon: 'props', group: 'prediction', collapse: 'md' },
+  { id: 'winhl', href: '#/winhl', label: 'WinHL', short: 'WinHL', group: 'intelligence', collapse: 'lg' }
 ];
 export const MORE = [
   { id: 'standings', href: '#/standings', label: 'Standings', group: 'live' },
@@ -42,6 +46,10 @@ export const NAV_GROUPS = [
   { id: 'intelligence', label: 'Intelligence' },
   { id: 'research', label: 'Research' }
 ];
+// The desktop More panel lays the four sections out as three balanced columns
+// (Live and Prediction share one), so the tallest column is six rows and the
+// panel never needs an inner scrollbar.
+const MORE_COLUMNS = [['live', 'prediction'], ['intelligence'], ['research']];
 const ALL_NAV = [...NAV, ...MORE];
 const BOTTOM = ['board', 'picks', 'cast', 'props'];
 // PropBetEdge All Access is the network's primary offer: a first-class gold
@@ -66,6 +74,18 @@ const ICONS = {
 };
 const icon = name => `<svg class="ico" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">${ICONS[name] || ''}</svg>`;
 
+// One section of the More panel: its More items, preceded by any header item
+// of the same section that has collapsed out of the header at this width
+// (shell.css shows those rows only below their breakpoint).
+function moreSection(groupId) {
+  const group = NAV_GROUPS.find(g => g.id === groupId);
+  const collapsed = NAV.filter(item => item.collapse && item.group === groupId);
+  const items = MORE.filter(item => item.group === groupId);
+  if (!group || !(items.length + collapsed.length)) return '';
+  const row = (item, extra = '') => `<a role="menuitem" tabindex="-1" href="${item.href}" data-nav="${item.id}"${extra}><span>${esc(item.label)}</span><i class="more__arrow" aria-hidden="true">→</i></a>`;
+  return `<div class="more__section" role="group" aria-labelledby="more-g-${group.id}"><span class="more__group" id="more-g-${group.id}">${esc(group.label)}</span>${collapsed.map(item => row(item, ` data-collapsed-from="${item.collapse}"`)).join('')}${items.map(item => row(item)).join('')}</div>`;
+}
+
 export function renderShell(app) {
   app.innerHTML = `
     <a class="skip-link" href="#main" data-skip>Skip to content</a>
@@ -79,11 +99,20 @@ export function renderShell(app) {
           <span class="brand__sport">NHL</span>
         </a>
         <nav class="mainnav" aria-label="Primary">
-          ${NAV.map(item => `<a href="${item.href}" data-nav="${item.id}"${item.pro ? ' data-pro="1"' : ''}>${esc(item.label)}</a>`).join('')}
+          ${NAV.map(item => `<a href="${item.href}" data-nav="${item.id}"${item.pro ? ' data-pro="1"' : ''}${item.collapse ? ` data-collapse="${item.collapse}"` : ''}>${esc(item.label)}</a>`).join('')}
           <div class="more">
-            <button class="more__btn" type="button" aria-expanded="false" aria-controls="more-menu" data-more>More <span aria-hidden="true">▾</span></button>
-            <div class="more__menu" id="more-menu" role="menu" hidden>
-              ${NAV_GROUPS.map(g => { const items = MORE.filter(item => item.group === g.id); return items.length ? `<span class="more__group" role="presentation">${esc(g.label)}</span>${items.map(item => `<a role="menuitem" tabindex="-1" href="${item.href}" data-nav="${item.id}">${esc(item.label)}</a>`).join('')}` : ''; }).join('')}
+            <button class="more__btn" type="button" aria-haspopup="true" aria-expanded="false" aria-controls="more-menu" data-more>More <svg class="more__caret" viewBox="0 0 10 6" aria-hidden="true"><path d="M1 1l4 4 4-4" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></button>
+            <div class="more__menu" id="more-menu" hidden>
+              <div class="more__head">
+                <span class="more__title">All NHL sections</span>
+                <span class="season-chip" id="season-chip" data-tone="" hidden><i class="season-chip__dot" aria-hidden="true"></i><span class="season-chip__text" id="season-chip-text" aria-live="polite"></span></span>
+              </div>
+              <div class="more__cols" role="menu" aria-label="All NHL sections">
+                ${MORE_COLUMNS.map(col => `<div class="more__col">${col.map(moreSection).join('')}</div>`).join('')}
+              </div>
+              <div class="more__foot">
+                <button type="button" class="more__search" data-open-search>${icon('search')}<span>Search teams, games and pages</span><kbd aria-hidden="true">Ctrl K</kbd></button>
+              </div>
             </div>
           </div>
         </nav>
@@ -93,7 +122,6 @@ export function renderShell(app) {
                explainer, sign-in, or the member panel (see bindProButton). -->
           <a class="topbar__aa" id="nhl-all-access-link" href="${ALL_ACCESS_NAV.href}" rel="noopener" data-all-access="header" aria-label="PropBetEdge All Access: every Pro sport"><i aria-hidden="true">★</i>ALL ACCESS</a>
           <button class="pbepro__open" type="button" id="nhl-pro-btn" data-open-nhl-pro data-account="unknown" aria-label="See what NHL Pro includes"><span>NHL</span> PRO</button>
-          <span class="season-chip" id="season-chip" data-tone="" hidden><i class="season-chip__dot" aria-hidden="true"></i><span class="season-chip__text" id="season-chip-text" aria-live="polite"></span></span>
           <div class="alerts-wrap">
             <button class="bell-btn" type="button" data-alerts aria-expanded="false" aria-controls="alert-center" aria-label="Alerts">${icon('bell')}<span class="bell-count" id="alert-count" hidden></span></button>
             <div class="alert-center" id="alert-center" hidden>
@@ -161,8 +189,11 @@ export function setActiveNav(id) {
     if (active) node.setAttribute('aria-current', 'page');
     else node.removeAttribute('aria-current');
   }
-  const moreActive = MORE.some(item => item.id === id);
-  $('[data-more]')?.classList.toggle('is-active', moreActive);
+  const moreBtn = $('[data-more]');
+  moreBtn?.classList.toggle('is-active', MORE.some(item => item.id === id));
+  // A header item that has collapsed into More (NAV.collapse) lights the More
+  // button instead; shell.css decides by width which of the two shows it.
+  if (moreBtn) moreBtn.dataset.current = NAV.find(item => item.id === id && item.collapse)?.collapse || '';
 }
 
 // Season state is product chrome, not a debug badge: it stays on one quiet
@@ -197,11 +228,25 @@ export function bindShell(ctx) {
   let active = 0;
   let items = [];
 
-  const moreItems = () => $$('a', moreMenu);
-  const openMore = () => {
+  // Rows for header items still in the header are display:none, so the
+  // keyboard walks only what is on screen.
+  const moreItems = () => $$('a[role="menuitem"]', moreMenu).filter(a => a.offsetParent !== null);
+  // The panel is centred under the More button, then nudged so it never leaves
+  // the viewport (the button moves as the header collapses).
+  const placeMore = () => {
+    moreMenu.style.setProperty('--more-shift', '0px');
+    const r = moreMenu.getBoundingClientRect();
+    const edge = 12;
+    const room = document.documentElement.clientWidth - edge;
+    const shift = r.left < edge ? edge - r.left : r.right > room ? room - r.right : 0;
+    moreMenu.style.setProperty('--more-shift', `${Math.round(shift)}px`);
+  };
+  const openMore = ({ focus = 'first' } = {}) => {
     moreMenu.hidden = false;
     moreBtn.setAttribute('aria-expanded', 'true');
-    moreItems()[0]?.focus();
+    placeMore();
+    const items = moreItems();
+    (focus === 'last' ? items[items.length - 1] : items[0])?.focus();
   };
   const closeMore = ({ restoreFocus = false } = {}) => {
     if (moreMenu.hidden) return;
@@ -248,7 +293,9 @@ export function bindShell(ctx) {
   }
 
   const openPalette = () => {
-    lastFocus = document.activeElement;
+    // Opened from the More panel's search row: close the panel and hand focus
+    // back to the More button when the palette closes.
+    if (!moreMenu.hidden) { closeMore(); lastFocus = moreBtn; } else lastFocus = document.activeElement;
     closeSheet();
     palette.hidden = false;
     document.documentElement.classList.add('is-locked');
@@ -272,13 +319,22 @@ export function bindShell(ctx) {
       event.preventDefault();
       const next = (i + (event.key === 'ArrowDown' ? 1 : -1) + items.length) % items.length;
       items[i < 0 ? 0 : next].focus();
+    } else if ((event.key === 'ArrowRight' || event.key === 'ArrowLeft') && i >= 0) {
+      // Columns: move to the nearest row of the neighbouring column.
+      event.preventDefault();
+      const cols = $$('.more__col', moreMenu).map(col => items.filter(a => col.contains(a))).filter(col => col.length);
+      const c = cols.findIndex(col => col.includes(items[i]));
+      const target = cols[(c + (event.key === 'ArrowRight' ? 1 : -1) + cols.length) % cols.length];
+      const y = items[i].getBoundingClientRect().top;
+      const dist = a => Math.abs(a.getBoundingClientRect().top - y);
+      target.reduce((best, a) => (dist(a) < dist(best) ? a : best)).focus();
     } else if (event.key === 'Home') { event.preventDefault(); items[0].focus(); }
     else if (event.key === 'End') { event.preventDefault(); items[items.length - 1].focus(); }
   };
   moreMenu.addEventListener('keydown', onMoreKey);
   disposers.push(() => moreMenu.removeEventListener('keydown', onMoreKey));
   const onMoreBtnKey = event => {
-    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') { event.preventDefault(); openMore(); }
+    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') { event.preventDefault(); openMore({ focus: event.key === 'ArrowUp' ? 'last' : 'first' }); }
   };
   moreBtn.addEventListener('keydown', onMoreBtnKey);
   disposers.push(() => moreBtn.removeEventListener('keydown', onMoreBtnKey));
@@ -329,6 +385,10 @@ export function bindShell(ctx) {
   document.addEventListener('keydown', onKey);
   disposers.push(() => document.removeEventListener('keydown', onKey));
   input.addEventListener('input', () => { active = 0; renderResults(); });
+
+  const onResize = () => { if (!moreMenu.hidden) placeMore(); };
+  window.addEventListener('resize', onResize);
+  disposers.push(() => window.removeEventListener('resize', onResize));
 
   const onHash = () => { closeSheet(); closeMore(); };
   window.addEventListener('hashchange', onHash);

@@ -301,7 +301,7 @@ for (const width of WIDTHS) {
     check(`@${width}: season chip does not borrow the nav's active colour`, bar.chipColor !== bar.navActiveColor, `${bar.chipColor} vs ${bar.navActiveColor}`);
     note(`@${width}: season chip reads "${bar.chipText}" (tone=${bar.chipTone || 'none'})`);
   } else {
-    note(`@${width}: season chip not in the topbar at this width (mirrored into the More sheet)`);
+    note(`@${width}: season chip lives in the More panel header (desktop) and the mobile sheet, never the topbar`);
   }
   await page.screenshot({ path: path.join(outDir, `chrome-${width}.png`) });
   await page.locator('#topbar').screenshot({ path: path.join(outDir, `topbar-${width}.png`) });
@@ -377,7 +377,8 @@ for (const width of WIDTHS) {
     check(`@${width}: More opens`, await page.evaluate(() => !document.querySelector('#more-menu').hidden));
     check(`@${width}: More moves focus into the menu`, await page.evaluate(() => document.activeElement?.closest('#more-menu') !== null));
     await page.keyboard.press('ArrowDown');
-    check(`@${width}: ArrowDown walks the menu`, await page.evaluate(() => document.activeElement?.textContent?.trim()) === 'News');
+    check(`@${width}: ArrowDown walks the menu`, await page.evaluate(() => document.activeElement?.querySelector('span')?.textContent?.trim()) === 'News');
+    check(`@${width}: More panel shows everything without an inner scrollbar`, await page.evaluate(() => { const m = document.querySelector('#more-menu'); const r = m.getBoundingClientRect(); return m.scrollHeight <= m.clientHeight && m.scrollWidth <= m.clientWidth && r.left >= 0 && r.right <= document.documentElement.clientWidth && r.bottom <= innerHeight; }));
     await page.keyboard.press('Escape');
     await settle(page, 300);
     check(`@${width}: Escape closes More and restores focus to the button`, await page.evaluate(() => document.querySelector('#more-menu').hidden && document.activeElement?.hasAttribute('data-more')));
@@ -394,9 +395,14 @@ for (const width of WIDTHS) {
       await page.screenshot({ path: path.join(outDir, 'more-open-1440.png') });
       await page.keyboard.press('Escape');
     }
-    // every item navigates to a page that mounts
-    const items = await page.evaluate(() => [...document.querySelectorAll('#more-menu a')].map(a => ({ label: a.textContent.trim(), href: a.getAttribute('href') })));
-    check(`@${width}: More carries the full secondary set`, items.map(i => i.label).join('|') === 'Standings|News|Shot Lab|Matchups|Goalies|Fatigue|Fights|Lines|Injuries|Players|Teams|Track Record|Methodology', items.map(i => i.label).join('|'));
+    // every VISIBLE item navigates to a page that mounts. Header items that
+    // collapse at this width (WinHL <1280, Props <1024) join their section.
+    await page.locator('[data-more]').click();
+    await settle(page, 250);
+    const items = await page.evaluate(() => [...document.querySelectorAll('#more-menu a[role="menuitem"]')].filter(a => a.offsetParent !== null).map(a => ({ label: a.querySelector('span').textContent.trim(), href: a.getAttribute('href') })));
+    await page.keyboard.press('Escape');
+    const expected = ['Standings', 'News', ...(width < 1024 ? ['Props'] : []), 'Shot Lab', 'Matchups', ...(width < 1280 ? ['WinHL'] : []), 'Goalies', 'Fatigue', 'Fights', 'Lines', 'Injuries', 'Players', 'Teams', 'Track Record', 'Methodology'];
+    check(`@${width}: More carries the full secondary set`, items.map(i => i.label).join('|') === expected.join('|'), items.map(i => i.label).join('|'));
     for (const item of items) {
       await page.goto(`${base}/#/`, { waitUntil: 'domcontentloaded' });
       await settle(page, 1800);

@@ -633,6 +633,9 @@ if (!pro) {
 // ── Season / preseason chip ──────────────────────────────────────────────────
 await ensureBoard(page, bag);
 {
+  // Since the 2026-09-25 nav redesign the chip is status in the More panel
+  // header (desktop) rather than a topbar slot: open the panel to read it.
+  await page.evaluate(() => { const b = document.querySelector('[data-more]'); if (b && document.querySelector('#more-menu')?.hidden && b.offsetParent) b.click(); });
   const chip = await page.evaluate(() => {
     const el = document.querySelector('#season-chip, .season-chip, header [aria-live]');
     if (!el) return null;
@@ -656,6 +659,7 @@ await ensureBoard(page, bag);
     if (after.hash !== before || after.openPanels.length) PASS('Season chip', `interactive, ${before} → ${after.hash}`);
     else FAIL('Season chip', `looks clickable (cursor:${chip.cursor}) but the click does nothing — DEAD UI`);
   }
+  await page.keyboard.press('Escape');
 }
 
 // ── Mode ribbon ("What's available") — persistent chrome off the board route ──
