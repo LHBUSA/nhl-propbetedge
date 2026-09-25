@@ -1,3 +1,79 @@
+## 2026-09-25 — NHL Intelligence Program (Goalie 2.0 · Fatigue · WinHL · Props · Fight Score · Game Intel) — PLAN (Phase 0 audit)
+
+Status words as below: PROVEN / IN PROGRESS / BLOCKED / UNVERIFIED. This section is the plan written **before** implementation; the
+results section above it is updated as each phase passes its gates.
+
+### Audit — what exists today (verified 2026-09-25)
+
+| Layer | Fact |
+|---|---|
+| Frontend | `main` 1ad59cb (Vite, hash router `src/lib/router.js`, 18 routes). Goalie Center = starter ladder CONFIRMED/PROJECTED/UNKNOWN + club season lines + last-5 appearances + days rest/B2B from `/nhl/game/:id/goalies`. Props = stored Odds API snapshot (best line, no-vig consensus, moves) and an explicit "no released player-prop model". Fights = `src/lib/fights.js` (server ledger first, client derivation fallback, fan-vote only, never official). |
+| Gateway | `nhl-gateway` 1.1.0 (custom domain nhl-api.propbetedge.ai): strict route/param allowlist, product-origin CORS, edge cache + stale-if-error, `/pro/*` gated by `requirePro()` (session + billing ledger, All Access aware). Service bindings: PROPSPORTS, NHL_ODDS, BILLING. |
+| Backend | `propsports-api` (shared with MLB/NFL) serves `/v1/nhl/*` from `nhl-intelligence/src/nhl-data.js` straight from api-web.nhle.com + api.nhle.com/stats (no NHL persistence on the read path). Daily 11:00Z archive writes `nhl_games`, `nhl_shot_events`, `nhl_line_snapshots` (rlfy). `nhl-odds` (3x/day KV snapshot; player markets requested per event: SOG, saves, points, goals, assists). `nhl-picks` (v1.1 shadow + v1.2 runner, tkmln ledger). |
+| Odds today | 33 events in the 12:00Z snapshot, **0 player-prop rows** (preseason; books have not posted NHL player markets). |
+| History on disk | `D:\Workers\_data\nhl-archive` 5.1 GB: raw play-by-play + boxscore (gz, sha256 manifest) 2010-11 → 2025-26 (no 2020-21 / 2021-22 folders). |
+
+### Source audit — what the official feeds really carry
+
+| Need | Source (probed 2026-09-25) | Verdict |
+|---|---|---|
+| Per-player per-game TOI split: EV / PP / SH / **OT** TOI, shifts | `api.nhle.com/stats/rest/en/skater/timeonice?isGame=true` (one call returned 9,216 rows with `limit=-1`) | SUPPORTED |
+| Goals, A1/A2 (`totalPrimaryAssists`), shots, attempts, hits, blocks, takeaways, giveaways | `skater/summary`, `skater/scoringpergame`, `skater/realtime` | SUPPORTED |
+| Penalties drawn / taken | `skater/penalties` | SUPPORTED |
+| On-ice 5v5 shot-attempt share (NHL "SAT", relative) | `skater/scoringRates` / `skater/percentages` | SUPPORTED (NHL's own stat; labelled as such, never called xG or possession value) |
+| Faceoffs W/L | `skater/faceoffwins` | SUPPORTED |
+| Goalie per-game SA / saves / TOI / GS | `goalie/summary?isGame=true`, player game logs | SUPPORTED |
+| Goalie **high-danger / location** save % with league average + percentile | NHL Edge `edge/goalie-detail` (`shotLocationSummary`: all/high/mid/long) | SUPPORTED (official NHL Edge values shown as-is; not our computation) |
+| Team per-game shots for/against, PP% / PK% | `team/summary?isGame=true`, `team/realtime` | SUPPORTED |
+| Schedule home/road, venue, **venue timezone**, OT/SO outcome | `club-schedule-season/{team}/{season}` | SUPPORTED |
+| Travel miles | No coordinates in any NHL feed | NOT SUPPORTED today → timezone shift + home/road transitions only; miles need a verified venue coordinate table |
+| Pregame lines / PP units | none licensed | NOT SUPPORTED (derived last-game deployment only) |
+| xG / GSAx / RAPM / WAR | none validated | NOT BUILT — never displayed |
+| Fight winner | NHL never declares one; HockeyFights fan vote (10-20 fights/page, `/fightlog/1/reg{YYYY}/{page}`) | FAN VOTE ONLY, labelled non-official |
+| Historical prop prices | none stored before 2026-09-11; 0 NHL player-prop rows so far | market-benchmark backtest NOT possible yet |
+
+Rights: every official-data feature depends on the NHL.com ToS risk already recorded in `docs/NHL_SOURCE_MATRIX.md` §0 (owner decision
+outstanding). HockeyFights enrichment already runs in production (Cast); the season ledger reads the same public fight-log pages at
+most once per day.
+
+### Feasibility per requested feature
+
+| Feature | Buildable today from authoritative data? | Needs |
+|---|---|---|
+| Goalie Intelligence 2.0 (starts/apps/SA/TOI 7-14d, rest, B2B, consecutive starts, rolling SV%, season vs recent, opponent shot environment, Edge HD splits) | **YES** | new Worker aggregation (per game, cached) |
+| PBE Goalie Form Score v1 | **YES** | deterministic lib + tests |
+| Team fatigue (games in 3/4/6/7 days, B2B, 3-in-4, 4-in-6, road streak, transitions, prior-game OT, top-4 D TOI load, goalie workload, PP/PK minutes) | **YES** | Worker aggregation from schedules + per-game TOI |
+| Player fatigue (TOI last 3/5/7 vs season, PP/PK/OT TOI, consecutive games, trend) | **YES** | same |
+| Travel distance | **NO** (timezone shift YES) | verified venue coordinates |
+| WinHL v1 (season / last 10 / last 5 / trend / ranks / components / min-sample flags) | **YES** | Worker cron + KV daily snapshots (rank history) |
+| Props market board (SOG, saves, points, goals, assists; best line, consensus, movement, books quoting, freshness) | **YES** (renders real rows as soon as books post) | frontend upgrade on existing `/odds` |
+| Prop model (SOG, saves) | **SHADOW only** | offline backtest + held-out calibration, pregame lock, grader, then an independent forward record — which cannot exist before real games are graded |
+| Fight ledger / fighter history / team fight activity / Fight Score | **YES** (NHL penalties + fan votes) | season ledger job + KV |
+| Post-fight momentum (shots, attempts, goals, penalties in fixed windows) | **YES** (play-by-play) | computed in the ledger job; labelled descriptive, not causal |
+| Game Intelligence summary | **YES** for goalie matchup / fatigue edge / roster WinHL / shot environment / special teams / props / fights; team model probability only if a released model exists (none today) | aggregation endpoint |
+
+### Architecture decision
+
+- **New isolated Worker `nhl-metrics`** (`LHBUSA/propsports-api-worker/nhl-metrics/`), reached ONLY by `nhl-gateway` through a service
+  binding with a bearer token. It does **not** modify `propsports-api`, so MLB/NFL cannot regress. Pure, unit-tested libraries compute
+  every score; the Worker only fetches official feeds, calls the libs, and stores results.
+- **Storage: Cloudflare KV** (new namespace) for current snapshots + one daily snapshot per metric (rank history, `captured_at`,
+  `source_urls`). No Supabase migration is required for this program. If a durable SQL history is wanted later, the KV rows map 1:1.
+- **Cron in Cloudflare** (never GitHub Actions): league snapshot (WinHL, player TOI windows) + fight ledger + shadow prop lock/grade.
+- **Free vs Pro**: the Worker serializes each payload per tier in ONE function; free gets starter truth, fatigue schedule flags, the
+  top of the WinHL table and the fight ledger; the scores, components, full WinHL table, player fatigue and Game Intelligence detail are
+  served only on `/pro/intel/*`, which the gateway gates with the existing `requirePro()` before the Worker is called.
+- Every endpoint: `schema`, `version`, `source_urls`, `captured_at`, `ttl_s`, `stale_after_s`, `partial` / `unavailable` reasons; the
+  gateway adds `X-NHL-Semantics`.
+
+### Phase plan (each phase: tests → Worker deploy (rollback id recorded) → gateway deploy (rollback id recorded) → frontend push → prod QA)
+
+1. `nhl-metrics` Worker + libs: goalie form, fatigue (team/player), WinHL, fight ledger/score/momentum, game intel, SOG/saves shadow models.
+2. Gateway 1.2.0: `/nhl/intel/*` (free) + `/pro/intel/*` (Pro) routes, `NHL_METRICS` binding, regression tests.
+3. Frontend: Goalie Center 2.0, `#/fatigue`, `#/winhl`, `#/fights`, Props market upgrade + model validation status, Game Intelligence in Matchup / Cast pregame / Ice Board, nav IA (LIVE · PREDICTION · INTELLIGENCE · RESEARCH), Methodology formulas.
+4. Shadow prop model: backtest on the archive (train ≤ 2024-25, hold out 2025-26), calibration report, pregame lock + grader in the Worker. Status stays **SHADOW** until a forward record exists.
+5. Release gates: `npm test`, `npm run build`, existing E2E (ticker, live acceptance, picks, chrome/destinations, headshots) + new feature canaries, 8 widths, console/CSP, signed-out vs Pro.
+
 ## 2026-09-21 — Newsroom V3: real PropBetEdge editorial media — PRODUCTION
 
 - **Frontend commit:** `81a5cfd863d2c4420f2dd1ab63502b509904e99c` — `Bring real PBE media into NHL newsroom`.
