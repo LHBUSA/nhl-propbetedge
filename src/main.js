@@ -119,7 +119,7 @@ function updateSeasonChip(board) {
   }
   if (board.season_phase === 'PRESEASON' && cal.regular_season_start) {
     const d = daysUntil(cal.regular_season_start, today);
-    return setSeasonChip(d === 0 ? 'Opening night' : `Opening night in ${d}d`);
+    return setSeasonChip(d === 0 ? 'NHL Pro is live · Opening night' : `NHL Pro is live · Opening night in ${d}d`);
   }
   if (board.season_phase === 'REGULAR_SEASON') return setSeasonChip(`${dateLabel(today)} · ${board.counts?.total || 0} games`);
   if (board.season_phase === 'PLAYOFFS') return setSeasonChip('Stanley Cup Playoffs');

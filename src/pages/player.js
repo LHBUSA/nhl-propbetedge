@@ -7,7 +7,7 @@ import { ageText, dateLabel, dayET, n, num, pct, svPct, timeET, todayET } from '
 import { TEAM_BY_ABBREV, teamAccent } from '../lib/teams.js';
 import { teamMark } from '../components/game.js';
 import { playerIdentity, playerPhoto, photoCredit } from '../components/player.js';
-import { fightEvents, fightOutcomeForPlayer } from '../lib/fights.js';
+import { defaultFightScope, fightRecordFor, fightSeasons, recordText } from '../lib/fight-record.js';
 
 // ---- private helpers (lane-local by contract)
 const seasonLabel = s => {
@@ -39,20 +39,6 @@ function ageOn(birth, today = todayET()) {
   if (Number(t[2]) < Number(b[2]) || (t[2] === b[2] && Number(t[3]) < Number(b[3]))) age -= 1;
   return age;
 }
-function currentSeasonId(anchor = todayET()) {
-  const m = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(anchor || ''));
-  const year = m ? Number(m[1]) : new Date().getUTCFullYear();
-  const month = m ? Number(m[2]) : new Date().getUTCMonth() + 1;
-  const start = month >= 7 ? year : year - 1;
-  return Number(`${start}${start + 1}`);
-}
-const gamePim = row => n(
-  row?.pim
-  ?? row?.penaltyMinutes
-  ?? row?.penaltyMins
-  ?? row?.penalty_minutes
-  ?? row?.penaltyMinutesTotal
-);
 const gameTypeShort = value => Number(value) === 1 ? 'PRE' : Number(value) === 3 ? 'POST' : 'REG';
 
 const signedNum = v => {
@@ -144,21 +130,25 @@ function headerMarkup(p, meta, nextGame) {
   </header>`;
 }
 
-function seasonLine(p, totals, gameType, fightState = {}) {
+// fights: fightSeasons() output (null while loading, [] when unavailable).
+function seasonLine(p, totals, gameType, fights = null) {
   const goalie = p.position === 'G';
   if (!totals) return `${panelHead('Season line')}<p class="dim">No NHL ${esc(typeLabel(gameType))} row in this player's season totals.</p>`;
   const label = `${seasonLabel(totals.season)} ${typeLabel(gameType)}`;
   const cell = (k, v) => `<div><dt>${esc(k)}</dt><dd>${v}</dd></div>`;
-  const f = fightState?.data;
-  const fightRecord = f ? `${f.wins || 0}-${f.losses || 0}-${f.draws || 0}` : '—';
+  // Same season as this line, from the same ledger as Fight History. A season
+  // the ledger does not cover reads '—' (unknown), never 0-0-0.
+  const fr = fights ? fightRecordFor(fights, totals.season) : null;
+  const fightRecord = fights === null ? '…' : recordText(fr?.record);
+  const fightTitle = fr ? `${fr.label} regular season + playoffs · HockeyFights fan vote, not an official NHL result` : 'Not covered by the fight ledger';
   const cells = goalie
     ? [cell('GP', num(totals.gamesPlayed)), cell('GS', num(totals.gamesStarted)), cell('W', num(totals.wins)), cell('L', num(totals.losses)), cell('OTL', num(totals.otLosses)),
       cell('SV%', svPct(totals.savePctg)), cell('GAA', num(totals.gaa, 2)), cell('SA', num(totals.shotsAgainst)), cell('SO', num(totals.shutouts)),
-      cell('FIGHT W-L-D', `<b>${esc(fightRecord)}</b>`)]
+      cell('FIGHT W-L-D', `<b title="${esc(fightTitle)}" data-fight-strip="${esc(fr?.scope || '')}">${esc(fightRecord)}</b>`)]
     : [cell('GP', num(totals.gamesPlayed)), cell('G', num(totals.goals)), cell('A', num(totals.assists)), cell('P', `<b>${num(totals.points)}</b>`), cell('+/−', signedNum(totals.plusMinus)),
       cell('PIM', num(totals.pim)), cell('PPG', num(totals.powerPlayGoals)), cell('PPP', num(totals.powerPlayPoints)), cell('SOG', num(totals.shots)),
       cell('SOG/GP', totals.gamesPlayed ? (totals.shots / totals.gamesPlayed).toFixed(2) : '—'), cell('S%', pct(totals.shootingPctg, 1)), cell('TOI/GP', mmss(totals.avgToiSec)),
-      cell('FIGHT W-L-D', `<b>${esc(fightRecord)}</b>`)];
+      cell('FIGHT W-L-D', `<b title="${esc(fightTitle)}" data-fight-strip="${esc(fr?.scope || '')}">${esc(fightRecord)}</b>`)];
   return `${panelHead(`${label} line`, `<span class="micro">NHL · ${esc(totals.teams.join(' / ') || '')}${totals.rows > 1 ? ' · combined' : ''}</span>`)}
     <dl class="kv rs-kvfix rs-season-kv">${cells.join('')}</dl>`;
 }
@@ -299,52 +289,54 @@ function gameLogSection(p, logState, gameType, hasPlayoffs) {
       : `<p class="dim">No ${esc(season)} games in the source game log.</p>`}`;
 }
 
-function fightSection(p, s) {
-  const title = 'Fan-voted fight record';
-  if (s.error) {
-    return `${panelHead(title)}<p class="dim small">Fight history is temporarily unavailable. Game and player stats remain unaffected.</p>`;
-  }
-  if (!s.data) {
-    return `${panelHead(title)}<div class="pbe-skeleton" style="height:180px"></div>`;
-  }
-  const d = s.data;
-  const fights = d.fights || [];
-  const record = `${d.wins || 0}-${d.losses || 0}-${d.draws || 0}`;
-  const decided = (d.wins || 0) + (d.losses || 0) + (d.draws || 0);
-  const winPct = decided ? Math.round(((d.wins || 0) / decided) * 100) : null;
-  const rows = fights.map(item => {
-    const r = item.fight?.result || {};
-    const vote = r?.type === 'fan_vote' && r?.status === 'available'
-      ? [Number.isFinite(Number(r.winner_pct)) ? `${Number(r.winner_pct)}% winner vote` : null,
-         Number.isFinite(Number(r.vote_count)) ? `${Number(r.vote_count)} vote${Number(r.vote_count) === 1 ? '' : 's'}` : null,
-         Number.isFinite(Number(r.rating)) ? `rating ${Number(r.rating).toFixed(1)}/10` : null].filter(Boolean).join(' · ')
+// Fight History: one tab per ledger season plus Career, all from the same
+// fightSeasons() data the stat strip and the intelligence card read.
+function fightSection(ledger, fights, scope) {
+  const title = 'Fight History';
+  if (ledger?.error) return `${panelHead(title)}<p class="dim small">Fight history is temporarily unavailable. Game and player stats remain unaffected.</p>`;
+  if (fights === null) return `${panelHead(title)}<div class="pbe-skeleton" style="height:180px"></div>`;
+  if (!fights.length) return `${panelHead(title)}<p class="dim small">The fight ledger returned no season for this player.</p>`;
+  const view = fightRecordFor(fights, scope) || fightRecordFor(fights, fights[0].season);
+  const tabs = [...fights.map(f => [f.season, f.label]), ['career', 'Career']]
+    .map(([k, l]) => `<button type="button" class="rs-toggle${k === view.scope ? ' is-on' : ''}" data-fight-scope="${esc(k)}" aria-pressed="${k === view.scope}">${esc(l)}</button>`).join('');
+  const r = view.record;
+  const decided = r.w + r.l + r.d;
+  const rows = view.rows.map(item => {
+    const v = item.fight?.result || {};
+    const vote = v.type === 'fan_vote' && v.status === 'available'
+      ? [v.winner_name ? `Fan-vote winner: ${v.winner_name}` : null,
+         Number.isFinite(Number(v.winner_pct)) ? `${Number(v.winner_pct)}%` : null,
+         Number.isFinite(Number(v.vote_count)) ? `${Number(v.vote_count)} vote${Number(v.vote_count) === 1 ? '' : 's'}` : null].filter(Boolean).join(' · ')
       : 'Fan-vote result pending';
-    const badge = item.outcome === 'WIN' ? 'pbe-badge--good'
-      : item.outcome === 'LOSS' ? 'pbe-badge--alert'
-        : item.outcome === 'DRAW' ? 'pbe-badge--sched' : '';
-    return `<li class="rs-fight-row">
-      <div class="rs-fight-row__result"><span class="pbe-badge ${badge}">${esc(item.outcome)}</span></div>
+    const shown = item.decided ? item.outcome : item.outcome === 'TOO_FEW_VOTES' ? 'TOO FEW VOTES' : 'NO DECISION';
+    const badge = item.outcome === 'WIN' ? 'pbe-badge--good' : item.outcome === 'LOSS' ? 'pbe-badge--alert' : item.outcome === 'DRAW' ? 'pbe-badge--sched' : '';
+    return `<li class="rs-fight-row" data-fight-outcome="${esc(item.outcome)}">
+      <div class="rs-fight-row__result"><span class="pbe-badge ${badge}">${esc(shown)}</span></div>
       <div class="rs-fight-row__main">
         <strong>${esc(item.opponent?.name || 'Opponent not listed')}</strong>
-        <span class="micro">${esc(item.opponent?.team_abbrev || '')}${item.game_type ? ` · ${esc(gameTypeShort(item.game_type))}` : ''}${item.date ? ` · ${esc(dateLabel(item.date))}` : ''}${item.fight?.period ? ` · P${esc(item.fight.period)} ${esc(item.fight.clock || '')}` : ''}</span>
+        <span class="micro">${esc(item.opponent?.team_abbrev || '')}${item.game_type ? ` · ${esc(gameTypeShort(item.game_type))}` : ''}${item.date ? ` · ${esc(dateLabel(item.date))}` : ''}${item.fight?.period ? ` · P${esc(item.fight.period)} ${esc(item.fight.clock || '')}` : ''}${item.counted ? '' : ' · preseason, not counted'}</span>
         <span class="micro dim">${esc(vote)}</span>
       </div>
       ${item.game_id ? `<a class="rs-fight-row__cast" href="#/cast/${esc(item.game_id)}">PBE Cast →</a>` : ''}
     </li>`;
   }).join('');
-  return `${panelHead(title, `<span class="micro">${esc(seasonLabel(d.season))} · NHL fight occurrence + fan vote</span>`)}
+  const others = fights.filter(f => f.season !== view.scope && f.record.fights);
+  const empty = view.scope === 'career' ? 'No documented regular-season or playoff fights in the ledger seasons.'
+    : `No documented regular-season or playoff fights in ${view.label}.${others.length ? ` See ${others.map(f => `${f.label} (${f.record.fights})`).join(', ')}.` : ''}`;
+  return `${panelHead(title, `<span class="micro" data-fight-scope-label>${esc(view.scope === 'career' ? `Career · ${view.label}` : view.label)} · NHL fight occurrence + fan vote</span>`)}
+    <div class="rs-bar" role="group" aria-label="Fight history season">${tabs}</div>
     <div class="rs-fight-summary">
-      <div class="rs-fight-record"><span class="eyebrow">FIGHT W-L-D</span><b>${esc(record)}</b><small>${d.total || 0} documented fight${d.total === 1 ? '' : 's'}${d.pending ? ` · ${d.pending} pending` : ''}</small></div>
+      <div class="rs-fight-record"><span class="eyebrow">FIGHT W-L-D</span><b data-fight-history="${esc(view.scope)}">${esc(recordText(r))}</b><small>${r.fights} counted fight${r.fights === 1 ? '' : 's'}${r.undecided ? ` · ${r.undecided} undecided` : ''}${r.preseason ? ` · ${r.preseason} preseason not counted` : ''}</small></div>
       <dl class="kv rs-kvfix rs-fight-kv">
-        <div><dt>Fights</dt><dd>${num(d.total)}</dd></div>
-        <div><dt>FW</dt><dd>${num(d.wins)}</dd></div>
-        <div><dt>FL</dt><dd>${num(d.losses)}</dd></div>
-        <div><dt>FD</dt><dd>${num(d.draws)}</dd></div>
-        <div><dt>Win%</dt><dd>${winPct === null ? '—' : `${winPct}%`}</dd></div>
+        <div><dt>Fights</dt><dd>${num(r.fights)}</dd></div>
+        <div><dt>FW</dt><dd>${num(r.w)}</dd></div>
+        <div><dt>FL</dt><dd>${num(r.l)}</dd></div>
+        <div><dt>FD</dt><dd>${num(r.d)}</dd></div>
+        <div><dt>Win%</dt><dd>${decided ? `${Math.round((r.w / decided) * 100)}%` : '—'}</dd></div>
       </dl>
     </div>
-    <p class="micro rs-fight-note">Fight occurrence is documented from paired NHL fighting majors in PBE Cast. W-L-D uses HockeyFights fan voting delivered through PropSports and is not an official NHL decision.</p>
-    ${rows ? `<ol class="rs-fight-list">${rows}</ol>` : '<p class="dim small">No documented fights in the current NHL season yet.</p>'}`;
+    <p class="micro rs-fight-note">Fights come from paired NHL fighting majors. W-L-D is the HockeyFights fan vote (at least 5 votes), matched to the fighter by NHL player ID. It is not an official NHL result. Regular season and playoffs count; preseason fights are listed but not counted.</p>
+    ${rows ? `<ol class="rs-fight-list">${rows}</ol>` : `<p class="dim small">${esc(empty)}</p>`}`;
 }
 
 function careerSection(p) {
@@ -379,7 +371,7 @@ function newsSection(p, s) {
 
 export function mount(root, params) {
   const id = params.playerId;
-  const st = { player: {}, log: {}, fights: {}, news: {}, next: null, gameType: 2, season: null, hasPlayoffs: false, totals: null, pi: { tier: null, winhl: null, fatigue: null, goalie: null, fightLedger: null } };
+  const st = { player: {}, log: {}, fightScope: null, news: {}, next: null, gameType: 2, season: null, hasPlayoffs: false, totals: null, pi: { tier: null, winhl: null, fatigue: null, goalie: null, fightLedger: null } };
   root.innerHTML = `<section class="wrap section rs-player"><div id="rs-p-head"><div class="pbe-skeleton" style="height:180px"></div></div>
     <div id="rs-p-body"></div></section>`;
   const headEl = $('#rs-p-head', root);
@@ -394,13 +386,21 @@ export function mount(root, params) {
     if (!p) return;
     headEl.innerHTML = headerMarkup(p, st.player.meta, st.next);
   };
+  // Every fight surface reads this one normalization of the ledger.
+  const fightData = () => {
+    const l = st.pi.fightLedger;
+    if (!l) return null;
+    return l.error ? [] : fightSeasons(l.data, id);
+  };
   const renderBody = () => {
     const p = st.player.data?.player;
     if (!p) { bodyEl.innerHTML = ''; return; }
+    const fights = fightData();
+    const scope = st.fightScope || defaultFightScope(fights || [], st.totals?.season);
     bodyEl.innerHTML = `
-      <section class="pbe-panel rs-p-season">${seasonLine(p, st.totals, st.gameType, st.fights)}</section>
-      <section class="pbe-panel rs-p-intel" aria-label="PBE intelligence">${playerIntelSection(p, st.pi)}</section>
-      <section class="pbe-panel rs-p-fights">${fightSection(p, st.fights)}</section>
+      <section class="pbe-panel rs-p-season">${seasonLine(p, st.totals, st.gameType, fights)}</section>
+      <section class="pbe-panel rs-p-intel" aria-label="PBE intelligence">${playerIntelSection(p, st.pi, fights)}</section>
+      <section class="pbe-panel rs-p-fights">${fightSection(st.pi.fightLedger, fights, scope)}</section>
       <div class="rs-player-grid">
         <section class="pbe-panel" id="rs-p-charts">${chartsSection(p, st.log, st.totals)}</section>
         <div class="rs-col">
@@ -428,95 +428,6 @@ export function mount(root, params) {
     settle('fightLedger', intel(`/fights/player/${id}`, { signal, tier: 'free' }));
   };
 
-  const loadFights = async () => {
-    const season = currentSeasonId();
-    st.fights = {};
-    renderBody();
-    try {
-      const segments = await Promise.all([1, 2, 3].map(async gameType => {
-        try {
-          const res = await nhl(`/nhl/player/${id}/game-log`, { season, gameType }, { signal });
-          return { gameType, rows: res.data?.game_log || [] };
-        } catch (error) {
-          if (error.kind === 'aborted') throw error;
-          return { gameType, rows: [] };
-        }
-      }));
-
-      const candidates = new Map();
-      let pimFieldSeen = false;
-      for (const segment of segments) {
-        for (const row of segment.rows) {
-          const pim = gamePim(row);
-          if (pim !== null) pimFieldSeen = true;
-          if (pim === null || pim < 5 || !row.gameId) continue;
-          candidates.set(String(row.gameId), {
-            game_id: String(row.gameId),
-            date: row.gameDate || null,
-            game_type: segment.gameType
-          });
-        }
-      }
-
-      const documented = [];
-      const queue = [...candidates.values()];
-      for (let i = 0; i < queue.length; i += 4) {
-        const batch = queue.slice(i, i + 4);
-        const casts = await Promise.all(batch.map(async candidate => {
-          try {
-            const res = await nhl(`/nhl/game/${candidate.game_id}/cast`, {}, { signal, timeout: 9000 });
-            return { candidate, cast: res.data };
-          } catch (error) {
-            if (error.kind === 'aborted') throw error;
-            return null;
-          }
-        }));
-        for (const hit of casts.filter(Boolean)) {
-          for (const fight of fightEvents(hit.cast)) {
-            if (!(fight.fighters || []).some(x => String(x.player_id) === String(id))) continue;
-            const classified = fightOutcomeForPlayer(fight, id);
-            if (classified.outcome === 'UNRELATED') continue;
-            documented.push({
-              game_id: hit.candidate.game_id,
-              date: hit.cast?.game?.date || hit.candidate.date,
-              game_type: hit.cast?.game?.game_type || hit.candidate.game_type,
-              fight,
-              outcome: classified.outcome,
-              opponent: classified.opponent || null
-            });
-          }
-        }
-      }
-
-      documented.sort((a, b) => {
-        const da = String(a.date || '');
-        const db = String(b.date || '');
-        if (da !== db) return db.localeCompare(da);
-        return Number(b.fight?.first_sort_order || 0) - Number(a.fight?.first_sort_order || 0);
-      });
-      const wins = documented.filter(x => x.outcome === 'WIN').length;
-      const losses = documented.filter(x => x.outcome === 'LOSS').length;
-      const draws = documented.filter(x => x.outcome === 'DRAW').length;
-      const pending = documented.filter(x => x.outcome === 'PENDING').length;
-      st.fights = {
-        data: {
-          season,
-          total: documented.length,
-          wins,
-          losses,
-          draws,
-          pending,
-          fights: documented,
-          candidate_games: queue.length,
-          pim_field_seen: pimFieldSeen
-        }
-      };
-    } catch (error) {
-      if (error.kind !== 'aborted') st.fights = { error };
-    }
-    if (!signal.aborted) renderBody();
-  };
-
   const loadLog = () => {
     logCtl?.abort();
     logCtl = new AbortController();
@@ -540,7 +451,6 @@ export function mount(root, params) {
       st.hasPlayoffs = Boolean(reg && seasonTotals(p.season_totals, 3, reg.season));
       renderHead();
       loadLog();
-      loadFights();
       loadIntel(p);
       // Next game for the player's club (context for tonight), from the club schedule.
       if (TEAM_BY_ABBREV.has(p.current_team_abbrev)) {
@@ -569,6 +479,10 @@ export function mount(root, params) {
     .catch(error => { if (error.kind !== 'aborted') { st.news = { error }; renderBody(); } });
 
   const disposers = [
+    on(root, 'click', '[data-fight-scope]', (_, b) => {
+      st.fightScope = b.dataset.fightScope;
+      renderBody();
+    }),
     on(root, 'click', '[data-gt]', (_, b) => {
       const gt = Number(b.dataset.gt);
       if (gt === st.gameType) return;

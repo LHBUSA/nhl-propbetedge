@@ -38,18 +38,22 @@ function fatigueBlock(s, tier) {
     <p class="micro faint">${esc(d.semantics || '')}</p>`;
 }
 
-function fightScoreBlock(s) {
-  if (!s) return '';
-  if (s.error) return '';
-  const seasons = (s.data?.seasons || []).filter(x => x.summary || x.fights?.length);
+// fights: fightSeasons() output from lib/fight-record.js, the same data the
+// stat strip and Fight History read. W-L-D is the counted (regular season +
+// playoffs) fan-vote record; the PBE Fight Score is the ledger's own summary.
+function fightScoreBlock(s, fights) {
+  if (!s || s.error) return '';
+  if (!fights) return '';
+  const seasons = fights.filter(x => x.rows.length);
   if (!seasons.length) return '<p class="micro faint">No documented fights in the fight ledger (current or previous season).</p>';
   return seasons.map(x => {
-    const r = x.summary;
-    return `<div class="micro"><b>${esc(`${x.season.slice(0, 4)}-${x.season.slice(6, 8)}`)}</b> · ${x.fights.length} fight${x.fights.length === 1 ? '' : 's'}${r ? ` · fan-vote ${r.record.w}-${r.record.l}-${r.record.d} · PBE Fight Score <b class="mono">${fmtScore(r.score, 1)}</b>${r.provisional ? ' (provisional)' : ''}` : ''}</div>`;
+    const r = x.record;
+    const score = x.summary && Number.isFinite(Number(x.summary.score)) ? ` · PBE Fight Score <b class="mono">${fmtScore(x.summary.score, 1)}</b>${x.summary.provisional ? ' (provisional)' : ''}` : '';
+    return `<div class="micro" data-fight-intel="${esc(x.season)}"><b>${esc(x.label)}</b> · ${r.fights} fight${r.fights === 1 ? '' : 's'} · fan-vote <b>${r.w}-${r.l}-${r.d}</b>${r.preseason ? ` · ${r.preseason} preseason not counted` : ''}${score}</div>`;
   }).join('') + '<p class="micro faint">Fan votes are not official NHL results. <a class="gold" href="#/fights">Fight ledger ›</a></p>';
 }
 
-export function playerIntelSection(p, st) {
+export function playerIntelSection(p, st, fights = null) {
   const goalie = p.position === 'G';
   const tier = st.tier;
   if (goalie) {
@@ -65,6 +69,6 @@ export function playerIntelSection(p, st) {
     <div class="iq-grid iq-grid--3">
       <div class="gi-card"><span class="gx-cell__k">WinHL</span>${winhlBlock(st.winhl)}</div>
       <div class="gi-card"><span class="gx-cell__k">Fatigue</span>${fatigueBlock(st.fatigue, tier)}</div>
-      <div class="gi-card"><span class="gx-cell__k">Fight ledger</span>${fightScoreBlock(st.fightLedger) || '<div class="pbe-skeleton" style="height:60px"></div>'}</div>
+      <div class="gi-card"><span class="gx-cell__k">Fight ledger</span>${fightScoreBlock(st.fightLedger, fights) || '<div class="pbe-skeleton" style="height:60px"></div>'}</div>
     </div>`;
 }

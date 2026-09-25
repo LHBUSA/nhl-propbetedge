@@ -151,7 +151,7 @@ function coveragePanel() {
       </tbody>
     </table></div>
     <p class="micro dk-cov__books">Books seen: ${BOOKS.map(esc).join(' · ')}. Two did not post a puck line.</p>
-    <p class="micro dk-cov__foot">When books open NHL player markets is not yet measured; a game-day re-check is required before this board can go live.</p>
+    <p class="micro dk-cov__foot">Player prop markets have not been posted yet. The player-prop board fills automatically from each stored snapshot as soon as sportsbooks publish NHL player markets.</p>
   </section>`;
 }
 

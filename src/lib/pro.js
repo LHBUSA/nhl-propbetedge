@@ -5,9 +5,15 @@ import { accountMembership, freeOfferHtml, isMember, memberPanelHtml, planCardsH
 /**
  * PropBetEdge NHL Pro — purchase + membership surface.
  *
- * Vercel serves this frontend. NHL checkout remains closed until the
- * Cloudflare -> Supabase multi-sport entitlement path passes production gates.
- * The PropBetEdge All Access checkout (shared contract) is live and is the
+ * Vercel serves this frontend. NHL Pro is sold and usable today through All
+ * Access (live checkout; the billing ledger grants nhl_pro to every All Access
+ * member). The NHL-only checkout (OPEN_FOR_PURCHASE) stays off only because
+ * both NHL-only payment links are deactivated at the payment provider
+ * (verified 2026-09-25: they show "checkout is not open yet"). The entitlement
+ * path behind them passed its production canaries (propsports-api-worker
+ * docs/receipts/2026-09-15-nhl-pro-plumbing.json) and sign-in email is
+ * configured, so re-activating the two links and setting this to true is the
+ * whole switch. The PropBetEdge All Access checkout (shared contract) is live and is the
  * PRIMARY offer: FREE readers see the All Access hero first, then the
  * "ONLY WANT NHL?" seam, then the NHL cards (lib/all-access-hero.js renders
  * the hero in NHL's own visual identity). Members see the shared membership
@@ -85,7 +91,7 @@ function markup() {
       <section class="pbepro__dialog" role="dialog" aria-modal="true" aria-labelledby="nhl-pro-title">
         <button class="pbepro__close" type="button" data-pro-close aria-label="Close NHL Pro">×</button>
         <div class="pbepro__story">
-          <div class="pbepro__eyebrow">PROPBETEDGE · NHL PRO</div>
+          <div class="pbepro__eyebrow">PROPBETEDGE · NHL PRO · LIVE NOW</div>
           <h2 id="nhl-pro-title">See the market.<br><em>Own the ice.</em></h2>
           <p class="pbepro__lede">The full PropBetEdge hockey intelligence layer at introductory pricing. Built for bettors who want to know what changed and why the number matters.</p>
           <div class="pbepro__features">
@@ -141,15 +147,15 @@ function paintSelection() {
   });
   const plan = NHL_PRO_PLANS[selected];
   const cta = document.getElementById('nhl-pro-checkout');
-  // Purchase closed: the CTA states the truth and cannot be actioned, and the
-  // access-email field is not rendered at all, so nothing implies checkout is open.
+  // NHL-only checkout off (OPEN_FOR_PURCHASE false): the CTA states the truth,
+  // points to All Access (which includes NHL Pro), and cannot be actioned.
   if (cta && !OPEN_FOR_PURCHASE) {
     cta.disabled = true;
     cta.setAttribute('aria-disabled', 'true');
   }
   if (cta) cta.textContent = OPEN_FOR_PURCHASE
     ? `Continue to checkout · ${plan.price}${selected === 'monthly' ? '/mo' : '/wk'}`
-    : 'NHL Pro checkout opens soon · Founding Season rate';
+    : 'NHL-only checkout paused · All Access above includes NHL Pro';
 }
 
 function message(text, tone = '') {
@@ -181,7 +187,7 @@ function startCheckout() {
   const email = String(document.getElementById('nhl-pro-email')?.value || '').trim().toLowerCase();
   if (!validEmail(email)) return message('Enter the email you want tied to NHL Pro.', 'error');
   if (!OPEN_FOR_PURCHASE) {
-    return message('NHL Pro pricing is locked. Checkout opens after the entitlement security cutover passes.', 'hold');
+    return message('NHL-only checkout is paused. All Access above includes NHL Pro and is open now. Nothing was charged.', 'hold');
   }
   window.location.assign(checkoutUrl(NHL_PRO_PLANS[selected], email));
 }

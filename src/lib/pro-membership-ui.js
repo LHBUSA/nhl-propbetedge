@@ -83,7 +83,7 @@ export function planCardsHtml(plans) {
 }
 
 // ABOVE the NHL cards for FREE readers only: the All Access hero (the primary
-// offer, whose checkout is live even while NHL checkout is closed) followed by
+// offer) followed by
 // the "ONLY WANT NHL?" seam. Empty for every member.
 export function freeOfferHtml(m) {
   return m?.state === 'free' ? `${heroHtml(m)}${dividerHtml()}` : '';

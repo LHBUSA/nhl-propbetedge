@@ -119,7 +119,7 @@ function personKey(value) {
   };
 }
 
-function samePersonLabel(a, b) {
+export function samePersonLabel(a, b) {
   const x = personKey(a);
   const y = personKey(b);
   if (!x.last || !y.last || x.last !== y.last) return false;
@@ -141,13 +141,13 @@ export function fightOutcomeForPlayer(fight, playerId) {
   if (/\b(draw|tie)\b/i.test(String(r.winner_name))) {
     return { outcome: 'DRAW', player, opponent, decided: true };
   }
-  if (samePersonLabel(r.winner_name, player.name)) {
-    return { outcome: 'WIN', player, opponent, decided: true };
+  // The vote names a winner; the name only picks WHICH fighter won, and that
+  // fighter's player_id decides. A name matching neither or both decides nothing.
+  const winners = fighters.filter(p => samePersonLabel(r.winner_name, p.name));
+  if (winners.length !== 1 || winners[0].player_id == null) {
+    return { outcome: 'PENDING', player, opponent, decided: false };
   }
-  if (opponent && samePersonLabel(r.winner_name, opponent.name)) {
-    return { outcome: 'LOSS', player, opponent, decided: true };
-  }
-  return { outcome: 'PENDING', player, opponent, decided: false };
+  return { outcome: String(winners[0].player_id) === String(playerId) ? 'WIN' : 'LOSS', player, opponent, decided: true };
 }
 
 export function fightForPlay(cast, play) {

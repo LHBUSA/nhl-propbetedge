@@ -126,9 +126,11 @@ test('with readiness false the explainer is real content and carries no dead sig
     'no submit handler is bound when sign-in does not exist');
 });
 
-test('OPEN_FOR_PURCHASE false never exposes checkout', () => {
+test('NHL-only checkout off: CTA routes to All Access and the guard precedes navigation', () => {
   assert.match(pro, /const OPEN_FOR_PURCHASE = false/);
-  assert.match(pro, /NHL Pro checkout opens soon · Founding Season rate/, 'the closed CTA names the rate, never a checkout provider');
+  assert.match(pro, /Continue to checkout · \$\{plan\.price\}/, 'the open CTA names the price');
+  assert.match(pro, /NHL-only checkout paused · All Access above includes NHL Pro/, 'the paused CTA points to the live All Access offer, never a checkout provider');
+  assert.doesNotMatch(pro, /opens soon|coming online|security cutover/i, 'no stale closed-checkout copy');
   const start = pro.match(/function startCheckout\(\)[\s\S]*?\n\}/)[0];
   assert.match(start, /if \(!OPEN_FOR_PURCHASE\) \{[\s\S]*?return message\(/,
     'the CTA refuses before it can ever reach a Stripe URL');

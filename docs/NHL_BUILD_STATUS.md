@@ -1,3 +1,28 @@
+## 2026-09-25 — NHL Pro sale audit + player fight-record consistency
+
+**NHL Pro sale.** No launch-date, preseason or "coming soon" gate exists in the gateway (`requirePro()` = session + billing
+ledger only) or billing (`purchase_activation: external_gate`). The only purchase gate was the frontend `OPEN_FOR_PURCHASE`.
+- All Access checkout (`buy.stripe.com/8x2eVd…A0N`) renders a live $29/month Stripe checkout; billing v1.5.0 grants `nhl_pro`
+  to every active `pbe_all_access` member. → NHL Pro is purchasable and usable today via All Access.
+- Both NHL-only Payment Links (`14AbJ1…A0B` $9.99/mo, `6oUfZh…A0C` $3.99/wk) render Stripe's inactive message **"NHL Pro Founding
+  Season checkout is not open yet."** (headless render 2026-09-25). No Stripe API key is available locally, so they were not
+  re-activated. `OPEN_FOR_PURCHASE` stays `false`; the NHL-only CTA now reads "NHL-only checkout paused · All Access above
+  includes NHL Pro". Re-activate the two links in Stripe → set `OPEN_FOR_PURCHASE = true` (one line; tests pin it).
+- Entitlement path behind the NHL links: PROVEN by the 2026-09-15 production canary (monthly + weekly grant `nhl_pro`, forged /
+  wrong-price / cancelled / expired refused; session cookie, logout, CSRF). A fresh synthetic-webhook canary was not run
+  (tool permission denied for forging signed webhooks into production billing).
+- Owner: `justin@proptechusa.ai` → `nhl_pro` + `pbe_all_access` entitled, `access_source: owner` (read-only billing read).
+- Copy: season chip "NHL Pro is live · Opening night in Nd"; Pro sheet eyebrow "… · LIVE NOW"; Props coverage footer no longer
+  says the board cannot "go live". No other "coming soon"/launch-lock copy exists in `src/`.
+
+**Fight record.** Root cause: the player page ran a second, client-side fight derivation hard-wired to `currentSeasonId()`
+(2026-27) for BOTH the stat strip and the "Fan-voted fight record" panel, while the stat strip's stats and the PBE intelligence
+card used 2025-26. Now all three read one normalization (`src/lib/fight-record.js`) of `/nhl/intel/fights/player/:id`; the stat
+strip uses the stat line's season, Fight History has tabs [2026-27] [2025-26] [Career] and opens on the stat line's season;
+preseason fights are listed but not counted (as on the server). Winner orientation: player_id first, name only picks which
+fighter won; a name matching both/neither decides nothing (client + `nhl-metrics@17ffba8`, deployed `f29b7f53`, rollback
+`7d7bf1d1`). Production audit of all 309 2025-26 fights: 0 mismatches, 0 ambiguous, 0 records changed by the deploy.
+
 ## 2026-09-25 — NHL Intelligence Program — RESULTS
 
 | Phase | Status | Evidence |
