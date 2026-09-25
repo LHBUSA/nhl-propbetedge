@@ -4,7 +4,15 @@ Owner re-activated the two existing NHL-only Payment Links (no new links/prices)
 `plink_1UEWmLF3CaVzg4ORwxmpwjSz` → "Subscribe to PropBetEdge NHL Pro $9.99 per month"; `plink_1UEWmSF3CaVzg4ORdWk3Yqcj` → "$3.99 per week".
 `OPEN_FOR_PURCHASE = true`; All Access stays the primary offer; the "checkout paused" copy is removed (the kill-switch CTA
 now reads "Get NHL Pro with All Access above"). Rollback: Vercel deployment `BLLoFPniokqxan3EqqmNuWMfaMkr` (commit `64a2399`)
-or `git revert` of this commit. Production receipts in the commit following this entry's push (see report).
+or `git revert b70ac64`.
+
+Production receipts (commit `b70ac64`, Vercel `LStcBjBYPSCVJniXYck1BzL8QmmW` READY, live bundle `index-CASOMMZf.js` == tested build):
+checkout QA 28/28 at 1440 + 390 — signed-out sheet (All Access above the NHL plans, sign-in offered); monthly CTA →
+`buy.stripe.com/14AbJ1…A0B?locked_prefilled_email=…` renders "NHL Pro $9.99 per month" with the email locked; weekly →
+`…6oUfZh…A0C` renders "$3.99 per week"; All Access → `…8x2eVd…A0N` renders "$29.00 per month"; zero console/HTTP errors on
+nhl.propbetedge.ai in every flow; signed-out `/pro/intel/*` → 401; `?checkout=success` grants nothing. Deployed-JS sweep
+(30 chunks): 0 coming-soon / paused / not-open / cutover strings. NOT exercised: a completed real payment and a signed-in paid
+session (entitlement proof remains the 2026-09-15 production canary + owner read).
 
 ## 2026-09-25 — NHL Pro sale audit + player fight-record consistency
 
