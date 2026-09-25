@@ -1,6 +1,8 @@
 import { $, esc, on } from '../lib/dom.js';
 import { describeError, nhl, odds } from '../lib/api.js';
 import { marketPanel } from '../components/market.js';
+import { intel } from '../lib/intel.js';
+import { gameIntelStrip } from '../components/game-intel.js';
 import { mountCenter } from './cast-center.js';
 import { playerIdentity } from '../components/player.js';
 import { freshStamp } from '../lib/freshness.js';
@@ -501,6 +503,7 @@ function pickerMarkup(games, currentId, label) {
 
 export function mount(root, params, ctx) {
   if (params.view === 'all') return mountCenter(root, params, ctx);
+  const intelCtl = new AbortController();
   const state = {
     gameId: params.gameId || null,
     cast: null, meta: null, failed: false, error: null,
@@ -619,6 +622,15 @@ export function mount(root, params, ctx) {
     const g = cast.game;
     const st = stateOf(full.game);
     const pre = st.key === 'SCHEDULED' || st.key === 'PREGAME';
+    // Pregame intelligence strip (starters, rest, fatigue for Pro): requested
+    // once, only for a game that has not started. Fail-quiet — the Cast never
+    // depends on it.
+    if (pre && !state.intelRequested) {
+      state.intelRequested = true;
+      intel(`/game/${state.gameId}`, { signal: intelCtl.signal })
+        .then(res => { state.intel = { data: res.data, tier: res.tier }; renderBody(); })
+        .catch(() => {});
+    }
     const periods = [...new Set(full.plays.filter(p => p.shot).map(p => p.period))].filter(Boolean);
     // In replay, ring the most recent attempt at the cursor unless the user picked one.
     const lastShot = cast.replay ? [...cast.plays].reverse().find(p => p.shot?.has_coordinates) : null;
@@ -635,6 +647,7 @@ export function mount(root, params, ctx) {
       <div class="cast-grid" data-tab="${state.tab}">
         <div class="cast-col cast-col--rink">
           ${pre ? pregamePanel(cast, state.market) : ''}
+          ${pre && state.intel?.data ? gameIntelStrip(state.intel.data, { pro: state.intel.tier === 'pro' }) : ''}
           ${state.market && !['FINAL'].includes(st.key) ? `<section class="pbe-panel cast-card"><div class="panel-head"><h3>Market</h3><span class="pbe-badge pbe-badge--sched">Snapshot · not live</span></div>${marketPanel(state.market.event, state.market.meta)}</section>` : ''}
           <section class="pbe-panel cast-card">
             <div class="panel-head"><h3>Shot map</h3><span class="micro">${rink.plotted} plotted${omittedTotal ? ` · ${omittedTotal} not plotted` : ''}</span></div>
@@ -882,6 +895,7 @@ export function mount(root, params, ctx) {
   return () => {
     stopPlay();
     oddsCtl.abort();
+    intelCtl.abort();
     pickerPoller.stop();
     poller?.stop();
     document.removeEventListener('keydown', onKey);

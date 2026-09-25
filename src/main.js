@@ -16,6 +16,7 @@ import './styles/mode.css';
 import './styles/identity.css';
 import './styles/product-depth.css';
 import './styles/score-ticker.css';
+import './styles/intel.css';
 import './styles/chrome-upgrade.css';
 // Shared PropBetEdge membership vocabulary (badge, panel, All Access card).
 // Identity chrome only: it never styles body, so the atmosphere field stays visible.

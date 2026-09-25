@@ -7,27 +7,40 @@ import { isMember, proButtonHtml, proButtonLabel } from '../lib/pro-membership-u
 import { ALL_ACCESS_URL } from '../lib/pbe-membership.js';
 
 // Keep the desktop header focused on the five highest-value product surfaces,
-// with PBE Picks — the flagship — directly after the Ice Board. Everything else
-// stays one click away in More (News included on desktop, as before). Mobile
-// carries Board, PBE Picks, Cast and Props in its persistent bottom navigation
-// and moves News into the More sheet.
+// with PBE Picks — the flagship — directly after the Ice Board and WinHL (the
+// PropBetEdge skater metric) as the fifth. Everything else lives one click away
+// in More, grouped into the four product sections below. Mobile carries Board,
+// PBE Picks, Cast and Props in its persistent bottom navigation; the sheet
+// carries every section, grouped the same way.
 export const NAV = [
-  { id: 'board', href: '#/', label: 'Ice Board', short: 'Board', icon: 'board' },
-  { id: 'picks', href: '#/pbe-picks', label: 'PBE Picks', short: 'PBE Picks', icon: 'picks', pro: true },
-  { id: 'cast', href: '#/cast', label: 'PBE Cast', short: 'Cast', icon: 'cast' },
-  { id: 'props', href: '#/props', label: 'Props', short: 'Props', icon: 'props' },
-  { id: 'shots', href: '#/shots', label: 'Shot Lab', short: 'Shot Lab', icon: 'shots' }
+  { id: 'board', href: '#/', label: 'Ice Board', short: 'Board', icon: 'board', group: 'live' },
+  { id: 'picks', href: '#/pbe-picks', label: 'PBE Picks', short: 'PBE Picks', icon: 'picks', pro: true, group: 'prediction' },
+  { id: 'cast', href: '#/cast', label: 'PBE Cast', short: 'Cast', icon: 'cast', group: 'live' },
+  { id: 'props', href: '#/props', label: 'Props', short: 'Props', icon: 'props', group: 'prediction' },
+  { id: 'winhl', href: '#/winhl', label: 'WinHL', short: 'WinHL', group: 'intelligence' }
 ];
 export const MORE = [
-  { id: 'news', href: '#/news', label: 'News', short: 'News', icon: 'news' },
-  { id: 'goalies', href: '#/goalies', label: 'Goalies' },
-  { id: 'lines', href: '#/lines', label: 'Lines' },
-  { id: 'injuries', href: '#/injuries', label: 'Injuries' },
-  { id: 'matchup', href: '#/matchup', label: 'Matchups' },
-  { id: 'players', href: '#/players', label: 'Players' },
-  { id: 'standings', href: '#/standings', label: 'Standings' },
-  { id: 'track', href: '#/track-record', label: 'Track Record' },
-  { id: 'methodology', href: '#/methodology', label: 'Methodology' }
+  { id: 'standings', href: '#/standings', label: 'Standings', group: 'live' },
+  { id: 'news', href: '#/news', label: 'News', short: 'News', icon: 'news', group: 'live' },
+  { id: 'shots', href: '#/shots', label: 'Shot Lab', short: 'Shot Lab', icon: 'shots', group: 'prediction' },
+  { id: 'matchup', href: '#/matchup', label: 'Matchups', group: 'prediction' },
+  { id: 'goalies', href: '#/goalies', label: 'Goalies', group: 'intelligence' },
+  { id: 'fatigue', href: '#/fatigue', label: 'Fatigue', group: 'intelligence' },
+  { id: 'fights', href: '#/fights', label: 'Fights', group: 'intelligence' },
+  { id: 'lines', href: '#/lines', label: 'Lines', group: 'intelligence' },
+  { id: 'injuries', href: '#/injuries', label: 'Injuries', group: 'intelligence' },
+  { id: 'players', href: '#/players', label: 'Players', group: 'research' },
+  { id: 'teams', href: '#/teams', label: 'Teams', group: 'research' },
+  { id: 'track', href: '#/track-record', label: 'Track Record', group: 'research' },
+  { id: 'methodology', href: '#/methodology', label: 'Methodology', group: 'research' }
+];
+// The four product sections (owner IA, 2026-09-25). Order within a section is
+// the order the items are declared above.
+export const NAV_GROUPS = [
+  { id: 'live', label: 'Live' },
+  { id: 'prediction', label: 'Prediction' },
+  { id: 'intelligence', label: 'Intelligence' },
+  { id: 'research', label: 'Research' }
 ];
 const ALL_NAV = [...NAV, ...MORE];
 const BOTTOM = ['board', 'picks', 'cast', 'props'];
@@ -70,7 +83,7 @@ export function renderShell(app) {
           <div class="more">
             <button class="more__btn" type="button" aria-expanded="false" aria-controls="more-menu" data-more>More <span aria-hidden="true">▾</span></button>
             <div class="more__menu" id="more-menu" role="menu" hidden>
-              ${MORE.map(item => `<a role="menuitem" tabindex="-1" href="${item.href}" data-nav="${item.id}">${esc(item.label)}</a>`).join('')}
+              ${NAV_GROUPS.map(g => { const items = MORE.filter(item => item.group === g.id); return items.length ? `<span class="more__group" role="presentation">${esc(g.label)}</span>${items.map(item => `<a role="menuitem" tabindex="-1" href="${item.href}" data-nav="${item.id}">${esc(item.label)}</a>`).join('')}` : ''; }).join('')}
             </div>
           </div>
         </nav>
@@ -123,7 +136,7 @@ export function renderShell(app) {
         <div class="sheet__head"><span class="eyebrow">All sections</span><span class="sheet__season micro" id="sheet-season" hidden></span><button type="button" class="pbe-btn pbe-btn--ghost pbe-btn--sm" data-close-sheet aria-label="Close menu">Close</button></div>
         <a class="sheet__aa" id="nhl-sheet-all-access" href="${ALL_ACCESS_NAV.href}" rel="noopener" data-all-access="sheet">${icon('star')}<span class="sheet__aa-title">ALL ACCESS</span><span class="sheet__aa-copy">Every PropBetEdge Pro sport, one membership</span><span class="sheet__aa-arrow" aria-hidden="true">↗</span></a>
         <div class="sheet__grid">
-          ${ALL_NAV.map(item => `<a href="${item.href}" data-nav="${item.id}"${item.pro ? ' data-pro="1"' : ''}>${esc(item.label)}</a>`).join('')}
+          ${NAV_GROUPS.map(g => `<span class="sheet__group">${esc(g.label)}</span>${ALL_NAV.filter(item => item.group === g.id).map(item => `<a href="${item.href}" data-nav="${item.id}"${item.pro ? ' data-pro="1"' : ''}>${esc(item.label)}</a>`).join('')}`).join('')}
         </div>
         <button type="button" class="pbe-btn sheet__search" data-open-search>${icon('search')} Search teams &amp; games</button>
       </div>

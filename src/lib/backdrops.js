@@ -38,7 +38,12 @@ export const PHOTO_BACKDROPS = {
   shotlab:     { file: 'props',     pos: '50% 48%', mpos: '45% 45%', floor: .18, fpos: '50% 30%' },
   track:       { file: 'standings', pos: '50% 34%', mpos: '50% 40%', floor: .22, fpos: '50% 60%' },
   methodology: { file: 'injuries',  pos: '50% 50%', mpos: '50% 50%', opacity: .55, floor: .16, fpos: '50% 30%' },
-  picks:       { file: 'cast',      pos: '52% 40%', mpos: '50% 30%', floor: .26, fpos: '50% 70%' }
+  picks:       { file: 'cast',      pos: '52% 40%', mpos: '50% 30%', floor: .26, fpos: '50% 70%' },
+  // Intelligence routes (2026-09-25) re-use licensed plates; no new asset.
+  winhl:       { file: 'players',   pos: '50% 42%', mpos: '55% 40%', floor: .24, fpos: '50% 68%' },
+  fatigue:     { file: 'lines',     pos: '50% 55%', mpos: '50% 55%', floor: .20, fpos: '50% 78%' },
+  fights:      { file: 'matchups',  pos: '58% 30%', mpos: '60% 45%', floor: .24, fpos: '55% 70%' },
+  teams:       { file: 'standings', pos: '50% 38%', mpos: '50% 45%', floor: .16, fpos: '50% 24%' }
 };
 
 // Generated SVG route art is retired: every backdrop is a licensed raster plate.
@@ -52,7 +57,7 @@ const FLOOR_ONLY = { board: { key: 'standings', floor: .22, fpos: '50% 26%' } };
 const ROUTE_KEY = {
   cast: 'cast', props: 'props', goalies: 'goalies', lines: 'lines', injuries: 'injuries', news: 'news',
   matchup: 'matchups', players: 'players', standings: 'standings', shots: 'shotlab', track: 'track', methodology: 'methodology',
-  team: 'team', picks: 'picks'
+  team: 'team', picks: 'picks', winhl: 'winhl', fatigue: 'fatigue', fights: 'fights', teams: 'teams'
 };
 
 let supportsImageSet = null;

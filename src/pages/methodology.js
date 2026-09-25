@@ -199,6 +199,111 @@ const SECTIONS = [
     <p>A model is released only with a stored model version, criteria met on data it never trained on, and owner approval. Every output it produces carries that version.</p>`
   },
   {
+    id: 'goalie-form',
+    title: 'PBE Goalie Form (pbe-goalie-form-v1.0)',
+    lede: 'A PropBetEdge 0–100 reading of a goalie\'s current form. It is not an official NHL statistic and it contains no xG or GSAx: no validated expected-goals model exists here.',
+    body: `${table(['Component', 'Weight', 'Source fields', 'How it becomes 0–100'], [
+      ['Recent save rate', '40%', 'Last ≤5 regular-season/playoff appearances within 60 days (game log; box score for games the log lacks)', 'Shot-weighted save rate, shrunk toward the league rate by 150 shots; 50 + (shrunk − league) ÷ 0.025 × 50, clipped 0–100. Needs ≥3 appearances and ≥60 shots.'],
+      ['Season baseline', '30%', 'Season saves and shots (NHL stats); previous season until the current one has 300 shots', 'Shrunk toward the league rate by 300 shots; 50 + (shrunk − league) ÷ 0.015 × 50, clipped.'],
+      ['Rest & workload', '20%', 'Appearances and starts in the last 7 days, shots faced', '100 minus: appeared yesterday 45 · 3 starts in 7 days 15 (4+: 30) · more than 100 shots in 7 days 10.'],
+      ['Opponent shot volume', '10%', 'Opponent shots-for per game vs league (team stats)', '50 − (opponent − league) ÷ 4 × 50, clipped. Only for a specific game.']
+    ])}
+    ${defs([
+      ['Score', 'Σ subscore × weight ÷ Σ available weight. Every component shows its raw value, subscore, weight and contribution; contributions sum to the score.'],
+      ['Missing inputs', 'A component that cannot be computed is excluded and the rest renormalized. With less than 60% of the declared weight available, there is no score — never a guess.'],
+      ['Preseason', 'Preseason games count toward workload and rest, never toward the save rate. The NHL box score has no starter flag in the preseason, so a start is recorded only when one goalie played the whole game.'],
+      ['Location splits', 'High-danger / mid / long save rates on the Goalie Center are NHL Edge values exactly as the NHL publishes them, with its league average and percentile. We do not compute them.']
+    ])}`
+  },
+  {
+    id: 'fatigue',
+    title: 'PBE Fatigue (pbe-fatigue-team-v1.0 · pbe-fatigue-player-v1.0)',
+    lede: 'An additive burden index, 0–100, higher = more accumulated schedule and ice-time load. It is not a medical assessment and it does not claim that fatigue decides games.',
+    body: `<h4 class="micro">Team</h4>
+    ${table(['Component', 'Points', 'Source'], [
+      ['Rest', 'back-to-back +35 · one day of rest +10', 'Club schedule'],
+      ['3 games in 4 days (incl. this one)', '+12', 'Club schedule'],
+      ['4 games in 6 days (incl. this one)', '+12', 'Club schedule'],
+      ['Games in the previous 7 days', '3 → +6 · 4+ → +10', 'Club schedule'],
+      ['Road streak (this game on the road)', '+3 per consecutive road game after the first, max +12', 'Club schedule'],
+      ['Venue time-zone change since the last game', '1 h +3 · 2+ h +6', 'Venue UTC offsets in the schedule'],
+      ['Previous game past regulation', 'overtime +1…+4 by minutes played · shootout +5', 'Box score (OT clock, outcome)'],
+      ['Top-4 defense ice time, last 3 games vs season', '≥105% +4 · ≥110% +8', 'Box scores + NHL season ice time'],
+      ['Goalie workload', 'a goalie with 3+ starts in 7 days +5', 'Box-score starter flags']
+    ])}
+    <h4 class="micro" style="margin-top:14px">Player</h4>
+    ${table(['Component', 'Points', 'Source'], [
+      ['Played yesterday', '+25', 'Box scores'],
+      ['Appearances in the previous 3 days', '2+ → +10', 'Box scores'],
+      ['Ice time, last 3 games vs season average', '≥108% +10 · ≥115% +20', 'Box scores + NHL season ice time'],
+      ['Average ice time, last 3 games', 'D ≥21:00 +5, ≥24:00 +10 · F ≥18:00 +5, ≥20:00 +10', 'Box scores'],
+      ['Short-handed ice time, last 3 games', '≥3:00 per game +5', 'NHL per-game time-on-ice report'],
+      ['Overtime ice time, last game', '≥2:00 +5', 'NHL per-game time-on-ice report']
+    ])}
+    ${defs([
+      ['Cap', 'Scores are capped at 100. Unavailable components add nothing and are labelled.'],
+      ['Minimum sample', 'A player score needs three appearances in the last 21 days; before that the facts show and the score is withheld.'],
+      ['Travel', 'Travel distance is not computed: no integrated source carries verified venue coordinates. The time-zone change uses each venue\'s UTC offset from the NHL schedule.'],
+      ['Preseason', 'Preseason games are real games and count toward schedule load. The NHL does not publish power-play / penalty-kill / overtime splits for them, so those components stay unavailable.']
+    ])}`
+  },
+  {
+    id: 'winhl',
+    title: 'WinHL (winhl-v1.0)',
+    lede: 'PropBetEdge\'s skater impact metric: how much a player contributes to winning hockey, 0–100 within his position group. Built for hockey — not a port of any other sport\'s metric — and not xG, possession value, RAPM, GAR or WAR.',
+    body: `${table(['Component (per game)', 'Forward weight', 'Defense weight'], [
+      ['Goal creation: G + 0.7 × primary A + 0.3 × secondary A', '30%', '18%'],
+      ['Shots on goal', '10%', '7%'],
+      ['Individual shot attempts', '5%', '5%'],
+      ['Power-play + short-handed points', '10%', '8%'],
+      ['Ice time (coach trust)', '10%', '16%'],
+      ['Penalty-kill ice time (deployment, not results)', '5%', '8%'],
+      ['Blocked shots + takeaways', '7%', '14%'],
+      ['Hits', '3%', '5%'],
+      ['Penalties drawn − penalties taken', '5%', '5%'],
+      ['NHL 5v5 on-ice shot-attempt share, relative to team (SAT rel, as published)', '10%', '14%'],
+      ['Faceoff wins − losses (centers only)', '5%', '—']
+    ])}
+    ${defs([
+      ['Percentiles', 'Each component is a mid-rank percentile among qualified players in the same group (forwards or defensemen; faceoffs among centers). WinHL = Σ percentile × weight ÷ Σ available weight. 50 is the median qualified player at the position.'],
+      ['Qualification', '10+ games and 5:00+ per game in the window. Fewer than 20 games in the season window is flagged provisional.'],
+      ['Windows', 'Season; each player\'s last 10 and last 5 regular-season games. Short windows score their per-game rates against the season distribution so a small sample cannot drift toward the middle by construction. SAT relative is season-only; short windows renormalize without it.'],
+      ['Trend', 'Last-10 minus season over only the components both windows have (like for like). Up ≥ +5, down ≤ −5.'],
+      ['Season choice', 'The current regular season once 200 skaters have 10+ games; before that the most recent completed season, labelled on every surface.'],
+      ['Not included', 'Plus/minus (context-poor), goalies (see PBE Goalie Form), and any team-result weighting — not in v1.']
+    ])}`
+  },
+  {
+    id: 'fights',
+    title: 'Fights, PBE Fight Score (pbe-fight-score-v1.0) and post-fight windows',
+    lede: 'A fight is a pair of opposing fighting majors at the same stoppage in the official NHL play-by-play. The NHL never declares a winner.',
+    body: `${defs([
+      ['Result', 'Only the HockeyFights fan vote for that exact fight (date, period, clock, both teams, both last names). It is always labelled FAN VOTE · NOT OFFICIAL. No vote → no result.'],
+      ['Decided', 'A fan vote with at least 5 votes. A named draw counts ½.'],
+      ['PBE Fight Score', 'Fan-vote result share (win 1, draw ½, loss 0), each fight weighted by min(1, votes ÷ 30), shrunk toward 50 by three neutral pseudo-fights: 100 × (Σ w·result + 1.5) ÷ (Σ w + 3). No decided fight → no score. Fewer than three decisions → provisional.'],
+      ['Shown, not scored', 'Fight count, fighting PIM, average opponent Fight Score and the last fight date are shown beside the score, never folded into it: activity is not quality.'],
+      ['Post-fight window', 'Shot attempts, shots on goal, goals and penalties for each team in the 5:00 of game time before and after the fight (penalties at the fight stoppage excluded; windows truncated at game boundaries and flagged). Descriptive, not causal: it does not show that fighting changes play.']
+    ])}`
+  },
+  {
+    id: 'props-model',
+    title: 'Player props: market vs model',
+    lede: 'The Props board shows market prices. A PropBetEdge prop model is shown only after it passes every release gate — until then it runs in SHADOW and serves nothing.',
+    body: `${table(['Gate', 'Meaning'], [
+      ['Versioned', 'A frozen spec and version string.'],
+      ['Backtest', 'Evaluated on archived official box scores.'],
+      ['Held-out season', 'A season never used for fitting.'],
+      ['Calibration', 'Measured calibration within the frozen criteria.'],
+      ['Pregame lock', 'Predictions lock before puck drop.'],
+      ['Grader', 'Graded automatically against official box scores.'],
+      ['Forward record', 'An independent forward track record meets the frozen criteria.']
+    ])}
+    ${defs([
+      ['Market consensus', 'The no-vig consensus averages each book\'s margin-free probability, and needs at least two books quoting both sides of the same line. It is market observation, never a model probability.'],
+      ['Status', 'Shots on goal and goalie saves are the first models in validation. Both are SHADOW: no probability, fair line or edge is served to any client, free or Pro.']
+    ])}`
+  },
+  {
     id: 'track',
     title: 'Track record rules',
     lede: 'How every published pick will be kept and graded.',
@@ -253,7 +358,7 @@ export function mount(root, params = {}) {
           <p class="mth-lede">${esc(s.lede)}</p>
           <div class="mth-body">${typeof s.body === 'function' ? s.body() : s.body}</div>
         </section>`).join('')}
-        <p class="micro mth-updated">Last reviewed Sep 11, 2026 · 2026-27 season</p>
+        <p class="micro mth-updated">Last reviewed Sep 25, 2026 · 2026-27 season</p>
       </article>
     </div>
   </section>`;

@@ -10,6 +10,9 @@ import { createPoller } from '../lib/poll.js';
 import { teamAccent, TEAM_BY_ABBREV } from '../lib/teams.js';
 import { stateBadge, stateOf, teamMark } from '../components/game.js';
 import { playerIdentity } from '../components/player.js';
+import { intel } from '../lib/intel.js';
+import { goalieIntelCards, goalieIntelTop } from '../components/goalie-intel.js';
+import { describeError as describeIntelError } from '../lib/api.js';
 
 // Logos here always sit next to visible team text: decorative, so alt="".
 const mark = (team, size) => teamMark(team, size).replace(/ alt="[^"]*"/, ' alt=""');
@@ -175,7 +178,24 @@ function teamPanel(t, side, game, big) {
   </section>`;
 }
 
-function gameArticle(game, entry, { big = false } = {}) {
+// Goalie Intelligence 2.0 (nhl-metrics): workload timeline, rest warnings,
+// season vs recent, NHL Edge splits; PBE Goalie Form for NHL Pro.
+function intelTop(ie) {
+  if (!ie) return '<div class="pbe-skeleton" style="height:84px;margin:12px 16px 0"></div>';
+  if (!ie.data) return '';
+  return `<div class="dk-gi dk-gi--top">${goalieIntelTop(ie.data, { pro: ie.tier === 'pro' })}</div>`;
+}
+
+function intelBlock(ie, big) {
+  if (!ie) return '<div class="pbe-skeleton" style="height:90px;margin-top:12px"></div>';
+  if (!ie.data) {
+    const e = describeIntelError(ie.error);
+    return `<p class="micro faint" style="margin-top:10px">Goalie intelligence unavailable — ${esc(e.title)}. Starter truth and workload above are unaffected.</p>`;
+  }
+  return `<div class="dk-gi">${goalieIntelCards(ie.data, { pro: ie.tier === 'pro', big })}<p class="micro faint">${ie.data.captured_at ? `Intelligence computed ${esc(dayET(ie.data.captured_at))} ${esc(clockET(ie.data.captured_at))} · ` : ''}GSAx and xG are not shown: no validated model exists.</p></div>`;
+}
+
+function gameArticle(game, entry, { big = false, intelEntry = undefined } = {}) {
   const g = entry?.data?.game || game;
   const a = g.teams?.away || {}; const h = g.teams?.home || {};
   const body = !entry
@@ -204,7 +224,9 @@ function gameArticle(game, entry, { big = false } = {}) {
         <a class="dk-link" href="#/matchup/${esc(g.id)}">Matchup</a>
       </div>
     </header>
+    ${intelEntry === undefined ? '' : intelTop(intelEntry)}
     ${body}
+    ${intelEntry === undefined ? '' : intelBlock(intelEntry, big)}
     <footer class="dk-game__foot micro">GSAx: unavailable — requires a validated xG model; none is released.</footer>
   </article>`;
 }
@@ -301,6 +323,7 @@ export function mount(root, params, ctx) {
     board: null, boardMeta: null, boardFailed: false, boardError: null,
     games: [],
     store: new Map(),       // gameId -> { data, meta, failed, error }
+    intel: new Map(),       // gameId -> { data, tier, error } (nhl-metrics)
     loadedOnce: false,
     leaders: {},
     calendar: null,
@@ -367,7 +390,7 @@ export function mount(root, params, ctx) {
     }
     if (state.limited) { body.innerHTML = gridBlock(games, state.store, true); return; }
     body.innerHTML = `${gridBlock(games, state.store)}
-      <div class="dk-games">${games.map(g => gameArticle(g, state.store.get(String(g.id)))).join('')}</div>`;
+      <div class="dk-games">${games.map(g => gameArticle(g, state.store.get(String(g.id)), { intelEntry: state.intel.get(String(g.id)) || null })).join('')}</div>`;
   };
 
   // Replace one game (and the grid summary) without re-rendering the page.
@@ -375,7 +398,7 @@ export function mount(root, params, ctx) {
     const game = state.games.find(g => String(g.id) === String(id));
     const node = body.querySelector(`[data-game="${CSS.escape(String(id))}"]`);
     if (!game || !node) { renderSlate(); return; }
-    node.outerHTML = gameArticle(game, state.store.get(String(id)));
+    node.outerHTML = gameArticle(game, state.store.get(String(id)), { intelEntry: state.intel.get(String(id)) || null });
     const grid = body.querySelector('.dk-sgwrap');
     if (grid) grid.outerHTML = gridBlock(state.games, state.store);
   };
@@ -391,6 +414,20 @@ export function mount(root, params, ctx) {
       state.store.set(key, prev?.data ? { ...prev, failed: true, error } : { data: null, meta: null, failed: true, error });
     }
     if (!signal.aborted) patchGame(key);
+  }
+
+  async function loadIntel(id, signal, { focus = false } = {}) {
+    const key = String(id);
+    try {
+      const res = await intel(`/game/${key}`, { signal });
+      state.intel.set(key, { data: res.data, tier: res.tier, error: null });
+    } catch (error) {
+      if (error.kind === 'aborted' || signal.aborted) return;
+      const prev = state.intel.get(key);
+      state.intel.set(key, prev?.data ? prev : { data: null, error });
+    }
+    if (signal.aborted) return;
+    if (focus) renderFocus(); else patchGame(key);
   }
 
   async function resolveDate(signal) {
@@ -430,6 +467,8 @@ export function mount(root, params, ctx) {
     const targets = state.loadedOnce ? state.games.filter(volatile) : state.games;
     state.loadedOnce = true;
     await pool(targets, 4, g => loadGoalies(g.id, signal));
+    // Intelligence rides on the same cadence; the first pass loads every game.
+    pool(targets, 2, g => loadIntel(g.id, signal)).catch(() => {});
     const anyLive = state.games.some(g => LIVEISH.has(stateOf(g).key));
     const anyPending = state.date === todayET() && state.games.some(g => PREISH.has(stateOf(g).key));
     return anyLive ? 60000 : anyPending ? 300000 : null;
@@ -449,13 +488,14 @@ export function mount(root, params, ctx) {
     if (!f.data) { body.innerHTML = errorBox(f.error); return; }
     const g = f.data.game;
     $('#dk-g-title', root).textContent = `${g.teams.away.abbrev || 'TBD'} @ ${g.teams.home.abbrev || 'TBD'} · who is in net`;
-    body.innerHTML = gameArticle(g, f, { big: true });
+    body.innerHTML = gameArticle(g, f, { big: true, intelEntry: state.intel.get(String(focusId)) || null });
   };
 
   const focusPoller = focusId ? createPoller(async signal => {
     const res = await nhl(`/nhl/game/${focusId}/goalies`, {}, { signal, timeout: 15000 });
     state.focus = { data: res.data, meta: res.meta, failed: false, error: null };
     renderFocus();
+    loadIntel(focusId, signal, { focus: true });
     renderTools();
     if (!state.pickGames.length && res.data.game?.date) {
       ctx.board(res.data.game.date, { signal: ctl.signal }).then(b => {

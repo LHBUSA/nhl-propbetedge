@@ -1,3 +1,5 @@
+import { intel, intelTier } from '../lib/intel.js';
+import { playerIntelSection } from '../components/player-intel.js';
 import { $, esc, on, safeUrl } from '../lib/dom.js';
 import { describeError, news, nhl } from '../lib/api.js';
 import { freshStamp } from '../lib/freshness.js';
@@ -377,7 +379,7 @@ function newsSection(p, s) {
 
 export function mount(root, params) {
   const id = params.playerId;
-  const st = { player: {}, log: {}, fights: {}, news: {}, next: null, gameType: 2, season: null, hasPlayoffs: false, totals: null };
+  const st = { player: {}, log: {}, fights: {}, news: {}, next: null, gameType: 2, season: null, hasPlayoffs: false, totals: null, pi: { tier: null, winhl: null, fatigue: null, goalie: null, fightLedger: null } };
   root.innerHTML = `<section class="wrap section rs-player"><div id="rs-p-head"><div class="pbe-skeleton" style="height:180px"></div></div>
     <div id="rs-p-body"></div></section>`;
   const headEl = $('#rs-p-head', root);
@@ -397,6 +399,7 @@ export function mount(root, params) {
     if (!p) { bodyEl.innerHTML = ''; return; }
     bodyEl.innerHTML = `
       <section class="pbe-panel rs-p-season">${seasonLine(p, st.totals, st.gameType, st.fights)}</section>
+      <section class="pbe-panel rs-p-intel" aria-label="PBE intelligence">${playerIntelSection(p, st.pi)}</section>
       <section class="pbe-panel rs-p-fights">${fightSection(p, st.fights)}</section>
       <div class="rs-player-grid">
         <section class="pbe-panel" id="rs-p-charts">${chartsSection(p, st.log, st.totals)}</section>
@@ -406,6 +409,23 @@ export function mount(root, params) {
         </div>
       </div>
       <section class="pbe-panel rs-p-log">${gameLogSection(p, st.log, st.gameType, st.hasPlayoffs)}</section>`;
+  };
+
+  // PBE intelligence (nhl-metrics via the gateway). Each block fails on its own.
+  const loadIntel = async p => {
+    const tier = await intelTier();
+    st.pi.tier = tier;
+    const settle = (key, promise) => promise
+      .then(res => { st.pi[key] = { data: res.data }; if (res.tier) st.pi.tier = res.tier; })
+      .catch(error => { if (error.kind !== 'aborted') st.pi[key] = { error }; })
+      .finally(() => { if (!signal.aborted) renderBody(); });
+    if (p.position === 'G') {
+      settle('goalie', intel(`/goalie/${id}`, { signal }));
+    } else {
+      settle('winhl', intel(`/winhl/player/${id}`, { signal }));
+      if (tier === 'pro') settle('fatigue', intel(`/player/${id}/fatigue`, { signal, proOnly: true }));
+    }
+    settle('fightLedger', intel(`/fights/player/${id}`, { signal, tier: 'free' }));
   };
 
   const loadFights = async () => {
@@ -521,6 +541,7 @@ export function mount(root, params) {
       renderHead();
       loadLog();
       loadFights();
+      loadIntel(p);
       // Next game for the player's club (context for tonight), from the club schedule.
       if (TEAM_BY_ABBREV.has(p.current_team_abbrev)) {
         nhl(`/nhl/team/${p.current_team_abbrev}/schedule`, {}, { signal })

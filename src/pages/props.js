@@ -9,6 +9,8 @@ import { freshStamp } from '../lib/freshness.js';
 import { dateLabel, dayET, timeET, todayET } from '../lib/format.js';
 import { teamMark } from '../components/game.js';
 import { bookName, price } from '../components/market.js';
+import { intel } from '../lib/intel.js';
+import { PROP_LABEL, PROP_MARKETS, aggregatePropMarkets, marketCounts, propMoves } from '../lib/prop-market.js';
 
 // Logos here always sit next to visible team text: decorative, so alt="".
 const mark = (team, size) => teamMark(team, size).replace(/ alt="[^"]*"/, ' alt=""');
@@ -45,7 +47,7 @@ const PLAYER_MARKETS = [
 const PLAYER_MARKET_LABEL = Object.fromEntries(PLAYER_MARKETS.map(([label, key]) => [key, label]));
 const BOOKS = ['DraftKings', 'FanDuel', 'BetMGM', 'Caesars', 'BetRivers', 'Fanatics', 'Bovada', 'BetOnline', 'LowVig', 'BetUS'];
 
-function boardFrame(hasMarket = false) {
+function boardFrame(hasMarket = false, snapshot = false) {
   return `<section class="dk-props-board" id="dk-p-frame" aria-labelledby="dk-p-board">
     <div class="dk-props-board__head">
       <div><span class="eyebrow">Props Board</span><h3 id="dk-p-board">Player markets</h3></div>
@@ -61,7 +63,7 @@ function boardFrame(hasMarket = false) {
       <tbody>
         <tr><td colspan="${COLUMNS.length}" class="dk-ptable__empty">
           <span class="pbe-badge pbe-badge--unavailable">No market data</span>
-          <b>${hasMarket ? 'No book has posted NHL player markets in the current snapshot.' : 'Market snapshots not integrated — no prices are shown until a verified ingest exists.'}</b>
+          <b>${hasMarket || snapshot ? 'No book has posted NHL player markets in the current snapshot.' : 'Market snapshot unavailable here — no prices are shown until a verified snapshot loads.'}</b>
           <span class="dim">Each row will be one book's quote for one player market, stamped with its capture time.</span>
         </td></tr>
       </tbody>
@@ -70,40 +72,70 @@ function boardFrame(hasMarket = false) {
   </section>`;
 }
 
-function propsQuoteBoard(events, meta, { gameId = null } = {}) {
+// Player markets: one row per game x player x market (lib/prop-market.js).
+// Market observation only, never a model.
+function propsQuoteBoard(events, meta, { gameId = null, market = 'all' } = {}) {
   const filtered = gameId ? events.filter(e => String(e.game_id) === String(gameId)) : events;
-  const rows = filtered.flatMap(e => (e.props || []).map(p => ({ ...p, game: e })))
-    .sort((a, b) =>
-      String(a.game.commence_time || '').localeCompare(String(b.game.commence_time || ''))
-      || String(a.player || '').localeCompare(String(b.player || ''))
-      || String(a.market || '').localeCompare(String(b.market || ''))
-      || Number(a.line || 0) - Number(b.line || 0)
-      || String(a.book || '').localeCompare(String(b.book || '')));
-
-  if (!rows.length) return boardFrame(events.some(e => (e.props || []).length));
-
-  const quote = v => (v === null || v === undefined ? '—' : price(v));
+  const all = aggregatePropMarkets(filtered);
+  if (!all.length) return boardFrame(false, true);
+  const counts = marketCounts(all);
+  const moves = propMoves(filtered);
+  const rows = market === 'all' ? all : all.filter(r => r.market === market);
+  const cell = s => (s ? `<b>${price(s.price)}</b><span class="dk-bl__book">${esc(bookName(s.book))}</span>` : '<span class="faint">not quoted</span>');
   return `<section class="dk-props-board" id="dk-p-frame" aria-labelledby="dk-p-board">
     <div class="dk-props-board__head">
-      <div><span class="eyebrow">Props Board · stored quotes</span><h3 id="dk-p-board">${gameId ? 'Player props for this game' : 'Posted NHL player markets'}</h3></div>
+      <div><span class="eyebrow">Player market intelligence · stored quotes</span><h3 id="dk-p-board">${gameId ? 'Player props for this game' : 'Posted NHL player markets'}</h3></div>
       ${freshStamp(meta, { source: 'Market snapshot' })}
+    </div>
+    <div class="chips dk-p-markets" role="group" aria-label="Market">
+      <button type="button" class="chip${market === 'all' ? ' is-active' : ''}" aria-pressed="${market === 'all'}" data-pmarket="all">All · ${all.length}</button>
+      ${PROP_MARKETS.map(([k, l]) => `<button type="button" class="chip${market === k ? ' is-active' : ''}" aria-pressed="${market === k}" data-pmarket="${k}"${counts[k] ? '' : ' disabled'}>${esc(l)} · ${counts[k]}</button>`).join('')}
     </div>
     <div class="table-wrap" tabindex="0" role="region" aria-label="Posted NHL player props">
       <table class="pbe-table dk-ptable dk-propquotes">
-        <thead><tr><th>Player</th><th>Game</th><th>Market</th><th class="num">Line</th><th class="num">Over</th><th class="num">Under</th><th>Book</th><th>Updated</th></tr></thead>
-        <tbody>${rows.map(r => `<tr data-game="${esc(r.game.game_id || '')}">
-          <td><b>${esc(r.player || '—')}</b></td>
-          <td><a class="dk-bl__game" href="#/cast/${esc(r.game.game_id || '')}">${mark({ abbrev: r.game.away }, 18)}<b>${esc(r.game.away || 'TBD')}</b><span class="faint">@</span>${mark({ abbrev: r.game.home }, 18)}<b>${esc(r.game.home || 'TBD')}</b></a></td>
-          <td>${esc(PLAYER_MARKET_LABEL[r.market] || r.market || '—')}</td>
-          <td class="num mono">${esc(r.line ?? '—')}</td>
-          <td class="num"><b>${quote(r.over)}</b></td>
-          <td class="num"><b>${quote(r.under)}</b></td>
-          <td>${esc(bookName(r.book))}</td>
+        <thead><tr><th>Player</th><th>Game</th><th>Market</th><th class="num">Main line</th><th class="num">Best over</th><th class="num">Best under</th><th class="num">Books</th><th class="num" title="Mean no-vig probability of the over across books quoting both sides of the main line">No-vig over</th><th class="num">Other lines</th><th class="num">Moves</th><th>Newest quote</th></tr></thead>
+        <tbody>${rows.map(r => {
+          const mv = [...moves.entries()].filter(([k]) => k.endsWith(`|${r.market}|${r.player}`)).reduce((sum, [, v]) => sum + v, 0);
+          return `<tr data-game="${esc(r.game.game_id || '')}">
+          <td><b>${esc(r.player)}</b></td>
+          <td><a class="dk-bl__game" href="#/matchup/${esc(r.game.game_id || '')}">${mark({ abbrev: r.game.away }, 18)}<b>${esc(r.game.away || 'TBD')}</b><span class="faint">@</span>${mark({ abbrev: r.game.home }, 18)}<b>${esc(r.game.home || 'TBD')}</b></a></td>
+          <td>${esc(PROP_LABEL[r.market] || r.market)}</td>
+          <td class="num mono">${esc(r.main_line)}</td>
+          <td class="num">${cell(r.best_over)}</td>
+          <td class="num">${cell(r.best_under)}</td>
+          <td class="num">${esc(r.books)}${r.books_any_line > r.books ? `<span class="dk-bl__book">${esc(r.books_any_line)} any line</span>` : ''}</td>
+          <td class="num">${r.consensus ? `${(r.consensus.over * 100).toFixed(1)}%<span class="dk-bl__book">fair ${price(r.consensus.fair_over)} · ${r.consensus.books} books</span>` : '<span class="faint">needs 2 books</span>'}</td>
+          <td class="num mono">${r.other_lines.length ? esc(r.other_lines.join(' · ')) : '—'}</td>
+          <td class="num">${mv}</td>
           <td class="micro">${r.last_update ? `${esc(dayET(r.last_update))} · ${esc(timeET(r.last_update))}` : '—'}</td>
-        </tr>`).join('')}</tbody>
+        </tr>`;
+        }).join('')}</tbody>
       </table>
     </div>
-    <p class="micro dk-bl__note">Stored market snapshot only — not a live sportsbook feed. These are quoted player markets; no PropBetEdge model edge is implied.</p>
+    <p class="micro dk-bl__note">Stored market snapshot only — not a live sportsbook feed. "No-vig over" is the average market-implied probability after removing each book's margin: a market consensus, never a PropBetEdge model probability. No player-prop model is released (see the validation status below).</p>
+  </section>`;
+}
+
+// Model side: status comes from nhl-metrics /props/validation. SHADOW models
+// never have any output served, to anyone.
+function validationPanel(v) {
+  if (!v) return '<section class="pbe-panel dk-steps" id="dk-p-validation"><div class="pbe-skeleton" style="height:180px"></div></section>';
+  if (v.error) return '<section class="pbe-panel dk-steps" id="dk-p-validation"><div class="panel-head"><h3>Prop model validation</h3></div><p class="micro faint">Validation status unavailable right now. No prop model output is served in any case.</p></section>';
+  const d = v.data;
+  const models = d.models || [];
+  const gate = (m, g) => {
+    const st = m?.gates?.[g.key];
+    const cls = st?.passed === true ? 'confirmed' : st?.passed === false ? 'alert' : 'unavailable';
+    const word = st?.passed === true ? 'Passed' : st?.passed === false ? 'Failed' : 'Not yet';
+    return `<li class="dk-steps__item"><span class="pbe-badge pbe-badge--${cls}">${word}</span><div><b>${esc(g.label)}</b>${st?.evidence ? `<p>${esc(st.evidence)}</p>` : ''}</div></li>`;
+  };
+  return `<section class="pbe-panel dk-steps" id="dk-p-validation">
+    <div class="panel-head"><h3>Prop model validation</h3><span class="pbe-badge pbe-badge--model">SHADOW</span></div>
+    <p class="dim">${esc(d.release_rule)} ${esc(d.serving)}</p>
+    ${models.length ? models.map(m => `<h4 class="micro" style="margin-top:12px">${esc(m.model)} · ${esc(m.market_label || m.market || '')} · <b>${esc(m.status)}</b></h4>
+      ${m.summary ? `<p class="micro dim">${esc(m.summary)}</p>` : ''}
+      <ol>${(d.gates || []).map(g => gate(m, g)).join('')}</ol>`).join('')
+      : `<ol>${(d.gates || []).map(g => gate(null, g)).join('')}</ol><p class="micro faint">No prop model has been registered for validation yet.</p>`}
   </section>`;
 }
 
@@ -131,13 +163,13 @@ function productsPanel() {
         <span class="pbe-badge pbe-badge--sched">Market</span>
         <h4>Market price intelligence</h4>
         <p>What the books are offering: the line, the price, which book, how old the quote is and how it moved since the last snapshot. Pure observation — it says nothing about who is right.</p>
-        <dl><div><dt>Needs</dt><dd>Snapshot ingest (3×/day) · stored history</dd></div><div><dt>Status</dt><dd><span class="pbe-badge pbe-badge--unavailable">Not integrated</span></dd></div></dl>
+        <dl><div><dt>Source</dt><dd>Scheduled snapshots 3×/day · stored history</dd></div><div><dt>Status</dt><dd><span class="pbe-badge pbe-badge--confirmed">Live snapshots</span></dd></div></dl>
       </article>
       <article class="dk-two__card dk-two__card--model">
         <span class="pbe-badge pbe-badge--model">Model</span>
         <h4>PropBetEdge model edge</h4>
         <p>A fair line from a versioned, validated model, compared with the market. Shown only when the model is released, with its version and a public track record.</p>
-        <dl><div><dt>Needs</dt><dd>Validated model · locked predictions · grading</dd></div><div><dt>Status</dt><dd><span class="pbe-badge pbe-badge--unavailable">No model released</span></dd></div></dl>
+        <dl><div><dt>Needs</dt><dd>Validated model · locked predictions · grading · forward record</dd></div><div><dt>Status</dt><dd><span class="pbe-badge pbe-badge--model">Shadow only</span></dd></div></dl>
       </article>
     </div>
   </section>`;
@@ -149,9 +181,9 @@ function activationPanel() {
     <div class="panel-head"><h3>What turns this board on</h3></div>
     <ol>
       ${step('Done', 'Provider coverage verified', 'Game markets posted by 10 US books; terms allow display in this product.')}
-      ${step('Pending', 'Snapshot ingest deployed', 'A separate odds Worker capturing snapshots three times a day. Awaiting owner approval.')}
-      ${step('Pending', 'Player markets posted', 'Game-day check of when books open SOG, saves, points, goals and assists.')}
-      ${step('Not started', 'Model fair lines', 'Only after a versioned model is validated and its picks lock before puck drop.')}
+      ${step('Done', 'Snapshot ingest deployed', 'The nhl-odds Worker captures scheduled snapshots at 08:00 / 13:00 / 18:00 ET and requests SOG, saves, points, goals and assists for each game.')}
+      ${step('Pending', 'Player markets posted', 'The board fills automatically when books post NHL player markets; none are in the current snapshot.')}
+      ${step('Pending', 'Model fair lines', 'Shots-on-goal and goalie-saves models run in SHADOW only; see the validation gates. No fair line is shown until every gate passes.')}
     </ol>
   </section>`;
 }
@@ -209,6 +241,7 @@ export function mount(root, params, ctx) {
       ${activationPanel()}
     </div>
     ${productsPanel()}
+    ${validationPanel(null)}
     <nav class="dk-p-links" aria-label="Related">
       <a class="pbe-btn" href="#/track-record">Track Record</a>
       <a class="pbe-btn pbe-btn--ghost" href="#/methodology">Methodology</a>
@@ -236,12 +269,26 @@ export function mount(root, params, ctx) {
     } catch { /* slate context is optional on this page */ }
   })();
 
+  // Model validation status (nhl-metrics). SHADOW models serve nothing.
+  intel('/props/validation', { signal: ctl.signal, tier: 'free' })
+    .then(res => { $('#dk-p-validation', root).outerHTML = validationPanel({ data: res.data }); })
+    .catch(error => { if (error.kind !== 'aborted') $('#dk-p-validation', root).outerHTML = validationPanel({ error }); });
+
   // Market snapshot, when this environment has the odds service.
+  let snapshot = null;
+  let marketFilter = PROP_MARKETS.some(([k]) => k === params.market) ? params.market : 'all';
+  root.addEventListener('click', event => {
+    const b = event.target.closest('[data-pmarket]');
+    if (!b || !snapshot || b.disabled) return;
+    marketFilter = b.dataset.pmarket;
+    $('#dk-p-frame', root).outerHTML = propsQuoteBoard(snapshot.events, snapshot.meta, { gameId: targetGame, market: marketFilter });
+  }, { signal: ctl.signal });
   odds({}, { signal: ctl.signal, timeout: 8000 })
     .then(res => {
       const events = res.data.events || [];
+      snapshot = { events, meta: res.meta };
       $('#dk-p-bestline', root).innerHTML = bestLineBoard(events, res.meta, { gameId: targetGame });
-      $('#dk-p-frame', root).outerHTML = propsQuoteBoard(events, res.meta, { gameId: targetGame });
+      $('#dk-p-frame', root).outerHTML = propsQuoteBoard(events, res.meta, { gameId: targetGame, market: marketFilter });
       if (focus) requestAnimationFrame(() => {
         const el = focus === 'props' ? $('#dk-p-frame', root) : $('#dk-p-bestline', root);
         el?.scrollIntoView({ behavior: 'smooth', block: 'start' });

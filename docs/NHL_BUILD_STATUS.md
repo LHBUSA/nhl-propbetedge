@@ -1,3 +1,21 @@
+## 2026-09-25 — NHL Intelligence Program — RESULTS
+
+| Phase | Status | Evidence |
+|---|---|---|
+| 1 `nhl-metrics` Worker | PROVEN (production) | `propsports-api-worker@8da8950`; `GET nhl-api.propbetedge.ai/nhl/intel/health` → ok, league/WinHL/fights snapshots captured 2026-09-25 |
+| 2 Gateway 1.2.0 intel routes | PROVEN (production) | `propsports-api-worker@34309ba`; `/nhl/intel/winhl?pos=F` and `/nhl/intel/slate` return tier `free` payloads |
+| 3 Frontend (Goalie Center 2.0, `#/fatigue`, `#/winhl`, `#/fights`, `#/teams`, Props market upgrade, Game Intelligence in Matchup/Cast/Player, nav IA, Methodology) | PUSHED — see commit below; prod QA recorded after deploy | gates below |
+| 4 Shadow saves model | IN PROGRESS (backend session) | release criteria frozen `1dc2a40`; v1 fit misses frozen tail-calibration thresholds on validation; test split NOT evaluated |
+| 5 Release gates | see Phase 3 gates | |
+
+Phase 3 gates (run 2026-09-25, recovered after a PC hard restart at ~17:31Z; nothing had been committed or pushed before it):
+- `npm test` — 113 pass / 0 fail. `npm run build` — PASS.
+- `tests/e2e/intel-qa.mjs` — 11/11 at each of 1440/1280/1024/768/430/390/360/320 (free tier, zero relay incidents); mocked-Pro presentation PASS at 1440/390.
+- Score ticker 52/52; headshot canary 15/15.
+- `chrome-destinations.mjs` — 253 ok; 9 failures, all **identical on clean production `146ca20`** (baseline run in a detached worktree): Shot Lab bare-landing / completed-game checks and replay tiles (preseason: no completed game on today's slate), and the three NHL Pro auth-button checks (localhost origin is not an allowed auth origin). Expectations updated for the new IA (desktop nav `…|Props|WinHL`, bottom nav `+All Access`, 13-item More menu, 18-item sheet).
+- `pbe-picks-qa.mjs` — 15 failures, **identical on clean `146ca20`**: `/auth/session` CORS from localhost (12) and Track Record "invented percentage" heuristic flagging real ledger percentages (3). Pre-existing; not a regression. UNVERIFIED on the production origin until post-deploy QA.
+- Public-repo guard: the Pro-tier test fixture is now SYNTHETIC (`scripts/redact-intel-fixture.mjs`); the real Pro payload stays in gitignored `tests/fixtures/local/`.
+
 ## 2026-09-25 — NHL Intelligence Program (Goalie 2.0 · Fatigue · WinHL · Props · Fight Score · Game Intel) — PLAN (Phase 0 audit)
 
 Status words as below: PROVEN / IN PROGRESS / BLOCKED / UNVERIFIED. This section is the plan written **before** implementation; the

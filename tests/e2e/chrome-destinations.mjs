@@ -291,11 +291,11 @@ for (const width of WIDTHS) {
   });
   check(`@${width}: no horizontal overflow`, bar.overflow === 0, `${bar.overflow}px`);
   if (desktopNav) {
-    check(`@${width}: nav membership preserved`, bar.navItems.join('|') === 'Ice Board|PBE Picks|PBE Cast|Props|Shot Lab', bar.navItems.join('|'));
+    check(`@${width}: nav membership preserved`, bar.navItems.join('|') === 'Ice Board|PBE Picks|PBE Cast|Props|WinHL', bar.navItems.join('|'));
     const order = [bar.brand, bar.nav, bar.chip, bar.bell, bar.search].filter(Boolean).map(b => b.x);
     check(`@${width}: brand → nav → tools left-to-right`, order.every((x, i) => i === 0 || x >= order[i - 1]), order.join(','));
   } else {
-    check(`@${width}: mobile bottom nav membership preserved`, bar.bottomItems.join('|') === 'Board|PBE Picks|Cast|Props', bar.bottomItems.join('|'));
+    check(`@${width}: mobile bottom nav membership preserved`, bar.bottomItems.join('|') === 'Board|PBE Picks|Cast|Props|All Access', bar.bottomItems.join('|'));
   }
   if (bar.chip) {
     check(`@${width}: season chip does not borrow the nav's active colour`, bar.chipColor !== bar.navActiveColor, `${bar.chipColor} vs ${bar.navActiveColor}`);
@@ -377,7 +377,7 @@ for (const width of WIDTHS) {
     check(`@${width}: More opens`, await page.evaluate(() => !document.querySelector('#more-menu').hidden));
     check(`@${width}: More moves focus into the menu`, await page.evaluate(() => document.activeElement?.closest('#more-menu') !== null));
     await page.keyboard.press('ArrowDown');
-    check(`@${width}: ArrowDown walks the menu`, await page.evaluate(() => document.activeElement?.textContent?.trim()) === 'Goalies');
+    check(`@${width}: ArrowDown walks the menu`, await page.evaluate(() => document.activeElement?.textContent?.trim()) === 'News');
     await page.keyboard.press('Escape');
     await settle(page, 300);
     check(`@${width}: Escape closes More and restores focus to the button`, await page.evaluate(() => document.querySelector('#more-menu').hidden && document.activeElement?.hasAttribute('data-more')));
@@ -396,7 +396,7 @@ for (const width of WIDTHS) {
     }
     // every item navigates to a page that mounts
     const items = await page.evaluate(() => [...document.querySelectorAll('#more-menu a')].map(a => ({ label: a.textContent.trim(), href: a.getAttribute('href') })));
-    check(`@${width}: More carries the full secondary set`, items.map(i => i.label).join('|') === 'News|Goalies|Lines|Injuries|Matchups|Players|Standings|Track Record|Methodology', items.map(i => i.label).join('|'));
+    check(`@${width}: More carries the full secondary set`, items.map(i => i.label).join('|') === 'Standings|News|Shot Lab|Matchups|Goalies|Fatigue|Fights|Lines|Injuries|Players|Teams|Track Record|Methodology', items.map(i => i.label).join('|'));
     for (const item of items) {
       await page.goto(`${base}/#/`, { waitUntil: 'domcontentloaded' });
       await settle(page, 1800);
@@ -421,7 +421,7 @@ for (const width of WIDTHS) {
     note(`@${width}: sheet season state → ${season.hidden ? '(hidden)' : season.text}`);
     if (width === 390) await page.screenshot({ path: path.join(outDir, 'sheet-open-390.png') });
     const sheetItems = await page.evaluate(() => [...document.querySelectorAll('.sheet__grid a')].map(a => ({ label: a.textContent.trim(), href: a.getAttribute('href') })));
-    check(`@${width}: the sheet carries every section`, sheetItems.length === 14, String(sheetItems.length));
+    check(`@${width}: the sheet carries every section`, sheetItems.length === 18, String(sheetItems.length)); // 5 header items + 13 in More (IA 2026-09-25)
     await page.keyboard.press('Escape');
     await settle(page, 300);
     check(`@${width}: Escape closes the sheet`, await page.evaluate(() => document.querySelector('#nav-sheet').hidden));

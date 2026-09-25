@@ -28,7 +28,7 @@ assert.match(picksSource, /return \(\) => \{/, 'mount returns an unmount');
 
 // ------------------------------------------------------------ 2. navigation
 const navIds = NAV.map(n => n.id);
-assert.deepEqual(navIds, ['board', 'picks', 'cast', 'props', 'shots'], 'desktop primary order: Ice Board, PBE Picks, PBE Cast, Props, Shot Lab');
+assert.deepEqual(navIds, ['board', 'picks', 'cast', 'props', 'winhl'], 'desktop primary order: Ice Board, PBE Picks, PBE Cast, Props, WinHL (owner IA 2026-09-25)');
 const picksItem = NAV.find(n => n.id === 'picks');
 assert.equal(picksItem.label, 'PBE Picks', 'desktop label');
 assert.equal(picksItem.href, '#/pbe-picks');

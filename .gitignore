@@ -7,3 +7,6 @@ dist/
 *.log
 scripts/identity/og.png
 artifacts/
+
+# real Pro-tier payloads stay local (public repo)
+tests/fixtures/local/

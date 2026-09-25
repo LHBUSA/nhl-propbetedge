@@ -188,10 +188,17 @@ test('exactly one NHL Pro control can exist', () => {
 test('nav membership set by the nav lane is preserved; All Access is a first-class external item, not a route', () => {
   const nav = shell.match(/export const NAV = \[([\s\S]*?)\];/)[1];
   assert.deepEqual([...nav.matchAll(/label: '([^']+)'/g)].map(m => m[1]),
-    ['Ice Board', 'PBE Picks', 'PBE Cast', 'Props', 'Shot Lab']);
+    ['Ice Board', 'PBE Picks', 'PBE Cast', 'Props', 'WinHL']);
   const more = shell.match(/export const MORE = \[([\s\S]*?)\];/)[1];
   assert.deepEqual([...more.matchAll(/label: '([^']+)'/g)].map(m => m[1]),
-    ['News', 'Goalies', 'Lines', 'Injuries', 'Matchups', 'Players', 'Standings', 'Track Record', 'Methodology']);
+    ['Standings', 'News', 'Shot Lab', 'Matchups', 'Goalies', 'Fatigue', 'Fights', 'Lines', 'Injuries', 'Players', 'Teams', 'Track Record', 'Methodology']);
+  // Owner IA (2026-09-25): every item belongs to exactly one of the four sections,
+  // and no destination appears twice across the header and More.
+  const groups = [...shell.matchAll(/\{ id: '([a-z]+)', label: '(Live|Prediction|Intelligence|Research)' \}/g)].map(m => m[1]);
+  assert.deepEqual(groups, ['live', 'prediction', 'intelligence', 'research']);
+  const allIds = [...`${nav}${more}`.matchAll(/id: '([a-z]+)'/g)].map(m => m[1]);
+  assert.equal(new Set(allIds).size, allIds.length, 'no duplicate destination across header + More');
+  for (const line of `${nav}${more}`.split(NL).filter(l => /id: '/.test(l))) assert.match(line, /group: '(live|prediction|intelligence|research)'/, `grouped: ${line.trim()}`);
   assert.match(shell, /const BOTTOM = \['board', 'picks', 'cast', 'props'\]/);
   // ALL ACCESS: a link to the network page (https://propbetedge.ai/pro), in
   // the desktop header beside NHL PRO (never inside More), a bottom tab and a
