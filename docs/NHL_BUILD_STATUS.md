@@ -4,7 +4,7 @@
 |---|---|---|
 | 1 `nhl-metrics` Worker | PROVEN (production) | `propsports-api-worker@8da8950`; `GET nhl-api.propbetedge.ai/nhl/intel/health` → ok, league/WinHL/fights snapshots captured 2026-09-25 |
 | 2 Gateway 1.2.0 intel routes | PROVEN (production) | `propsports-api-worker@34309ba`; `/nhl/intel/winhl?pos=F` and `/nhl/intel/slate` return tier `free` payloads |
-| 3 Frontend (Goalie Center 2.0, `#/fatigue`, `#/winhl`, `#/fights`, `#/teams`, Props market upgrade, Game Intelligence in Matchup/Cast/Player, nav IA, Methodology) | PUSHED — see commit below; prod QA recorded after deploy | gates below |
+| 3 Frontend (Goalie Center 2.0, `#/fatigue`, `#/winhl`, `#/fights`, `#/teams`, Props market upgrade, Game Intelligence in Matchup/Cast/Player, nav IA, Methodology) | PROVEN (production) | `7822b91`; Vercel status success; nhl.propbetedge.ai serves the tested bundle `index-DSZbg4AH.js`; production QA below |
 | 4 Shadow saves model | IN PROGRESS (backend session) | release criteria frozen `1dc2a40`; v1 fit misses frozen tail-calibration thresholds on validation; test split NOT evaluated |
 | 5 Release gates | see Phase 3 gates | |
 
@@ -14,6 +14,8 @@ Phase 3 gates (run 2026-09-25, recovered after a PC hard restart at ~17:31Z; not
 - Score ticker 52/52; headshot canary 15/15.
 - `chrome-destinations.mjs` — 253 ok; 9 failures, all **identical on clean production `146ca20`** (baseline run in a detached worktree): Shot Lab bare-landing / completed-game checks and replay tiles (preseason: no completed game on today's slate), and the three NHL Pro auth-button checks (localhost origin is not an allowed auth origin). Expectations updated for the new IA (desktop nav `…|Props|WinHL`, bottom nav `+All Access`, 13-item More menu, 18-item sheet).
 - `pbe-picks-qa.mjs` — 15 failures, **identical on clean `146ca20`**: `/auth/session` CORS from localhost (12) and Track Record "invented percentage" heuristic flagging real ledger percentages (3). Pre-existing; not a regression. UNVERIFIED on the production origin until post-deploy QA.
+- **Production QA (https://nhl.propbetedge.ai, after deploy):** intel QA 44/44 (1440/768/390/320, zero relay incidents); PBE Picks gate 0 failures after two harness fixes (relay now echoes the page origin with credentials, as the real gateway does — the `/auth/session` CORS failures were the harness's `*` header, the gateway itself returns the correct origin; the Track Record percentage check is scoped out of Track Record, whose 65.1% = 28/43 graded preseason ledger); chrome/destinations 253 ok with the same 9 pre-existing failures.
+- **Still degraded / UNVERIFIED:** (a) Shot Lab bare landing + replay tiles fail until a completed game is on the slate (preseason state; re-check after first completed game); (b) the three chrome-gate NHL Pro auth-button checks fail on production `146ca20` and on this build alike; not investigated in this program; (c) real signed-in Pro session never exercised (mocked Pro only); (d) player-prop board has 0 real prop rows until books post NHL player markets.
 - Public-repo guard: the Pro-tier test fixture is now SYNTHETIC (`scripts/redact-intel-fixture.mjs`); the real Pro payload stays in gitignored `tests/fixtures/local/`.
 
 ## 2026-09-25 — NHL Intelligence Program (Goalie 2.0 · Fatigue · WinHL · Props · Fight Score · Game Intel) — PLAN (Phase 0 audit)

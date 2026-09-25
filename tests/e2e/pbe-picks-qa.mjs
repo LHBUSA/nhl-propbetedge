@@ -83,8 +83,11 @@ for (const width of WIDTHS) {
         return r.fulfill({
           status: upstream.status,
           contentType: upstream.headers.get('content-type') || 'application/json',
+          // A credentialed fetch (/auth/*, /pro/*) rejects '*', so echo the page
+          // origin with credentials, as the real gateway does.
           headers: {
-            'Access-Control-Allow-Origin': '*',
+            'Access-Control-Allow-Origin': request.headers().origin || '*',
+            'Access-Control-Allow-Credentials': 'true',
             'Access-Control-Expose-Headers': 'X-NHL-Semantics',
             ...(upstream.headers.get('X-NHL-Semantics') ? { 'X-NHL-Semantics': upstream.headers.get('X-NHL-Semantics') } : {})
           },
@@ -147,7 +150,9 @@ for (const width of WIDTHS) {
     check(`${id}: News is out of the bottom nav`, !m.bottomHasNews);
     check(`${id}: News stays reachable in More`, m.sheetHasNews);
     check(`${id}: no /pro/ request while signed out`, proCalls.length === 0, proCalls.map(c => c.url).join(','));
-    check(`${id}: no invented percentage on screen`, percentages.length === 0, percentages.slice(0, 5).join(','));
+    // Track Record shows the graded ledger record (accuracy = wins / graded from
+    // /nhl/picks/*/record, since 273f22d), so percentages there are not invented.
+    if (route.id !== 'track-record') check(`${id}: no invented percentage on screen`, percentages.length === 0, percentages.slice(0, 5).join(','));
     if (route.expectCards) {
       check(`${id}: one card per real game`, m.cards > 0, `${m.cards} cards`);
       check(`${id}: no pick badge while no official model publishes`, m.pickBadges === 0, `${m.pickBadges} pick badges`);
