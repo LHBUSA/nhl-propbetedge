@@ -14,7 +14,7 @@
 import { esc } from './dom.js';
 import { ALL_ACCESS_OFFER } from './pbe-membership.js';
 
-export const SPORTS_LINE = 'MLB · NFL · NBA · NHL · WNBA · UFC';
+export const SPORTS_LINE = 'MLB · NFL · NBA · NHL · WNBA · UFC · Tennis';
 export const SPORTS_NEXT = 'plus every Pro sport added next.';
 const NO_HERO_STATES = new Set(['all_access', 'owner']);
 

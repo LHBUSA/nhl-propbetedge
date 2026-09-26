@@ -41,9 +41,9 @@ test('the hero carries the approved copy and the exact commercial facts from the
   assert.match(html, /<h3 class="nhl-aa-title">ALL ACCESS<\/h3>/);
   assert.match(html, /<span class="nhl-aa-price" aria-label="\$29\/month"><strong>\$29<\/strong>\/month<\/span>/);
   assert.match(html, /<p class="nhl-aa-tagline">Every current and future PropBetEdge Pro sport\.<\/p>/);
-  assert.equal(SPORTS_LINE, 'MLB · NFL · NBA · NHL · WNBA · UFC');
+  assert.equal(SPORTS_LINE, 'MLB · NFL · NBA · NHL · WNBA · UFC · Tennis');
   assert.equal(SPORTS_NEXT, 'plus every Pro sport added next.');
-  assert.match(html, /<p class="nhl-aa-sports"><b>MLB · NFL · NBA · NHL · WNBA · UFC<\/b> <span>plus every Pro sport added next\.<\/span><\/p>/);
+  assert.match(html, /<p class="nhl-aa-sports"><b>MLB · NFL · NBA · NHL · WNBA · UFC · Tennis<\/b> <span>plus every Pro sport added next\.<\/span><\/p>/);
   assert.match(html, /<p class="nhl-aa-promo">Launch offer: 25% off while active with code <b class="nhl-aa-code">THEEDGE25<\/b><\/p>/);
   assert.match(html, new RegExp(`<a class="nhl-aa-cta" href="${rx(STRIPE).source}" rel="noopener" data-pbe-placement="all_access_checkout" data-nhl-all-access-cta="checkout">GET ALL ACCESS</a>`), 'GET ALL ACCESS -> exactly the Stripe link');
   assert.match(html, new RegExp(`<a class="nhl-aa-learn" href="${rx(LEARN).source}" rel="noopener" data-nhl-all-access-cta="learn">WHAT'S INCLUDED</a>`));

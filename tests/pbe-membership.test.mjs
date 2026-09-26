@@ -50,8 +50,8 @@ const gateway = {
 };
 const account = body => ({ state: body.state, email: body.email || null, subscription: body.subscription || null, membership: readMembership(body.state === 'pro' ? body.membership : null, 'nhl') });
 
-test('the shared contract copy is 1.1.0 and the CSS is imported exactly once, never styling body', () => {
-  assert.equal(CONTRACT_VERSION, '1.1.0');
+test('the shared contract copy is 1.2.0 and the CSS is imported exactly once, never styling body', () => {
+  assert.equal(CONTRACT_VERSION, '1.2.0');
   assert.equal(mainSource.match(/import '\.\/styles\/pbe-membership\.css';/g)?.length, 1, 'one import in main.js');
   assert.doesNotMatch(sharedCss, /(^|[\s,}])body\s*[{,]/m, 'the atmosphere rule: body stays transparent');
   assert.match(accountSource, /readMembership\(data\.state === 'pro' \? data\.membership : null, 'nhl'\)/, 'account.js keeps membership via readMembership');
@@ -102,7 +102,7 @@ test('free readers: the All Access hero FIRST, then ONLY WANT NHL?, then both NH
   assert.match(offer, /aria-label="\$29\/month"><strong>\$29<\/strong>\/month/);
   assert.match(offer, /<b class="nhl-aa-code">THEEDGE25<\/b>/);
   assert.match(offer, /BEST VALUE · MOST COMPLETE/);
-  assert.match(offer, /MLB · NFL · NBA · NHL · WNBA · UFC/);
+  assert.match(offer, /MLB · NFL · NBA · NHL · WNBA · UFC · Tennis/);
   assert.doesNotMatch(offer, /Labs/i, 'no Labs / future computational products are sold as included');
   assert.ok(offer.indexOf('data-nhl-all-access="hero"') < offer.indexOf('data-nhl-all-access="divider"'), 'hero, then the seam');
   assert.match(offer, /<span>ONLY WANT NHL\?<\/span>/);
