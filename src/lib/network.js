@@ -13,6 +13,9 @@ export const PBE_NETWORK = {
   learn: 'https://learn.propbetedge.ai/',
   store: 'https://ufc.propbetedge.ai/store',
   discord: PROPBETEDGE_DISCORD_URL,
+  // PropBetEdge's own X account (external: new tab, noopener noreferrer).
+  x: 'https://x.com/PROPBETEDGE',
+  xHandle: '@PROPBETEDGE',
   sports: [
     { id: 'mlb', label: 'MLB', icon: '⚾', href: 'https://mlb.propbetedge.ai/', status: 'LIVE' },
     { id: 'nfl', label: 'NFL', icon: '🏈', href: 'https://nfl.propbetedge.ai/', status: 'LIVE' },

@@ -95,6 +95,7 @@ function premiumFooter() {
             <a href="https://billing.stripe.com/p/login/cNi3cv2vY7em3lr4oj7wA00" target="_blank" rel="noopener noreferrer">Manage billing <span>↗</span></a>
             <a href="mailto:sales@proptechusa.ai">Contact us <span>→</span></a>
             <a href="${PBE_NETWORK.discord}" target="_blank" rel="noopener">Discord Community <span>↗</span></a>
+            <a class="pbe-x-link" href="${PBE_NETWORK.x}" target="_blank" rel="noopener noreferrer" aria-label="Follow PropBetEdge on X (${PBE_NETWORK.xHandle})" title="Follow PropBetEdge on X"><span aria-hidden="true">𝕏</span> ${PBE_NETWORK.xHandle}</a>
           </div>
         </section>
         <section>
