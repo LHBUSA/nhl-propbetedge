@@ -441,7 +441,10 @@ test('REGRESSION: Anders Lee high-sticking (2025020446, real production window)'
   assert.equal(plays[at(344)].situation_code, '1451');
   const call = lee(specialTeams(plays, { cursorIndex: at(340) }));
   assert.equal(call.player_name, 'Anders Lee');
-  assert.equal(call.player_number, 27);
+  assert.equal(call.player_number, 27, 'game-day number from this game's rosterSpots (he wears #72 for Utah from 2026-27)');
+  assert.equal(fx.jersey_trace.source_rosterSpot_sweaterNumber, 27);
+  const spot = plays.flatMap(p => p.players).find(p => p.id === 8475314);
+  assert.equal(spot.number, 27, 'the frozen normalized PBEcast payload carries 27');
   assert.equal(call.infraction, 'high-sticking');
   assert.equal(call.duration_min, 2);
   assert.equal(clockText(call.remaining_seconds), '2:00', 'must NOT regress to "remaining time unavailable"');

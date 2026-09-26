@@ -398,5 +398,15 @@
    ],
    "shot": null
   }
- ]
+ ],
+ "jersey_trace": {
+  "player_id": 8475314,
+  "source_rosterSpot_sweaterNumber": 27,
+  "source_boxscore_sweaterNumber": 27,
+  "propsports_rosterIndex_number": 27,
+  "pbecast_api_players_number": 27,
+  "production_dom_pbox_number": "#27",
+  "verified_at": "2026-09-26T21:35Z",
+  "note": "Game-day number comes from THIS game's rosterSpots. Lee wears #72 for Utah from 2026-27 (player landing sweaterNumber = 72; 2026010030/2026010054 rosterSpots = 72). A current-identity number must never be applied to a historical game."
+ }
 }
