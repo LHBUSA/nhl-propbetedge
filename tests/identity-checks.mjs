@@ -62,6 +62,10 @@ assert.ok(fs.statSync(publicPath(og)).size < 300 * 1024, 'og image under 300 KB'
 assert.equal(one('name', 'twitter:card'), 'summary_large_image');
 one('name', 'twitter:title'); one('name', 'twitter:description'); one('name', 'twitter:image:alt');
 assert.equal(one('name', 'twitter:image'), og);
+// PropBetEdge's network X account; stale identities never return anywhere in the shell.
+assert.equal(one('name', 'twitter:site'), '@PROPBETEDGE');
+assert.equal(html.split('"https://x.com/PROPBETEDGE"').length - 1, 1, 'Organization sameAs once');
+assert.doesNotMatch(html, /MLBHRALERTSPBE|propbetedgeai|twitter\.com\/intent|x\.com\/intent\/tweet/i);
 
 // Favicon family + manifest
 const icons = all(/<link rel="(icon|apple-touch-icon|manifest)"[^>]*href="([^"]+)"/g).map(m => m[2]);
