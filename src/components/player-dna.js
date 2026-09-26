@@ -1,9 +1,8 @@
-// NHL Skater DNA research card (nhl-skater-dna/1.0.0-research).
+// NHL Skater DNA card (nhl-skater-dna/1.0.0, FROZEN).
 //
-// RIGHTS GATE: PUBLICATION_BLOCKED_RIGHTS_REVIEW. This module is deliberately
-// NOT imported by any page or route, so the production bundle does not contain
-// it (tests/player-dna.test.mjs enforces that). Mount it only after the owner
-// clears the rights review.
+// Mounted on skater profiles by src/lib/player-dna-mount.js, which renders it
+// ONLY when the DNA API answers 200. While the backend's rights gate is closed
+// (PUBLICATION_BLOCKED_RIGHTS_REVIEW -> 451) nothing is shown.
 //
 // Pure render functions: every number shown is read from a STORED snapshot or
 // the stored DNA-over-time summary. The browser never computes a percentile,
@@ -179,12 +178,12 @@ function insight(title, body) {
 function historyBlock(history, focus) {
   if (!history || !history.trends?.length) return '';
   const sm = history.summary || {};
-  const delta = r => (r ? `${esc(dimLabel(r.key))} <em>${r.delta > 0 ? '+' : ''}${esc(r.delta)}</em> <small>${esc(seasonLabel(r.from_season))} → ${esc(seasonLabel(r.to_season))}</small>` : '<small>None of 10+ points</small>');
+  const delta = r => (r ? `${esc(dimLabel(r.key))} <em>${r.delta > 0 ? '+' : ''}${esc(r.delta)}</em> <small>${esc(seasonLabel(r.from_season))} → ${esc(seasonLabel(r.to_season))}</small>` : '<small>No high-confidence move of 10+ points</small>');
   const strip = `<div class="nhl-dna__insights">
     ${insight('Biggest gain', delta(sm.biggest_gain))}
     ${insight('Biggest drop', delta(sm.biggest_drop))}
     ${insight('Highest current', sm.top_current ? `${esc(dimLabel(sm.top_current.key))} <em>${esc(sm.top_current.score)}</em>` : '<small>No ranked season</small>')}
-    ${insight('Most volatile', sm.most_volatile ? `${esc(dimLabel(sm.most_volatile.key))} <small>${esc(sm.most_volatile.min)}–${esc(sm.most_volatile.max)}</small>` : '<small>Needs 3 ranked seasons</small>')}
+    ${insight('Most volatile', sm.most_volatile ? `${esc(dimLabel(sm.most_volatile.key))} <small>${esc(sm.most_volatile.min)}–${esc(sm.most_volatile.max)}</small>` : '<small>Needs 3 consecutive high-confidence seasons</small>')}
   </div>
   <p class="nhl-dna__dim nhl-dna__basis">Summary uses ${esc(sm.basis || 'ranked seasons only')}${(sm.ranked_seasons || []).length ? ` (${esc(sm.ranked_seasons.map(seasonLabel).join(', '))})` : ''}. Unranked seasons are shown as measured only.</p>`;
   const seasons = history.seasons || [];

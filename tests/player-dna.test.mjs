@@ -76,7 +76,7 @@ test('DNA over time: summary read verbatim; unranked season shown as measured on
   assert.match(html, /Summary uses ranked forward seasons only \(2022-23, 2023-24, 2024-25, 2025-26\)/);
   assert.ok(!/Summary uses[^<]*2026-27/.test(html), 'the unranked season is not in the summary basis');
   assert.match(html, /Biggest gain<\/span><b>Shot Blocking <em>\+10<\/em>/);
-  assert.match(html, /Biggest drop<\/span><b><small>None of 10\+ points<\/small>/);
+  assert.match(html, /Biggest drop<\/span><b><small>No high-confidence move of 10\+ points<\/small>/);
   assert.match(html, /nhl-dna__cell is-gap" title="Measured only \(season not ranked\)">meas\./);
   assert.match(html, /nhl-dna__cell--head is-unranked/);
 });
@@ -102,7 +102,7 @@ test('no goalie DNA tab: only SKATER DNA; goalie kind renders nothing', () => {
   assert.match(renderGoalieDnaNotice(), /Goalie DNA is not released/);
 });
 
-test('rights gate: the component is not imported by any page, route or module', () => {
+test('mount allowlist: component <- lib/player-dna-mount.js <- pages/player.js only; css <- main.js', () => {
   assert.equal(DNA_PUBLICATION_GATE, 'PUBLICATION_BLOCKED_RIGHTS_REVIEW');
   const root = new URL('../src/', import.meta.url);
   const hits = [];
@@ -112,14 +112,14 @@ test('rights gate: the component is not imported by any page, route or module', 
       if (e.isDirectory()) walk(p);
       else if (/\.(js|mjs|css|html)$/.test(e.name) && !/player-dna\.(js|css)$/.test(e.name)) {
         const t = fs.readFileSync(p, 'utf8');
-        if (/player-dna/.test(t)) hits.push(p);
+        if (/player-dna/.test(t)) hits.push(path.relative(root.pathname.replace(/^\/([A-Za-z]:)/, '$1'), p).split(path.sep).join('/'));
       }
     }
   };
   walk(root.pathname.replace(/^\/([A-Za-z]:)/, '$1'));
+  assert.deepEqual(hits.sort(), ['lib/player-dna-mount.js', 'main.js', 'pages/player.js']);
   const index = fs.readFileSync(new URL('../index.html', import.meta.url), 'utf8');
-  if (/player-dna/.test(index)) hits.push('index.html');
-  assert.deepEqual(hits, [], 'mount only after the owner clears the rights review');
+  assert.ok(!/player-dna/.test(index));
 });
 
 test('the synthetic fixture contains no real-player ids', () => {

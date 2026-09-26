@@ -8,6 +8,7 @@ import { TEAM_BY_ABBREV, teamAccent } from '../lib/teams.js';
 import { teamMark } from '../components/game.js';
 import { playerIdentity, playerPhoto, photoCredit } from '../components/player.js';
 import { defaultFightScope, fightRecordFor, fightSeasons, recordText } from '../lib/fight-record.js';
+import { fetchSkaterDna, renderDnaPanel } from '../lib/player-dna-mount.js';
 
 // ---- private helpers (lane-local by contract)
 const seasonLabel = s => {
@@ -373,9 +374,15 @@ export function mount(root, params) {
   const id = params.playerId;
   const st = { player: {}, log: {}, fightScope: null, news: {}, next: null, gameType: 2, season: null, hasPlayoffs: false, totals: null, pi: { tier: null, winhl: null, fatigue: null, goalie: null, fightLedger: null } };
   root.innerHTML = `<section class="wrap section rs-player"><div id="rs-p-head"><div class="pbe-skeleton" style="height:180px"></div></div>
+    <div id="rs-p-dna"></div>
     <div id="rs-p-body"></div></section>`;
   const headEl = $('#rs-p-head', root);
   const bodyEl = $('#rs-p-body', root);
+  const dnaEl = $('#rs-p-dna', root);
+  // Skater DNA: stored snapshots only; renders nothing unless the DNA API
+  // answers 200 (dark behind the rights gate). Goalies never get DNA.
+  const dna = { payload: null, season: null, focus: null };
+  const renderDna = () => { dnaEl.innerHTML = dna.payload ? renderDnaPanel(dna.payload, { season: dna.season, focus: dna.focus }) : ''; };
   const controller = new AbortController();
   const signal = controller.signal;
   let logCtl = null;
@@ -452,6 +459,13 @@ export function mount(root, params) {
       renderHead();
       loadLog();
       loadIntel(p);
+      if (p.position !== 'G') {
+        fetchSkaterDna(id, { signal }).then(payload => {
+          if (signal.aborted || !payload) return;
+          dna.payload = payload;
+          renderDna();
+        });
+      }
       // Next game for the player's club (context for tonight), from the club schedule.
       if (TEAM_BY_ABBREV.has(p.current_team_abbrev)) {
         nhl(`/nhl/team/${p.current_team_abbrev}/schedule`, {}, { signal })
@@ -479,6 +493,14 @@ export function mount(root, params) {
     .catch(error => { if (error.kind !== 'aborted') { st.news = { error }; renderBody(); } });
 
   const disposers = [
+    on(root, 'click', '[data-dna-season]', (_, b) => {
+      dna.season = b.dataset.dnaSeason;
+      renderDna();
+    }),
+    on(root, 'click', '[data-dna-focus]', (_, b) => {
+      dna.focus = dna.focus === b.dataset.dnaFocus ? null : b.dataset.dnaFocus;
+      renderDna();
+    }),
     on(root, 'click', '[data-fight-scope]', (_, b) => {
       st.fightScope = b.dataset.fightScope;
       renderBody();

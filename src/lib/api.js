@@ -92,6 +92,10 @@ function envInfo() {
 export async function dataLayer() {
   return (await envInfo())?.data_layer || 'unknown';
 }
+// NHL Player DNA service bound on this gateway (readiness.dna, gateway 1.3.0+).
+export async function dnaConfigured() {
+  return (await envInfo())?.dna === 'configured';
+}
 export async function oddsConfigured() {
   return (await envInfo())?.odds === 'configured';
 }
