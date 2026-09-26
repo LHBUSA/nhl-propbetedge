@@ -140,7 +140,7 @@ test('V2 fingerprint: exactly the stored scores, gaps are gaps, no overall score
   const scoredDims = Object.entries(ranked.dimensions).filter(([, d]) => d.score !== null);
   assert.equal(tag(html, /class="nhl-dna__puck/g), scoredDims.length, 'one puck per stored score');
   for (const [k, d] of scoredDims) assert.match(html, new RegExp(`data-dim="${k}"><title>[^<]* · ${d.score} · `));
-  assert.match(html, /<table class="nhl-dna__sr"><caption>DNA fingerprint values/);
+  assert.match(html, /<div class="nhl-dna__sr"><table><caption>DNA fingerprint values/);
   assert.match(html, /role="img" aria-label="DNA fingerprint: /);
   assert.ok(!/overall|composite|DNA score/i.test(html), 'no overall score anywhere');
   const gap = structuredClone(ranked); gap.dimensions.faceoffs.score = null; gap.dimensions.faceoffs.status = 'NOT_APPLICABLE'; gap.dimensions.faceoffs.reason = 'NO_FACEOFF_ROLE';
@@ -174,7 +174,10 @@ test('V2 dimension rows: puck marker at the stored score + confidence text; evid
 test('V2 trajectory: fixed 0–100 axis, stored points only, never bridges a gap, current season emphasized', () => {
   const html = renderSkaterDna({ snapshot: ranked, history, focus: 'physicality' });
   const phys = history.trends.find(t => t.key === 'physicality');
-  const fig = html.slice(html.indexOf('nhl-dna__trajfig'), html.indexOf('</figure>'));
+  // count within ONE drawing (the full variant; the compact phone variant is identical data)
+  const fig = html.slice(html.indexOf('nhl-dna__trajsvg--full'), html.indexOf('</svg>', html.indexOf('nhl-dna__trajsvg--full')));
+  const compact = html.slice(html.indexOf('nhl-dna__trajsvg--compact'), html.indexOf('</svg>', html.indexOf('nhl-dna__trajsvg--compact')));
+  assert.equal(tag(compact, /class="nhl-dna__traj[ "]/g), tag(fig, /class="nhl-dna__traj[ "]/g), 'compact variant draws the same segments');
   for (const v of [0, 33, 67, 100]) assert.match(fig, new RegExp(`class="nhl-dna__tick"[^>]*>${v}<`));
   let expected = 0;
   for (let i = 0; i + 1 < phys.points.length; i++) if (phys.points[i].score !== null && phys.points[i + 1].score !== null) expected++;

@@ -31,7 +31,11 @@ export const DIMENSION_LABELS = {
   physicality: 'Physicality',
   penalty_differential: 'Penalty Differential'
 };
-// Short axis labels for the fingerprint (legible at 320 px).
+// Short axis labels for the fingerprint, and a compact set for phones.
+const ABBR = {
+  shot_generation: 'GEN', shot_location: 'LOC', goal_scoring: 'GOAL', finishing: 'FIN', playmaking: 'PLAY',
+  power_play: 'PP', faceoffs: 'FO', shot_blocking: 'BLK', physicality: 'HIT', penalty_differential: 'PEN'
+};
 const SHORT = {
   shot_generation: 'SHOT GEN', shot_location: 'SHOT LOC', goal_scoring: 'GOALS', finishing: 'FINISH',
   playmaking: 'PLAYMAKE', power_play: 'POWER PLAY', faceoffs: 'FACEOFFS', shot_blocking: 'BLOCKS',
@@ -198,7 +202,7 @@ export function fingerprint(snapshot) {
   if (!ranked(snapshot) || !n) {
     return `<section class="nhl-dna__print is-empty" aria-label="DNA fingerprint"><p class="nhl-dna__neutral">The fingerprint appears once the season is ranked. Measured values are listed below.</p></section>`;
   }
-  const W = 420; const C = W / 2; const R = 128;
+  const W = 420; const C = W / 2; const R = 150;
   const ang = i => (-90 + (360 / n) * i) * Math.PI / 180;
   const pt = (i, v) => [r1(C + Math.cos(ang(i)) * R * v / 100), r1(C + Math.sin(ang(i)) * R * v / 100)];
   const rings = [33, 67, 100].map(v => `<circle class="nhl-dna__ring nhl-dna__ring--${v}" cx="${C}" cy="${C}" r="${r1(R * v / 100)}"/>`).join('');
@@ -228,19 +232,22 @@ export function fingerprint(snapshot) {
     const anchor = c > 0.3 ? 'start' : c < -0.3 ? 'end' : 'middle';
     const dy = Math.sin(ang(i)) > 0.5 ? 14 : Math.sin(ang(i)) < -0.5 ? -4 : 5;
     const d = dims[k];
-    return `<text class="nhl-dna__axis${d.status === 'PROXY' ? ' is-proxy' : ''}" x="${x}" y="${r1(y + dy)}" text-anchor="${anchor}">${esc(SHORT[k] || k)} <tspan class="nhl-dna__axis-v">${scored(d) ? esc(d.score) : '—'}</tspan></text>`;
+    const v = `<tspan class="nhl-dna__axis-v">${scored(d) ? esc(d.score) : '—'}</tspan>`;
+    const px = d.status === 'PROXY' ? ' is-proxy' : '';
+    return `<text class="nhl-dna__axis nhl-dna__axis--full${px}" x="${x}" y="${r1(y + dy)}" text-anchor="${anchor}">${esc(SHORT[k] || k)} ${v}</text><text class="nhl-dna__axis nhl-dna__axis--abbr${px}" x="${x}" y="${r1(y + dy)}" text-anchor="${anchor}">${esc(ABBR[k] || k)} ${v}</text>`;
   }).join('');
   const scoredN = vals.filter(Boolean).length;
   const aria = `DNA fingerprint: ${keys.map(k => `${dimLabel(k)} ${scored(dims[k]) ? dims[k].score : 'not scored'}`).join(', ')}.`;
-  const table = `<table class="nhl-dna__sr"><caption>DNA fingerprint values</caption><thead><tr><th scope="col">Dimension</th><th scope="col">Percentile</th><th scope="col">Confidence</th></tr></thead><tbody>${keys.map(k => `<tr><th scope="row">${esc(dimLabel(k))}${dims[k].status === 'PROXY' ? ' (proxy)' : ''}</th><td>${scored(dims[k]) ? esc(dims[k].score) : '—'}</td><td>${esc(dims[k].label || '—')}</td></tr>`).join('')}</tbody></table>`;
+  const table = `<div class="nhl-dna__sr"><table><caption>DNA fingerprint values</caption><thead><tr><th scope="col">Dimension</th><th scope="col">Percentile</th><th scope="col">Confidence</th></tr></thead><tbody>${keys.map(k => `<tr><th scope="row">${esc(dimLabel(k))}${dims[k].status === 'PROXY' ? ' (proxy)' : ''}</th><td>${scored(dims[k]) ? esc(dims[k].score) : '—'}</td><td>${esc(dims[k].label || '—')}</td></tr>`).join('')}</tbody></table></div>`;
   const groups = DIMENSION_GROUPS.map(g => `<li><b>${esc(g.label === 'Shooting' ? 'Offense' : g.label)}</b> ${g.dims.filter(k => k in dims).map(k => esc(SHORT[k])).join(' · ')}</li>`).join('');
   return `<section class="nhl-dna__print" aria-label="DNA fingerprint" data-scored="${scoredN}">
     <div class="nhl-dna__print-head"><p class="nhl-dna__kicker">DNA FINGERPRINT</p><p class="nhl-dna__print-sub">Percentile vs qualified ${esc(PEER_PLURAL[snapshot.peer_group] || snapshot.peer_group)} · ${esc(seasonLabel(snapshot.season))}</p></div>
-    <svg class="nhl-dna__radar" viewBox="-40 -6 ${W + 80} ${W + 12}" role="img" aria-label="${esc(aria)}">
+    <svg class="nhl-dna__radar" viewBox="-70 -14 ${W + 140} ${W + 28}" role="img" aria-label="${esc(aria)}">
       <defs><pattern id="dna-hatch-${esc(snapshot.player_id)}" width="6" height="6" patternTransform="rotate(45)" patternUnits="userSpaceOnUse"><rect width="6" height="6" fill="#fff"/><line x1="0" y1="0" x2="0" y2="6" stroke="#b38a2a" stroke-width="3"/></pattern></defs>
       <g class="nhl-dna__faceoff">${rings}<circle class="nhl-dna__dot" cx="${C}" cy="${C}" r="4"/></g>
       ${spokes}${outline}${pucks}${gaps}${labels}
     </svg>
+    <p class="nhl-dna__abbr-key">${keys.map(k => `<span><b>${esc(ABBR[k])}</b> ${esc(dimLabel(k))}</span>`).join('')}</p>
     <ul class="nhl-dna__legend">${groups}<li class="nhl-dna__legend-proxy"><i></i> Proxy (Shot Location)</li><li class="nhl-dna__legend-zones">Rings: 33 · 67 · 100</li></ul>
     ${table}
   </section>`;
@@ -338,7 +345,18 @@ function insight(title, body, cls = '') {
 export function trajectory(history, key, activeSeason) {
   const t = history.trends.find(x => x.key === key);
   if (!t) return '';
-  const W = 640; const H = 260; const L = 44; const Rp = 20; const T = 16; const B = 40;
+  const aria = `${dimLabel(key)} by season: ${t.points.map(p => `${seasonLabel(p.season)} ${scored(p) ? p.score : 'no percentile'}`).join(', ')}.`;
+  const proxy = t.status === 'PROXY';
+  return `<figure class="nhl-dna__trajfig">
+    ${trajectorySvg(t, key, activeSeason, { W: 760, H: 300, L: 52, Rp: 48, T: 40, B: 44, cls: 'full', aria })}
+    ${trajectorySvg(t, key, activeSeason, { W: 340, H: 240, L: 38, Rp: 24, T: 34, B: 36, cls: 'compact', aria, short: true })}
+    <figcaption class="nhl-dna__dim">${esc(dimLabel(key))}${proxy ? ' · proxy' : ''} · fixed 0–100 percentile scale · gaps are not connected</figcaption>
+  </figure>`;
+}
+
+// One drawing of the trajectory. The compact variant (phones) uses a narrower
+// canvas so its text stays >= 10 px when scaled to the screen.
+function trajectorySvg(t, key, activeSeason, { W, H, L, Rp, T, B, cls, aria, short = false }) {
   const n = t.points.length;
   const x = i => r1(n === 1 ? (L + W - Rp) / 2 : L + (W - L - Rp) * (i / (n - 1)));
   const y = v => r1(T + (H - T - B) * (1 - v / 100));
@@ -351,18 +369,15 @@ export function trajectory(history, key, activeSeason) {
   }
   const dots = t.points.map((p, i) => {
     const cur = String(p.season) === String(activeSeason);
-    const lab = `<text class="nhl-dna__xlab${cur ? ' is-current' : ''}" x="${x(i)}" y="${H - 14}" text-anchor="middle">${esc(seasonLabel(p.season))}</text>`;
+    const sl = short ? `’${String(p.season).slice(6, 8)}` : seasonLabel(p.season);
+    const lab = `<text class="nhl-dna__xlab${cur ? ' is-current' : ''}" x="${x(i)}" y="${H - 12}" text-anchor="middle">${esc(sl)}</text>`;
     if (!scored(p)) {
       return `${lab}<text class="nhl-dna__gapmark" x="${x(i)}" y="${y(50)}" text-anchor="middle" data-gap="${esc(p.season)}">—<title>${esc(`${seasonLabel(p.season)} · ${dimLabel(key)} · ${reasonText(p.reason, p.reason)}`)}</title></text>`;
     }
     const tip = `${seasonLabel(p.season)} · ${dimLabel(key)} · ${ordinal(p.score)} percentile · ${p.label || ''}`;
     return `${lab}<g class="nhl-dna__tpt${cur ? ' is-current' : ''}${proxy ? ' is-proxy' : ''}" data-season="${esc(p.season)}" data-score="${esc(p.score)}"><circle cx="${x(i)}" cy="${y(clamp(p.score))}" r="${cur ? 9 : 6}"><title>${esc(tip)}</title></circle><text class="nhl-dna__tval" x="${x(i)}" y="${y(clamp(p.score)) - (cur ? 15 : 12)}" text-anchor="middle">${esc(p.score)}</text></g>`;
   }).join('');
-  const aria = `${dimLabel(key)} by season: ${t.points.map(p => `${seasonLabel(p.season)} ${scored(p) ? p.score : 'no percentile'}`).join(', ')}.`;
-  return `<figure class="nhl-dna__trajfig">
-    <svg class="nhl-dna__trajsvg" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(aria)}">${grid}${segs.join('')}${dots}</svg>
-    <figcaption class="nhl-dna__dim">${esc(dimLabel(key))}${proxy ? ' · proxy' : ''} · fixed 0–100 percentile scale · gaps are not connected</figcaption>
-  </figure>`;
+  return `<svg class="nhl-dna__trajsvg nhl-dna__trajsvg--${cls}" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(aria)}"${cls === 'compact' ? ' aria-hidden="true"' : ''}>${grid}${segs.join('')}${dots}</svg>`;
 }
 
 function heatmap(history, focus) {

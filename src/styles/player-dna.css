@@ -90,7 +90,7 @@
 .nhl-dna__print { min-width: 0; }
 .nhl-dna__print-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 12px; }
 .nhl-dna__print-sub { font-size: 12px; color: var(--dna-mute); }
-.nhl-dna__radar { display: block; width: 100%; max-width: 440px; height: auto; margin: 6px auto 0; overflow: visible; }
+.nhl-dna__radar { display: block; width: 100%; max-width: 500px; height: auto; margin: 6px auto 0; overflow: visible; }
 .nhl-dna__ring { fill: none; stroke: var(--dna-line); stroke-width: 1.5; }
 .nhl-dna__ring--67 { stroke: #d5dde9; }
 .nhl-dna__ring--100 { stroke: #c4cedc; stroke-width: 2; }
@@ -193,7 +193,7 @@
 .nhl-dna__traitbtn:hover { border-color: var(--dna-ink); }
 .nhl-dna__traitbtn.is-active { background: var(--dna-ink); border-color: var(--dna-ink); color: #fff; }
 .nhl-dna__traitbtn.is-proxy { border-style: dashed; }
-.nhl-dna__trajfig { margin: 0; min-width: 0; background: linear-gradient(180deg, #fbfcfe, #fff); border: 1px solid var(--dna-line); border-radius: 14px; padding: 10px 10px 6px; }
+.nhl-dna__trajfig { margin: 0; min-width: 0; max-width: 880px; background: linear-gradient(180deg, #fbfcfe, #fff); border: 1px solid var(--dna-line); border-radius: 14px; padding: 10px 10px 6px; }
 .nhl-dna__trajsvg { display: block; width: 100%; height: auto; }
 .nhl-dna__grid { stroke: #e8ecf2; stroke-width: 1; }
 .nhl-dna__grid.is-band { stroke: #d9e0ea; stroke-dasharray: 4 5; }
@@ -236,7 +236,7 @@
 /* ---------- responsive ---------- */
 @media (max-width: 1100px) {
   .nhl-dna__overview { grid-template-columns: minmax(0, 1fr); }
-  .nhl-dna__radar { max-width: 460px; }
+  .nhl-dna__radar { max-width: 520px; }
 }
 @media (max-width: 820px) {
   .nhl-dna__id { grid-template-columns: minmax(0, 1fr); }
@@ -275,4 +275,31 @@
 @media (max-width: 360px) {
   .nhl-dna__insights { grid-template-columns: minmax(0, 1fr); }
   .nhl-dna__sig-score { font-size: 24px; }
+}
+
+/* ---------- V2 mobile legibility (SVG text scales with the drawing) ---------- */
+.nhl-dna { position: relative; }
+.nhl-dna__sr table { border: 0; }
+.nhl-dna__trajsvg--compact { display: none; }
+.nhl-dna__axis--abbr, .nhl-dna__abbr-key { display: none; }
+.nhl-dna__abbr-key { flex-wrap: wrap; gap: 3px 10px; margin: 6px 0 0; font-size: 11px; color: var(--dna-mute); }
+.nhl-dna__abbr-key b { color: var(--dna-ink); letter-spacing: .04em; }
+@media (max-width: 560px) {
+  .nhl-dna__trajsvg--full { display: none; }
+  .nhl-dna__trajsvg--compact { display: block; }
+}
+@media (max-width: 400px) {
+  .nhl-dna__axis--full { display: none; }
+  .nhl-dna__axis--abbr { display: inline; font-size: 23px; letter-spacing: .02em; }
+  .nhl-dna__radar .nhl-dna__gapmark { font-size: 24px; }
+  .nhl-dna__abbr-key { display: flex; }
+}
+.nhl-dna__score, .nhl-dna__sig-score, .nhl-dna__trait-score, .nhl-dna__ev-val, .nhl-dna__insight em { white-space: nowrap; overflow-wrap: normal; }
+@media (max-width: 560px) {
+  .nhl-dna__dim-row > summary { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: 'name score' 'track track' 'conf conf'; gap: 4px 12px; }
+  .nhl-dna__score-box { display: contents; }
+  .nhl-dna__score { grid-area: score; justify-self: end; line-height: 1; }
+  .nhl-dna__conf { grid-area: conf; justify-self: start; }
+  .nhl-dna__scale-track { margin: 6px 0 2px; }
+  .nhl-dna__trait--watch { flex-direction: column; align-items: flex-start; gap: 2px; }
 }
