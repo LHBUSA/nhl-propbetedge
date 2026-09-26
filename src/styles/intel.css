@@ -130,6 +130,9 @@
 .gi-legend { display: flex; flex-wrap: wrap; gap: 10px; }
 .gi-legend i { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 4px; vertical-align: -1px; }
 .gi-split { width: 100%; font-size: var(--fs-sm); }
+/* Narrow screens: the 5-column split cannot shrink below its content width;
+   it scrolls inside the card instead of widening the page. */
+@media (max-width: 520px) { .gi-split { display: block; max-width: 100%; overflow-x: auto; } }
 .gi-split th, .gi-split td { padding: 4px 6px; text-align: right; }
 .gi-split th:first-child, .gi-split td:first-child { text-align: left; }
 .gi-cmp { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
