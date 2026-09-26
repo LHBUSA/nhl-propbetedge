@@ -11,13 +11,7 @@ const alpha = fx.alpha.snapshots;
 const ranked = alpha[3];          // 2025-26, ranked
 const early = alpha[4];           // 2026-27, early season
 const history = fx.alpha.history;
-const section = (html, cls) => {
-  const i = html.indexOf(`class="${cls}"`);
-  if (i < 0) return '';
-  const end = html.indexOf('</div>\n  <div class="nhl-dna__dims">', i);
-  return html.slice(i, end > i ? end : undefined);
-};
-const traitNames = html => [...section(html, 'nhl-dna__traits').matchAll(/nhl-dna__trait--(strong|watch)"><span>([^<]+)<\/span>/g)].map(m => [m[1], m[2]]);
+const traitNames = html => [...html.matchAll(/nhl-dna__trait--(strong|watch)" data-dim="[^"]+"><b class="nhl-dna__trait-score">[^<]*<\/b><span class="nhl-dna__trait-name">([^<]+)<\/span>/g)].map(m => [m[1], m[2]]);
 
 test('traits render verbatim from the snapshot (never recomputed)', () => {
   const html = renderSkaterDna({ snapshot: ranked, history });
@@ -73,19 +67,20 @@ test('gaps render as gaps with a plain-language reason, never as zero', () => {
 
 test('DNA over time: summary read verbatim; unranked season shown as measured only', () => {
   const html = renderSkaterDna({ snapshot: early, history, season: 20262027 });
-  assert.match(html, /Summary uses ranked forward seasons only \(2022-23, 2023-24, 2024-25, 2025-26\)/);
-  assert.ok(!/Summary uses[^<]*2026-27/.test(html), 'the unranked season is not in the summary basis');
+  assert.match(html, /Summary uses ranked forward seasons only \(2022–23, 2023–24, 2024–25, 2025–26\)/);
+  assert.ok(!/Summary uses[^<]*2026–27/.test(html), 'the unranked season is not in the summary basis');
   assert.match(html, /Biggest gain<\/span><b>Shot Blocking <em>\+10<\/em>/);
   assert.match(html, /Biggest drop<\/span><b><small>No high-confidence move of 10\+ points<\/small>/);
-  assert.match(html, /nhl-dna__cell is-gap" title="Measured only \(season not ranked\)">meas\./);
-  assert.match(html, /nhl-dna__cell--head is-unranked/);
+  assert.match(html, /nhl-dna__hcell is-gap[^"]*" title="2026–27 · [^"]*Measured only \(season not ranked\)">—</);
+  assert.match(html, /<th scope="col" class="is-unranked"[^>]*>2026–27<small>measured<\/small>/);
 });
 
 test('focus mode is a data attribute; the exact season table lists every season', () => {
   const html = renderSkaterDna({ snapshot: ranked, history, focus: 'finishing' });
   assert.match(html, /aria-label="DNA over time" data-focus="finishing"/);
-  assert.match(html, /nhl-dna__trow is-focus" data-dim="finishing"/);
-  for (const s of ['2022-23', '2023-24', '2024-25', '2025-26', '2026-27']) assert.ok(html.includes(`<th scope="col" class="num">${s}`), s);
+  assert.match(html, /<tr class="is-focus" data-dim="finishing">/);
+  assert.match(html, /nhl-dna__traitbtn is-active" data-dna-focus="finishing" aria-pressed="true"/);
+  for (const s of ['2022–23', '2023–24', '2024–25', '2025–26', '2026–27']) assert.ok(html.includes(`<th scope="col" class="num">${s}`), s);
 });
 
 test('penalty differential carries the home/road/officiating caveat; attribution is PropSports', () => {
@@ -126,4 +121,92 @@ test('the synthetic fixture contains no real-player ids', () => {
   const ids = new Set([...alpha, fx.bravo.snapshot, fx.charlie.snapshot].map(s => s.player_id));
   for (const id of ids) assert.ok(id >= 9990000 && id < 9999999, `synthetic id ${id}`);
   assert.match(fx.note, /SYNTHETIC/);
+});
+
+// ---------------------------------------------------------------- V2 visual system
+const tag = (html, re) => (html.match(re) || []).length;
+test('V2 hero: identity + DNA SIGNATURE shows exactly the stored strongest traits', () => {
+  const html = renderSkaterDna({ snapshot: ranked, history, player: { name: 'Synth Alpha Full', team: 'AAA', identityHtml: '<span class="pid">ID</span>' } });
+  assert.match(html, /<h3 class="nhl-dna__name">Synth Alpha Full<\/h3>/);
+  assert.match(html, /<span class="pid">ID<\/span>/, 'identity chip comes from the page (existing headshot component)');
+  const sig = [...html.matchAll(/nhl-dna__sig-score">(\d+)<\/b><span>([^<]+)<\/span>/g)].map(m => [Number(m[1]), m[2]]);
+  assert.deepEqual(sig.map(x => x[1]), ranked.traits.strongest.map(k => ({ shot_generation: 'SHOT GENERATION', playmaking: 'PLAYMAKING' })[k]));
+  assert.deepEqual(sig.map(x => x[0]), ranked.traits.strongest.map(k => ranked.dimensions[k].score));
+  assert.match(html, /400 qualified forwards · \d+ GP · [\d,.]+ TOI/);
+});
+
+test('V2 fingerprint: exactly the stored scores, gaps are gaps, no overall score, text equivalent', () => {
+  const html = renderSkaterDna({ snapshot: ranked, history });
+  const scoredDims = Object.entries(ranked.dimensions).filter(([, d]) => d.score !== null);
+  assert.equal(tag(html, /class="nhl-dna__puck/g), scoredDims.length, 'one puck per stored score');
+  for (const [k, d] of scoredDims) assert.match(html, new RegExp(`data-dim="${k}"><title>[^<]* · ${d.score} · `));
+  assert.match(html, /<div class="nhl-dna__sr"><table><caption>DNA fingerprint values/);
+  assert.match(html, /role="img" aria-label="DNA fingerprint: /);
+  assert.ok(!/overall|composite|DNA score/i.test(html), 'no overall score anywhere');
+  const gap = structuredClone(ranked); gap.dimensions.faceoffs.score = null; gap.dimensions.faceoffs.status = 'NOT_APPLICABLE'; gap.dimensions.faceoffs.reason = 'NO_FACEOFF_ROLE';
+  const g = renderSkaterDna({ snapshot: gap });
+  assert.equal(tag(g, /class="nhl-dna__puck/g), scoredDims.length - 1);
+  assert.ok(!/nhl-dna__shape/.test(g), 'no filled shape when an axis is missing');
+  assert.match(g, /nhl-dna__gapmark[^>]*>—<title>Faceoffs · No regular faceoff role/);
+  assert.match(renderSkaterDna({ snapshot: fx.charlie.snapshot }), /nhl-dna__print is-empty/);
+  assert.equal(tag(renderSkaterDna({ snapshot: fx.charlie.snapshot }), /class="nhl-dna__puck/g), 0);
+});
+
+test('V2 proxy is visually distinct in the fingerprint, rows, trajectory and heatmap', () => {
+  const html = renderSkaterDna({ snapshot: ranked, history, focus: 'shot_location' });
+  assert.match(html, /nhl-dna__spoke is-proxy/);
+  assert.match(html, /nhl-dna__puck is-proxy" [^>]*data-dim="shot_location"/);
+  assert.match(html, /nhl-dna__dim-row is-proxy" data-dim="shot_location"[\s\S]*?nhl-dna__scale-track is-proxy[\s\S]*?PROXY · MEDIUM CONFIDENCE/);
+  assert.match(html, /nhl-dna__traj is-proxy/);
+  assert.match(html, /nhl-dna__hcell is-proxy/);
+});
+
+test('V2 dimension rows: puck marker at the stored score + confidence text; evidence lists raw value, percentile, peers', () => {
+  const html = renderSkaterDna({ snapshot: ranked, history });
+  const d = ranked.dimensions.shot_generation;
+  assert.match(html, new RegExp(`data-dim="shot_generation"[\\s\\S]*?nhl-dna__marker" style="left:${d.score}%"[\\s\\S]*?nhl-dna__score">${d.score}<\\/span><small class="nhl-dna__conf[^>]*>HIGH CONFIDENCE`));
+  assert.match(html, /HOW THIS SCORE IS BUILT/);
+  const c = d.components.sog_per60;
+  const ord = n => `${n}${['th', 'st', 'nd', 'rd'][(n % 100 - 20) % 10] || ['th', 'st', 'nd', 'rd'][n % 100] || 'th'}`;
+  assert.match(html, new RegExp(`Shots on goal /60</span>\\s*<b class="nhl-dna__ev-val">${Number(c.value).toFixed(2)} /60</b>\\s*<span class="nhl-dna__ev-pct">${ord(c.percentile)} percentile <small>· ${c.n} peers</small>`));
+});
+
+test('V2 trajectory: fixed 0–100 axis, stored points only, never bridges a gap, current season emphasized', () => {
+  const html = renderSkaterDna({ snapshot: ranked, history, focus: 'physicality' });
+  const phys = history.trends.find(t => t.key === 'physicality');
+  // count within ONE drawing (the full variant; the compact phone variant is identical data)
+  const fig = html.slice(html.indexOf('nhl-dna__trajsvg--full'), html.indexOf('</svg>', html.indexOf('nhl-dna__trajsvg--full')));
+  const compact = html.slice(html.indexOf('nhl-dna__trajsvg--compact'), html.indexOf('</svg>', html.indexOf('nhl-dna__trajsvg--compact')));
+  assert.equal(tag(compact, /class="nhl-dna__traj[ "]/g), tag(fig, /class="nhl-dna__traj[ "]/g), 'compact variant draws the same segments');
+  for (const v of [0, 33, 67, 100]) assert.match(fig, new RegExp(`class="nhl-dna__tick"[^>]*>${v}<`));
+  let expected = 0;
+  for (let i = 0; i + 1 < phys.points.length; i++) if (phys.points[i].score !== null && phys.points[i + 1].score !== null) expected++;
+  assert.equal(tag(fig, /class="nhl-dna__traj[ "]/g), expected, 'segments only between adjacent scored seasons');
+  assert.equal(tag(fig, /class="nhl-dna__tpt/g), phys.points.filter(p => p.score !== null).length);
+  assert.ok(tag(fig, /data-gap=/g) >= 1, 'the gap season is marked, not plotted');
+  // the active (current) season label is always emphasized; its dot too when it is scored
+  assert.match(fig, /nhl-dna__xlab is-current"[^>]*>2026–27</);
+  const h2 = structuredClone(history); h2.active_season = 20252026;
+  assert.match(renderSkaterDna({ snapshot: ranked, history: h2, focus: 'shot_generation' }), /nhl-dna__tpt is-current" data-season="20252026"/);
+  assert.match(fig, /data-gap="20222023">—<title>2022–23 · Physicality · Not available this season/);
+});
+
+test('V2 heatmap: stored score or "—" per cell, never 0 for a gap; tooltip text', () => {
+  const html = renderSkaterDna({ snapshot: ranked, history });
+  const i = html.indexOf('nhl-dna__htable');
+  const heat = html.slice(i, html.indexOf('</table>', i));
+  for (const t of history.trends) for (const p of t.points) {
+    if (p.score === null) continue;
+    assert.ok(heat.includes(`style="--v:${p.score}" title="`), `${t.key} ${p.season}`);
+  }
+  assert.ok(!/nhl-dna__hcell is-gap[^>]*>0</.test(heat));
+  assert.match(heat, /title="2022–23 · Shot Generation · \d+(st|nd|rd|th) percentile · (HIGH|MEDIUM|LOW)"/);
+});
+
+test('V2 unqualified current season is labelled; footer keeps attribution + model version', () => {
+  const latest = alpha[alpha.length - 1];
+  const html = renderSkaterDna({ snapshot: fx.charlie.snapshot });
+  assert.match(html, /CURRENT SEASON · MEASURED, NOT RANKED/);
+  assert.match(renderSkaterDna({ snapshot: latest, history, season: latest.season }), /CURRENT SEASON · EARLY SEASON · MEASURED, NOT RANKED/);
+  assert.match(html, /<footer class="nhl-dna__foot">\s*<span>Data · PropSports<\/span>\s*<span>nhl-skater-dna\/1\.0\.0/);
 });
