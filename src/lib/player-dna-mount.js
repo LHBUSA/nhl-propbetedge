@@ -42,8 +42,12 @@ export function selectSnapshot(payload, season = null) {
   return snaps.find(s => s.season === active) || snaps[snaps.length - 1];
 }
 
-export function renderDnaPanel(payload, { season = null, focus = null } = {}) {
+// player: { name, team, identityFor(team) -> playerIdentity markup } from the
+// profile page, display only.
+export function renderDnaPanel(payload, { season = null, focus = null, player = null } = {}) {
   const snapshot = selectSnapshot(payload, season);
   if (!snapshot) return '';
-  return renderSkaterDna({ snapshot, history: payload.history || null, season: snapshot.season, focus });
+  const team = snapshot.team_context?.latest_team || player?.team || null;
+  const who = player ? { ...player, team, identityHtml: typeof player.identityFor === 'function' ? player.identityFor(team) : null } : null;
+  return renderSkaterDna({ snapshot, history: payload.history || null, season: snapshot.season, focus, player: who });
 }

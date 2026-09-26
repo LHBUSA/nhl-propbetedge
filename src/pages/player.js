@@ -381,8 +381,8 @@ export function mount(root, params) {
   const dnaEl = $('#rs-p-dna', root);
   // Skater DNA: stored snapshots only; renders nothing unless the DNA API
   // answers 200 (dark behind the rights gate). Goalies never get DNA.
-  const dna = { payload: null, season: null, focus: null };
-  const renderDna = () => { dnaEl.innerHTML = dna.payload ? renderDnaPanel(dna.payload, { season: dna.season, focus: dna.focus }) : ''; };
+  const dna = { payload: null, season: null, focus: null, player: null };
+  const renderDna = () => { dnaEl.innerHTML = dna.payload ? renderDnaPanel(dna.payload, { season: dna.season, focus: dna.focus, player: dna.player }) : ''; };
   const controller = new AbortController();
   const signal = controller.signal;
   let logCtl = null;
@@ -463,6 +463,10 @@ export function mount(root, params) {
         fetchSkaterDna(id, { signal }).then(payload => {
           if (signal.aborted || !payload) return;
           dna.payload = payload;
+          // Identity chip from the page's existing headshot component (no new
+          // image source); the team badge is the DNA season's own team.
+          const dnaName = p.full_name || `${p.first_name || ''} ${p.last_name || ''}`.trim();
+          dna.player = { name: dnaName, team: p.current_team_abbrev || null, identityFor: team => playerIdentity({ id: p.id ?? Number(id), name: dnaName, team, size: 'lg', headshot: p.headshot }) };
           renderDna();
         });
       }
@@ -498,7 +502,8 @@ export function mount(root, params) {
       renderDna();
     }),
     on(root, 'click', '[data-dna-focus]', (_, b) => {
-      dna.focus = dna.focus === b.dataset.dnaFocus ? null : b.dataset.dnaFocus;
+      // Trait selector for the career trajectory (heatmap row names too).
+      dna.focus = b.dataset.dnaFocus;
       renderDna();
     }),
     on(root, 'click', '[data-fight-scope]', (_, b) => {
