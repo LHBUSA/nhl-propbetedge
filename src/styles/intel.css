@@ -115,8 +115,11 @@
 .gi-matchup__who b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .gi-matchup__mid { display: grid; justify-items: center; gap: 2px; text-align: center; }
 @media (max-width: 520px) { .gi-matchup { grid-template-columns: 1fr; } .gi-matchup__side:last-child { flex-direction: row; text-align: left; } }
-.gi-card { display: grid; gap: 10px; padding: 12px; border: 1px solid var(--pbe-line); border-radius: var(--r-md); min-width: 0; }
-.gi-card__head { display: flex; align-items: center; gap: 10px; }
+.gi-card { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; padding: 12px; border: 1px solid var(--pbe-line); border-radius: var(--r-md); min-width: 0; }
+/* The implicit auto track sized to the widest unwrapped child (the workload
+   line), overflowing the card at 360 px; pin the track and let text wrap. */
+.gi-card__head { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.gi-card__head > div { min-width: 0; overflow-wrap: anywhere; }
 .gi-card__head .iq-ring { margin-left: auto; }
 .gi-warn { display: flex; flex-wrap: wrap; gap: 5px; }
 .gi-timeline { display: grid; grid-template-columns: repeat(14, minmax(0, 1fr)); gap: 3px; }

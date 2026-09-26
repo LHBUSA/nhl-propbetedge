@@ -230,7 +230,7 @@ export function renderSkaterDna({ snapshot, history = null, season = null, focus
   const pop = snapshot.population || {};
   const order = snapshot.dimension_order || Object.keys(snapshot.dimensions || {});
   const selector = `<div class="nhl-dna__seasons" role="tablist" aria-label="Season">${seasons.map(s => `<button type="button" role="tab" class="nhl-dna__season${String(s.season) === String(selected) ? ' is-active' : ''}" data-dna-season="${esc(s.season)}" aria-selected="${String(s.season) === String(selected)}">${esc(seasonLabel(s.season))}${s.ranked ? '' : '<small>measured</small>'}</button>`).join('')}</div>`;
-  return `<section class="nhl-dna" data-gate="${DNA_PUBLICATION_GATE}" data-player-id="${esc(snapshot.player_id)}" data-season="${esc(selected)}" aria-label="Player DNA">
+  return `<section class="nhl-dna" data-player-id="${esc(snapshot.player_id)}" data-season="${esc(selected)}" aria-label="Player DNA">
   <header class="nhl-dna__head">
     <div>
       <p class="nhl-dna__eyebrow">PLAYER DNA</p>
