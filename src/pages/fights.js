@@ -46,7 +46,7 @@ function momentumTable(f) {
     <span class="ft-mom__label micro faint">Descriptive window</span>
     <table class="pbe-table ft-mom"><thead><tr><th></th><th>${esc(a)} pre</th><th>${esc(h)} pre</th><th>${esc(a)} post</th><th>${esc(h)} post</th></tr></thead>
     <tbody>${row('Shot attempts', 'attempts')}${row('Shots on goal', 'shots_on_goal')}${row('Goals', 'goals')}${row('Penalties', 'penalties')}</tbody></table>
-    <p class="micro faint">${esc(m.semantics)} Pre window ${Math.round(m.pre_window_s / 60)} min, post window ${Math.round(m.post_window_s / 60)} min${m.truncated ? ' (truncated by a period/game boundary)' : ''}.</p></details>`;
+    <p class="micro faint">Pre window ${Math.round(m.pre_window_s / 60)} min, post window ${Math.round(m.post_window_s / 60)} min${m.truncated ? ' (truncated by a period/game boundary)' : ''}.</p></details>`;
 }
 
 export function fightCard(f) {
