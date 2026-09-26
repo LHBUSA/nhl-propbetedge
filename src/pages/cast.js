@@ -255,7 +255,7 @@ function penaltyBox(cast, st) {
         ? `<div class="pbox__time"><span class="pbox__clock mono">${esc(clockText(x.remaining_seconds))}</span><span class="micro">remaining</span>
             <div class="pbox__bar" role="presentation"><i style="width:${pctLeft.toFixed(1)}%"></i></div>
            </div>`
-        : `<div class="pbox__time pbox__time--unknown"><span class="micro">official box time unavailable</span><span class="micro dim">penalty is real; countdown withheld</span></div>`}
+        : `<div class="pbox__time pbox__time--unknown">${x.duration_min ? `<span class="pbox__assessed mono">${esc(`${x.duration_min}:00`)} assessed</span>` : ''}<span class="micro">Remaining time unavailable</span></div>`}
       ${x.served_by_name ? `<p class="micro dim">Served by ${esc(x.served_by_name)}</p>` : ''}
     </li>`;
   };

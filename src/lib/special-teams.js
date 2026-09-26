@@ -4,8 +4,10 @@
 // play stream up to a cursor. Two rules govern everything here:
 //
 //   1. situationCode is the authority for manpower. The penalty stream only
-//      EXPLAINS it. If the two disagree, the code wins and every countdown is
-//      withheld rather than guessed.
+//      EXPLAINS it. If the two disagree after the call has been enforced, the
+//      code wins and that side's countdowns are withheld rather than guessed.
+//      A call itself is logged at a stopped clock with the PRE-penalty code;
+//      that transition is not a disagreement.
 //   2. A countdown is shown only when it is provable. `elapsed_s` on each play
 //      is total elapsed GAME seconds, so penalty time elapsed is exactly
 //      (cursor.elapsed_s - penalty.elapsed_s) — the official clock, not a
@@ -113,7 +115,7 @@ export function specialTeams(plays, { cursorIndex = null } = {}) {
   const delayed = delayedPenaltyAt(upTo);
 
   const now = Number(at.elapsed_s);
-  const { penalties, exact } = reconstruct(upTo, now, cls);
+  const { penalties, overall } = reconstruct(upTo, now, cls, mp);
 
   const state = delayed ? STATE.DELAYED_PENALTY : cls.state;
 
@@ -125,9 +127,11 @@ export function specialTeams(plays, { cursorIndex = null } = {}) {
     active_penalties: penalties,
     delayed: delayed || null,
     pp_segment: cls.advantaged_side && !delayed ? segment(upTo, cls.advantaged_side) : null,
-    // 'exact' only when every displayed countdown came from the official clock
-    // AND the reconstruction agrees with the authoritative code.
-    certainty: exact ? 'exact' : 'partial',
+    // 'exact' when every countdown came from the official clock AND agrees
+    // with the authoritative code; 'transition' while a fresh call is still
+    // waiting for its first manpower-bearing play; 'partial' when any clock is
+    // withheld. Each penalty also carries its own certainty.
+    certainty: overall,
     source: mp ? `situationCode ${mp.code}` : 'no situation code at cursor'
   };
 }
@@ -152,16 +156,54 @@ function delayedPenaltyAt(upTo) {
   return null;
 }
 
+// Minors a power-play goal can release (a bench minor is a minor served by a
+// designated player). Majors and misconducts are never released by a goal.
+const RELEASABLE = new Set(['MIN', 'BEN']);
+const DOUBLE_MINOR_S = 240;
+const MINOR_S = 120;
+
+
+/**
+ * The first play after penalty call `p` whose situationCode reflects the
+ * enforced penalty. A call is logged at a stopped clock and carries the
+ * PRE-penalty code; the faceoff that restarts play (or any coded play at a
+ * later clock second) is the first one that can show the new manpower. Other
+ * plays in the same stoppage (further calls, the stoppage itself) cannot.
+ */
+// Order is the position in the (already ordered) play stream.
+function verificationPlay(upTo, idx, p) {
+  const start = Number(p.elapsed_s);
+  for (let i = idx.get(p) + 1; i < upTo.length; i++) {
+    const q = upTo[i];
+    if (!parseSituationClient(q.situation_code)) continue;
+    if (Number(q.elapsed_s) > start || q.type === 'faceoff') return q;
+  }
+  return null;
+}
+
 /**
  * Walk the penalty stream and keep the ones still being served at `now`.
  *
- * Returns `exact: false` when anything prevents an honest countdown, in which
- * case callers must render the penalty WITHOUT a remaining time.
+ * Three facts are kept apart for every penalty:
+ *   A. assessed duration   - duration_min from the official call (always shown)
+ *   B. remaining time      - official game clock since the call (elapsed_s), so
+ *                            stoppages never consume it and no browser timer runs
+ *   C. manpower agreement  - situationCode on plays AFTER the call's enforcement
+ *
+ * Each penalty carries its own certainty:
+ *   exact       B is proven and C agrees
+ *   transition  called, but no manpower-bearing play has followed yet; B is
+ *               exact (0 s elapsed at the call) and C is not yet testable
+ *   unknown     B cannot be proven or C contradicts it -> remaining withheld
+ * A disagreement on one side withholds only that side's clocks.
  */
-function reconstruct(upTo, now, cls) {
+function reconstruct(upTo, now, cls, mp) {
   const penalties = [];
-  let exact = Number.isFinite(now);
+  const withheldSides = new Set();
+  const untimed = { home: 0, away: 0 };   // manpower calls with no provable duration
+  const clockOk = Number.isFinite(now);
 
+  const idx = new Map(upTo.map((q, i) => [q, i]));
   const calls = upTo.filter(isPenalty);
   // Coincidental penalties are called at the same clock on opposite sides;
   // they cancel for manpower and are marked so nothing claims a power play.
@@ -171,50 +213,67 @@ function reconstruct(upTo, now, cls) {
     bySecond.set(k, [...(bySecond.get(k) || []), p]);
   }
 
+  // B: provisional end time of every timeable call, then power-play goals
+  // release minors one at a time (the soonest-ending minor on the short side).
+  const timed = [];
   for (const p of calls) {
     const pen = p.penalty || {};
     const severity = String(pen.severity || '').toUpperCase();
-    const minutes = Number(pen.duration_min);
+    // Number(null) is 0: a missing duration must stay missing, not look like a
+    // zero-minute penalty-shot call.
+    const rawDur = pen.duration_min;
+    const minutes = rawDur === null || rawDur === undefined || rawDur === '' ? NaN : Number(rawDur);
     const start = Number(p.elapsed_s);
     const affectsManpower = !NON_MANPOWER.has(severity);
     const group = bySecond.get(`${p.period}|${p.elapsed_s}`) || [];
     const coincidental = group.length > 1 && new Set(group.map(g => g.side)).size > 1;
-
-    if (!Number.isFinite(minutes) || !Number.isFinite(start)) {
-      // A penalty we cannot time at all: still report it, never time it.
-      exact = false;
+    if (!Number.isFinite(minutes) || minutes <= 0 || !Number.isFinite(start)) {
+      // Untimeable (or a penalty-shot call with no time): never timed. If it
+      // could change manpower, that side's clocks are no longer provable.
+      if (affectsManpower && minutes !== 0 && (p.side === 'home' || p.side === 'away')) { withheldSides.add(p.side); untimed[p.side] += 1; }
       continue;
     }
-
-    const elapsed = now - start;
     const total = minutes * 60;
-    if (elapsed < 0) continue;              // not yet called at this cursor
-    let remaining = total - elapsed;
-
-    // A minor ends early on a power-play goal against. Majors do not, and a
-    // penalty that never shorthanded anyone cannot be ended by a goal.
-    let endedEarly = false;
-    if (severity === 'MIN' && affectsManpower && !coincidental) {
-      const killedBy = upTo.find(g => g.type === 'goal'
-        && Number(g.elapsed_s) > start
-        && Number(g.elapsed_s) <= start + total
-        && g.side && g.side !== p.side);
-      if (killedBy) {
-        // Only treat it as terminating if the scoring side was actually up a
-        // skater at that moment; a 4v4 or even-strength goal does not release.
-        const gm = classify(manpowerAt(killedBy));
-        if (gm.advantaged_side === killedBy.side) {
-          endedEarly = Number(killedBy.elapsed_s) <= now;
-          if (endedEarly) remaining = 0;
-        }
-      }
+    const doubleMinor = severity === 'MIN' && total === DOUBLE_MINOR_S;
+    timed.push({ p, pen, severity, minutes, start, total, end: start + total, affectsManpower, coincidental, doubleMinor, notes: [] });
+  }
+  const goals = upTo.filter(g => g.type === 'goal' && g.side && Number.isFinite(Number(g.elapsed_s)));
+  for (const g of goals) {
+    const at = Number(g.elapsed_s);
+    // Only a goal by a side that was actually up a skater releases anything.
+    if (classify(manpowerAt(g)).advantaged_side !== g.side) continue;
+    const running = timed
+      .filter(t => t.p.side && t.p.side !== g.side && RELEASABLE.has(t.severity) && t.affectsManpower && !t.coincidental
+        && at > t.start && at < t.end && idx.get(g) > idx.get(t.p))
+      .sort((a, b) => a.end - b.end || idx.get(a.p) - idx.get(b.p));
+    const t = running[0];
+    if (!t) continue;
+    if (t.doubleMinor && at < t.start + MINOR_S) {
+      // A goal in the first half of a double minor ends only the first minor;
+      // the second starts at the goal.
+      t.end = at + MINOR_S;
+      t.notes.push('double_minor_first_half_released');
+    } else {
+      t.end = at;
     }
+  }
 
-    if (remaining <= 0 || endedEarly) continue;   // expired
-
+  for (const t of timed) {
+    const { p, pen } = t;
+    if (!clockOk || now < t.start) continue;          // not yet called at this cursor
+    const remaining = t.end - now;
+    if (remaining <= 0) continue;                     // expired or released
     const who = playerOf(p, 'committed_by') || playerOf(p, 'served_by');
     const served = playerOf(p, 'served_by');
-
+    const manpowerClaim = t.affectsManpower && !t.coincidental;
+    const verified = manpowerClaim ? verificationPlay(upTo, idx, p) : null;
+    let certainty = 'exact';
+    if (manpowerClaim && !verified) certainty = 'transition';
+    // A misconduct assessed together with the same player's minor is served
+    // AFTER the minor; its start is not provable from the call alone.
+    if (!t.affectsManpower && calls.some(o => o !== p && o.period === p.period && o.elapsed_s === p.elapsed_s
+      && !NON_MANPOWER.has(String(o.penalty?.severity || '').toUpperCase())
+      && (playerOf(o, 'committed_by')?.id ?? -1) === (who?.id ?? -2))) certainty = 'unknown';
     penalties.push({
       side: p.side || null,
       player_id: who?.id ?? null,
@@ -222,36 +281,57 @@ function reconstruct(upTo, now, cls) {
       player_number: who?.number ?? null,
       served_by_name: served && served.id !== who?.id ? served.name : null,
       infraction: pen.desc_key || null,
-      severity: severity || null,
-      duration_min: minutes,
+      severity: t.severity || null,
+      duration_min: t.minutes,
       start_sort_order: p.sort_order ?? null,
       start_period: p.period ?? null,
       start_clock: p.time_in_period || null,
-      affects_manpower: affectsManpower,
-      coincidental,
-      // Withheld below if the reconstruction does not agree with the code.
-      remaining_seconds: Math.max(0, Math.round(remaining)),
-      certainty: 'exact'
+      affects_manpower: t.affectsManpower,
+      coincidental: t.coincidental,
+      remaining_seconds: certainty === 'unknown' ? null : Math.max(0, Math.round(remaining)),
+      certainty,
+      ...(t.notes.length ? { notes: t.notes } : {})
     });
   }
 
-  // Cross-check against the authority. If the number of manpower-affecting
-  // penalties we reconstructed does not explain the situation code, we keep the
-  // penalties (they are real events) but strip every countdown.
-  const shortCount = side => penalties.filter(x => x.side === side && x.affects_manpower && !x.coincidental).length;
-  if (cls.shorthanded_side) {
-    const expected = cls.state === STATE.FIVE_ON_THREE ? 2 : 1;
-    if (shortCount(cls.shorthanded_side) !== expected) exact = false;
-  } else if (cls.state === STATE.EV && penalties.some(x => x.affects_manpower && !x.coincidental)) {
-    exact = false;
+  // C: cross-check against the authority. Only the manpower DIFFERENCE is
+  // tested (coincidental minors legitimately change both counts: 4v4, or 4v3
+  // on top of a power play). A call still in transition may or may not be
+  // reflected yet (the source usually stamps the call with the pre-penalty
+  // code, occasionally with the post-enforcement one), so it may count either
+  // way; a VERIFIED penalty must be explained. A side with more than two
+  // verified running penalties is a stacked call whose clock cannot have
+  // started: not provable.
+  const claim = x => x.affects_manpower && !x.coincidental;
+  const count = (side, c) => penalties.filter(x => x.side === side && claim(x) && x.certainty === c).length;
+  let contradiction = false;
+  if (mp) {
+    const pen = side => (side === 'away' ? mp.away_skaters - (mp.away_goalie_in_net ? 0 : 1) : mp.home_skaters - (mp.home_goalie_in_net ? 0 : 1));
+    const target = pen('away') - pen('home');             // > 0: home is shorter
+    const vh = count('home', 'exact'), va = count('away', 'exact');
+    // transition calls and untimeable calls may or may not be on the ice count
+    const th = count('home', 'transition') + untimed.home, ta = count('away', 'transition') + untimed.away;
+    if (vh > 2 || va > 2) contradiction = true;
+    else if (target < vh - va - ta || target > vh + th - va) contradiction = true;
+  } else if (penalties.some(x => claim(x) && x.certainty === 'exact')) {
+    contradiction = true;
   }
-
-  if (!exact) {
-    for (const x of penalties) { x.remaining_seconds = null; x.certainty = 'unknown'; }
+  // A contradiction cannot be pinned on one penalty, so every VERIFIED
+  // manpower clock is withheld; coincidental, non-manpower and transition
+  // clocks are proven by the official clock alone and stay. An untimeable call
+  // (withheldSides) makes only its own side unprovable.
+  if (contradiction) for (const x of penalties) if (claim(x) && x.certainty === 'exact') { x.remaining_seconds = null; x.certainty = 'unknown'; }
+  for (const x of penalties) {
+    if (x.affects_manpower && !x.coincidental && x.certainty === 'exact' && withheldSides.has(x.side)) {
+      x.remaining_seconds = null; x.certainty = 'unknown';
+    }
   }
   // Longest-serving first, so the box reads in the order it will empty.
   penalties.sort((a, b) => (a.remaining_seconds ?? 1e9) - (b.remaining_seconds ?? 1e9));
-  return { penalties, exact };
+  const certainties = penalties.map(x => x.certainty);
+  const overall = !clockOk || contradiction || withheldSides.size || certainties.includes('unknown') ? 'partial'
+    : certainties.includes('transition') ? 'transition' : 'exact';
+  return { penalties, overall };
 }
 
 /**

@@ -1,0 +1,402 @@
+{
+ "fixture": "pbecast-anders-lee-high-sticking",
+ "game_id": 2025020446,
+ "matchup": "NYI@TBL",
+ "source": "production nhl-gateway /nhl/game/2025020446/cast (normalized official play-by-play), fields reduced to what the special-teams engine reads",
+ "captured_at": "2026-09-26T21:15:40.047Z",
+ "note": "Penalty call (event 487, sort 340) carries the pre-penalty code 1551; the enforcing faceoff (event 483, sort 344) is the first play at 1451.",
+ "plays": [
+  {
+   "event_id": 491,
+   "sort_order": 328,
+   "type": "giveaway",
+   "kind": "giveaway",
+   "period": 2,
+   "period_type": "REG",
+   "time_in_period": "05:21",
+   "elapsed_s": 1521,
+   "situation_code": "1541",
+   "side": "away",
+   "players": [
+    {
+     "role": "player",
+     "id": 8485366,
+     "name": "Matthew Schaefer",
+     "number": 48
+    }
+   ],
+   "shot": null
+  },
+  {
+   "event_id": 474,
+   "sort_order": 331,
+   "type": "missed-shot",
+   "kind": "miss",
+   "period": 2,
+   "period_type": "REG",
+   "time_in_period": "05:27",
+   "elapsed_s": 1527,
+   "situation_code": "1541",
+   "side": "home",
+   "players": [
+    {
+     "role": "shooter",
+     "id": 8476826,
+     "name": "Yanni Gourde",
+     "number": 37
+    },
+    {
+     "role": "goalie",
+     "id": 8478009,
+     "name": "Ilya Sorokin",
+     "number": 30
+    }
+   ],
+   "shot": {
+    "on_goal": false,
+    "goal": false,
+    "blocked": false,
+    "shootout": false
+   }
+  },
+  {
+   "event_id": 32,
+   "sort_order": 338,
+   "type": "delayed-penalty",
+   "kind": "delayed-penalty",
+   "period": 2,
+   "period_type": "REG",
+   "time_in_period": "05:49",
+   "elapsed_s": 1549,
+   "situation_code": "1551",
+   "side": "away",
+   "players": [],
+   "shot": null
+  },
+  {
+   "event_id": 487,
+   "sort_order": 340,
+   "type": "penalty",
+   "kind": "penalty",
+   "period": 2,
+   "period_type": "REG",
+   "time_in_period": "05:58",
+   "elapsed_s": 1558,
+   "situation_code": "1551",
+   "side": "away",
+   "penalty": {
+    "severity": "MIN",
+    "desc_key": "high-sticking",
+    "duration_min": 2
+   },
+   "players": [
+    {
+     "role": "committed_by",
+     "id": 8475314,
+     "name": "Anders Lee",
+     "number": 27
+    },
+    {
+     "role": "drawn_by",
+     "id": 8476826,
+     "name": "Yanni Gourde",
+     "number": 37
+    }
+   ],
+   "shot": null
+  },
+  {
+   "event_id": 483,
+   "sort_order": 344,
+   "type": "faceoff",
+   "kind": "faceoff",
+   "period": 2,
+   "period_type": "REG",
+   "time_in_period": "05:58",
+   "elapsed_s": 1558,
+   "situation_code": "1451",
+   "side": "away",
+   "players": [
+    {
+     "role": "faceoff_winner",
+     "id": 8475231,
+     "name": "Casey Cizikas",
+     "number": 53
+    },
+    {
+     "role": "faceoff_loser",
+     "id": 8477426,
+     "name": "Nick Paul",
+     "number": 20
+    }
+   ],
+   "shot": null
+  },
+  {
+   "event_id": 492,
+   "sort_order": 345,
+   "type": "blocked-shot",
+   "kind": "block",
+   "period": 2,
+   "period_type": "REG",
+   "time_in_period": "06:28",
+   "elapsed_s": 1588,
+   "situation_code": "1451",
+   "side": "home",
+   "players": [
+    {
+     "role": "shooter",
+     "id": 8480426,
+     "name": "Charle-Edouard D'Astous",
+     "number": 51
+    },
+    {
+     "role": "blocker",
+     "id": 8475231,
+     "name": "Casey Cizikas",
+     "number": 53
+    }
+   ],
+   "shot": {
+    "on_goal": false,
+    "goal": false,
+    "blocked": true,
+    "shootout": false
+   }
+  },
+  {
+   "event_id": 493,
+   "sort_order": 346,
+   "type": "shot-on-goal",
+   "kind": "shot",
+   "period": 2,
+   "period_type": "REG",
+   "time_in_period": "06:40",
+   "elapsed_s": 1600,
+   "situation_code": "1451",
+   "side": "home",
+   "players": [
+    {
+     "role": "shooter",
+     "id": 8480426,
+     "name": "Charle-Edouard D'Astous",
+     "number": 51
+    },
+    {
+     "role": "goalie",
+     "id": 8478009,
+     "name": "Ilya Sorokin",
+     "number": 30
+    }
+   ],
+   "shot": {
+    "on_goal": true,
+    "goal": false,
+    "blocked": false,
+    "shootout": false
+   }
+  },
+  {
+   "event_id": 494,
+   "sort_order": 347,
+   "type": "missed-shot",
+   "kind": "miss",
+   "period": 2,
+   "period_type": "REG",
+   "time_in_period": "06:48",
+   "elapsed_s": 1608,
+   "situation_code": "1451",
+   "side": "home",
+   "players": [
+    {
+     "role": "shooter",
+     "id": 8479542,
+     "name": "Brandon Hagel",
+     "number": 38
+    },
+    {
+     "role": "goalie",
+     "id": 8478009,
+     "name": "Ilya Sorokin",
+     "number": 30
+    }
+   ],
+   "shot": {
+    "on_goal": false,
+    "goal": false,
+    "blocked": false,
+    "shootout": false
+   }
+  },
+  {
+   "event_id": 498,
+   "sort_order": 351,
+   "type": "blocked-shot",
+   "kind": "block",
+   "period": 2,
+   "period_type": "REG",
+   "time_in_period": "07:18",
+   "elapsed_s": 1638,
+   "situation_code": "1451",
+   "side": "home",
+   "players": [
+    {
+     "role": "shooter",
+     "id": 8480426,
+     "name": "Charle-Edouard D'Astous",
+     "number": 51
+    },
+    {
+     "role": "blocker",
+     "id": 8485366,
+     "name": "Matthew Schaefer",
+     "number": 48
+    }
+   ],
+   "shot": {
+    "on_goal": false,
+    "goal": false,
+    "blocked": true,
+    "shootout": false
+   }
+  },
+  {
+   "event_id": 203,
+   "sort_order": 352,
+   "type": "shot-on-goal",
+   "kind": "shot",
+   "period": 2,
+   "period_type": "REG",
+   "time_in_period": "07:20",
+   "elapsed_s": 1640,
+   "situation_code": "1451",
+   "side": "home",
+   "players": [
+    {
+     "role": "shooter",
+     "id": 8477426,
+     "name": "Nick Paul",
+     "number": 20
+    },
+    {
+     "role": "goalie",
+     "id": 8478009,
+     "name": "Ilya Sorokin",
+     "number": 30
+    }
+   ],
+   "shot": {
+    "on_goal": true,
+    "goal": false,
+    "blocked": false,
+    "shootout": false
+   }
+  },
+  {
+   "event_id": 204,
+   "sort_order": 353,
+   "type": "shot-on-goal",
+   "kind": "shot",
+   "period": 2,
+   "period_type": "REG",
+   "time_in_period": "07:21",
+   "elapsed_s": 1641,
+   "situation_code": "1451",
+   "side": "home",
+   "players": [
+    {
+     "role": "shooter",
+     "id": 8478519,
+     "name": "Anthony Cirelli",
+     "number": 71
+    },
+    {
+     "role": "goalie",
+     "id": 8478009,
+     "name": "Ilya Sorokin",
+     "number": 30
+    }
+   ],
+   "shot": {
+    "on_goal": true,
+    "goal": false,
+    "blocked": false,
+    "shootout": false
+   }
+  },
+  {
+   "event_id": 568,
+   "sort_order": 361,
+   "type": "giveaway",
+   "kind": "giveaway",
+   "period": 2,
+   "period_type": "REG",
+   "time_in_period": "07:45",
+   "elapsed_s": 1665,
+   "situation_code": "1451",
+   "side": "home",
+   "players": [
+    {
+     "role": "player",
+     "id": 8482090,
+     "name": "Jack Finley",
+     "number": 62
+    }
+   ],
+   "shot": null
+  },
+  {
+   "event_id": 564,
+   "sort_order": 370,
+   "type": "missed-shot",
+   "kind": "miss",
+   "period": 2,
+   "period_type": "REG",
+   "time_in_period": "08:48",
+   "elapsed_s": 1728,
+   "situation_code": "1551",
+   "side": "away",
+   "players": [
+    {
+     "role": "shooter",
+     "id": 8475314,
+     "name": "Anders Lee",
+     "number": 27
+    },
+    {
+     "role": "goalie",
+     "id": 8477992,
+     "name": "Jonas Johansson",
+     "number": 31
+    }
+   ],
+   "shot": {
+    "on_goal": false,
+    "goal": false,
+    "blocked": false,
+    "shootout": false
+   }
+  },
+  {
+   "event_id": 592,
+   "sort_order": 375,
+   "type": "giveaway",
+   "kind": "giveaway",
+   "period": 2,
+   "period_type": "REG",
+   "time_in_period": "09:11",
+   "elapsed_s": 1751,
+   "situation_code": "1551",
+   "side": "home",
+   "players": [
+    {
+     "role": "player",
+     "id": 8475167,
+     "name": "Victor Hedman",
+     "number": 77
+    }
+   ],
+   "shot": null
+  }
+ ]
+}
