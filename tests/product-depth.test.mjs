@@ -103,7 +103,8 @@ assert.match(playerPage, /intel\(`\/fights\/player\/\$\{id\}`/, 'fight history, 
 assert.match(playerPage, /FIGHT W-L-D/, 'fight wins, losses and draws are first-class player stats');
 assert.match(playerPage, /cell\('FIGHT W-L-D'/, 'fight W-L-D is visible in the main NHL season stat strip, not only the history panel');
 assert.match(playerPage, /PBE Cast →/, 'every documented fight links back to its game record');
-assert.match(playerPage, /It is not an official NHL result/, 'fan-vote outcomes are never mislabeled as official NHL results');
+assert.match(playerPage, /community fight results/, 'player fight outcomes are attributed to community results, never to the NHL');
+assert.doesNotMatch(playerPage, /[Oo]fficial (NHL )?(winner|result)[^s]/, 'no official-winner claim on the player page');
 
 // The shared image proxy returns HTTP 200 for an unreachable upstream (a 1x1
 // transparent GIF), so onerror alone can never catch that failure.

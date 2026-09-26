@@ -2,10 +2,13 @@
 //
 // A fight here is a pair of opposing fighting majors in the official NHL play
 // stream. The NHL never declares a winner: a result is shown only when the
-// HockeyFights fan vote exists for that exact fight, and it is always labelled
-// FAN VOTE · NOT OFFICIAL. PBE Fight Score is built only from those fan-vote
+// HockeyFights community (fan) vote exists for that exact fight. The page says
+// ONCE, at the top, that results are community votes and that the NHL does not
+// declare fight winners; each card is labelled COMMUNITY RESULT (never an
+// official winner). PBE Fight Score is built only from those community
 // decisions (no decision, no score). Post-fight windows count recorded events
-// in fixed game-time windows around the fight: descriptive, not causal.
+// in fixed game-time windows around the fight: descriptive, not causal (stated
+// in the team-table footnote and on /methodology, not on every card).
 import { $, esc, on } from '../lib/dom.js';
 import { describeError } from '../lib/api.js';
 import { intel } from '../lib/intel.js';
@@ -16,6 +19,7 @@ import { teamMark } from '../components/game.js';
 import { DASH, fmtScore, versionTag } from '../components/intel-ui.js';
 
 const mark = (abbrev, size = 22) => teamMark({ abbrev }, size).replace(/ alt="[^"]*"/, ' alt=""');
+const FIGHT_SCORE_TIP = 'Built from community fight results, weighted by vote count and shrunk toward 50.';
 const TYPES = [['2', 'Regular season + playoffs'], ['3', 'Playoffs'], ['1', 'Preseason'], ['all', 'All games']];
 
 function seasonsAround(now = new Date()) {
@@ -25,12 +29,12 @@ function seasonsAround(now = new Date()) {
 }
 const seasonLabel = s => `${s.slice(0, 4)}–${s.slice(6, 8)}`;
 
-function resultLine(f) {
+export function resultLine(f) {
   const r = f.result;
   if (r?.status === 'available') {
-    return `<span class="ft-result"><b class="gold">FAN VOTE · NOT OFFICIAL</b> · ${esc(r.winner_name)}${Number.isFinite(r.winner_pct) ? ` ${esc(r.winner_pct)}%` : ''} · ${esc(r.vote_count)} votes${Number.isFinite(r.rating) ? ` · rating ${esc(r.rating)}/10` : ''}</span>`;
+    return `<div class="ft-result"><span class="ft-result__badge">COMMUNITY RESULT</span><b>${esc(r.winner_name)}</b><span class="micro">${[Number.isFinite(r.winner_pct) ? `${esc(r.winner_pct)}%` : null, `${esc(r.vote_count)} votes`, Number.isFinite(r.rating) ? `${esc(r.rating)}/10` : null].filter(Boolean).join(' · ')}</span></div>`;
   }
-  return '<span class="ft-result">No fan-vote result — the NHL does not declare fight winners.</span>';
+  return '<div class="ft-result ft-result--none"><span class="micro faint">No community result</span></div>';
 }
 
 function momentumTable(f) {
@@ -38,13 +42,14 @@ function momentumTable(f) {
   if (!m?.available) return `<p class="micro faint">Post-fight window unavailable${m?.reason ? ` — ${esc(m.reason)}` : ''}.</p>`;
   const a = f.teams?.away || 'Away'; const h = f.teams?.home || 'Home';
   const row = (label, k) => `<tr><td>${esc(label)}</td><td>${m.pre.away[k]}</td><td>${m.pre.home[k]}</td><td>${m.post.away[k]}</td><td>${m.post.home[k]}</td></tr>`;
-  return `<details><summary class="micro gold">5:00 before / after (descriptive, not causal)</summary>
+  return `<details><summary class="micro gold">5:00 before / after</summary>
+    <span class="ft-mom__label micro faint">Descriptive window</span>
     <table class="pbe-table ft-mom"><thead><tr><th></th><th>${esc(a)} pre</th><th>${esc(h)} pre</th><th>${esc(a)} post</th><th>${esc(h)} post</th></tr></thead>
     <tbody>${row('Shot attempts', 'attempts')}${row('Shots on goal', 'shots_on_goal')}${row('Goals', 'goals')}${row('Penalties', 'penalties')}</tbody></table>
     <p class="micro faint">${esc(m.semantics)} Pre window ${Math.round(m.pre_window_s / 60)} min, post window ${Math.round(m.post_window_s / 60)} min${m.truncated ? ' (truncated by a period/game boundary)' : ''}.</p></details>`;
 }
 
-function fightCard(f) {
+export function fightCard(f) {
   const [a, b] = f.fighters || [];
   const winner = f.result?.status === 'available' ? String(f.result.winner_name || '').toLowerCase() : '';
   const who = p => {
@@ -68,16 +73,16 @@ function fighterRows(list, sort) {
     ? (x, y) => y.fights - x.fights || (y.score ?? -1) - (x.score ?? -1)
     : (x, y) => (y.score ?? -1) - (x.score ?? -1) || y.fights - x.fights).slice(0, 40);
   return `<div class="table-wrap" tabindex="0" role="region" aria-label="Fighter leaderboard"><table class="pbe-table">
-    <thead><tr><th>#</th><th>Fighter</th><th class="num">Fights</th><th class="num">Fan-vote W-L-D</th><th class="num">Undecided</th><th class="num">Avg votes</th><th class="num">Fight Score</th><th class="num">Opp. score</th><th class="num">Fight PIM</th><th>Last</th></tr></thead>
+    <thead><tr><th>#</th><th>Fighter</th><th class="num">Fights</th><th class="num">Community W-L-D</th><th class="num">Undecided</th><th class="num">Avg votes</th><th class="num" title="${FIGHT_SCORE_TIP}">Fight Score</th><th class="num">Opp. score</th><th class="num">Fight PIM</th><th>Last</th></tr></thead>
     <tbody>${rows.map((r, i) => `<tr><td class="mono">${i + 1}</td><td><a href="#/player/${esc(r.player_id)}">${esc(r.name)}</a> <span class="faint mono">${esc(r.team || '')}</span></td>
       <td class="num">${esc(r.fights)}</td><td class="num">${r.record.w}-${r.record.l}-${r.record.d}</td><td class="num">${esc(r.record.undecided)}</td>
-      <td class="num">${r.avg_votes ?? DASH}</td><td class="num"><b>${fmtScore(r.score, 1)}</b>${r.provisional ? ' <span class="faint" title="Fewer than 3 fan-vote decisions">·p</span>' : ''}</td>
+      <td class="num">${r.avg_votes ?? DASH}</td><td class="num"><b>${fmtScore(r.score, 1)}</b>${r.provisional ? ' <span class="faint" title="Provisional: fewer than 3 community decisions">·p</span>' : ''}</td>
       <td class="num">${r.avg_opponent_score ?? DASH}</td><td class="num">${esc(r.fighting_pim)}</td><td class="mono">${esc(r.last_fight_date || DASH)}</td></tr>`).join('')}</tbody></table></div>`;
 }
 
 function teamRows(teams) {
   return `<div class="table-wrap" tabindex="0" role="region" aria-label="Team fight activity"><table class="pbe-table">
-    <thead><tr><th>Team</th><th class="num">Fights</th><th class="num">Games with a fight</th><th class="num">Fighters</th><th class="num">Fan-vote W-L-D</th><th class="num" title="Average change in shot-attempt differential, post window minus pre window">Post-fight attempt swing*</th></tr></thead>
+    <thead><tr><th>Team</th><th class="num">Fights</th><th class="num">Games with a fight</th><th class="num">Fighters</th><th class="num">Community W-L-D</th><th class="num" title="Average change in shot-attempt differential, post window minus pre window">Post-fight attempt swing*</th></tr></thead>
     <tbody>${teams.map(t => `<tr><td>${mark(t.team)} <a href="#/team/${esc(t.team)}">${esc(t.team)}</a></td><td class="num">${t.fights}</td><td class="num">${t.games_with_fights}</td><td class="num">${t.distinct_fighters}</td><td class="num">${t.fan_vote_record.w}-${t.fan_vote_record.l}-${t.fan_vote_record.d}</td><td class="num">${t.post_fight_attempt_swing === null ? DASH : `${t.post_fight_attempt_swing > 0 ? '+' : ''}${t.post_fight_attempt_swing}`}</td></tr>`).join('')}</tbody></table></div>
     <p class="micro faint">* Descriptive, not causal: the average change in the team's shot-attempt differential between the 5:00 before and the 5:00 after its fights. It does not show that fighting changes play.</p>`;
 }
@@ -89,7 +94,7 @@ export function mount(root, params) {
   root.innerHTML = `<section class="wrap section">
     <div class="section-head section-head--editorial">
       <div><span class="eyebrow">Intelligence · Documented fights</span><h2>Fights</h2></div>
-      <p>Every fight paired from opposing fighting majors in the official NHL play-by-play. Results come only from the HockeyFights fan vote and are never official — the NHL does not declare fight winners.</p>
+      <p>Documented from official NHL play-by-play. Fight results use community voting where available; the NHL does not declare fight winners. <a class="gold" href="#/methodology?section=fights" data-fight-method>How Fight Score works</a></p>
     </div>
     <div id="ft-tools"></div>
     <div id="ft-body"><div class="pbe-skeleton" style="height:420px"></div></div>
@@ -118,11 +123,11 @@ export function mount(root, params) {
     const total = d.totals?.fights ?? 0;
     const scored = (d.fighters || []).filter(r => Number.isFinite(r.score));
     body.innerHTML = `
-      <div class="gx-strip"><b class="mono">${esc(total)}</b> documented fights · <b class="mono">${esc(d.totals?.fan_vote_results ?? 0)}</b> with a fan-vote result · ${esc(d.totals?.games_processed ?? 0)} games processed${d.scanned_through ? ` through ${esc(d.scanned_through)}` : ''}</div>
+      <div class="gx-strip"><b class="mono">${esc(total)}</b> documented fights · <b class="mono">${esc(d.totals?.fan_vote_results ?? 0)}</b> with a community result · ${esc(d.totals?.games_processed ?? 0)} games processed${d.scanned_through ? ` through ${esc(d.scanned_through)}` : ''}</div>
       ${total ? `
       <section class="dk-sub"><div class="section-head"><div><span class="eyebrow">Leaderboard</span><h2>Fighters</h2></div>
         <div class="iq-tabs"><button type="button" class="chip${state.sort === 'score' ? ' is-active' : ''}" data-sort="score">By Fight Score</button><button type="button" class="chip${state.sort === 'active' ? ' is-active' : ''}" data-sort="active">Most fights</button></div></div>
-        <p class="iq-note">PBE Fight Score is the fan-vote result share (win 1, draw ½, loss 0), each fight weighted by its vote count (full weight at 30 votes; fewer than 5 votes = undecided) and shrunk toward 50 by three neutral pseudo-fights. ${scored.length} fighters have at least one decision; ·p marks fewer than three.</p>
+        <p class="iq-note">Fight Score · 0–100 community-result index · weighted by vote depth · provisional (·p) under 3 decisions · ${scored.length} fighters scored · <a class="gold" href="#/methodology?section=fights">Methodology →</a></p>
         ${fighterRows(d.fighters || [], state.sort)}</section>
       <section class="dk-sub"><div class="section-head"><div><span class="eyebrow">Teams</span><h2>Team fight activity</h2></div></div>${teamRows(d.teams || [])}</section>
       <section class="dk-sub"><div class="section-head"><div><span class="eyebrow">Ledger</span><h2>Recent fights</h2></div></div><div class="ft-cards">${(d.recent || []).slice(0, 24).map(fightCard).join('')}</div></section>`

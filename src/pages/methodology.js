@@ -278,7 +278,7 @@ const SECTIONS = [
     title: 'Fights, PBE Fight Score (pbe-fight-score-v1.0) and post-fight windows',
     lede: 'A fight is a pair of opposing fighting majors at the same stoppage in the official NHL play-by-play. The NHL never declares a winner.',
     body: `${defs([
-      ['Result', 'Only the HockeyFights fan vote for that exact fight (date, period, clock, both teams, both last names). It is always labelled FAN VOTE · NOT OFFICIAL. No vote → no result.'],
+      ['Result', 'Only the HockeyFights fan vote for that exact fight (date, period, clock, both teams, both last names). The product labels it COMMUNITY RESULT and states once per page that the NHL does not declare fight winners; nothing implies an official winner. No vote → no result.'],
       ['Decided', 'A fan vote with at least 5 votes. A named draw counts ½.'],
       ['PBE Fight Score', 'Fan-vote result share (win 1, draw ½, loss 0), each fight weighted by min(1, votes ÷ 30), shrunk toward 50 by three neutral pseudo-fights: 100 × (Σ w·result + 1.5) ÷ (Σ w + 3). No decided fight → no score. Fewer than three decisions → provisional.'],
       ['Shown, not scored', 'Fight count, fighting PIM, average opponent Fight Score and the last fight date are shown beside the score, never folded into it: activity is not quality.'],

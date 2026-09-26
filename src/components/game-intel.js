@@ -55,7 +55,7 @@ export function gameIntelPanel(intel, { pro = false, props = null, propsError = 
       ? `<b class="mono">${props.count}</b><span class="micro">player quotes across ${props.markets.size} market${props.markets.size === 1 ? '' : 's'} in the latest stored snapshot</span><a class="gold micro" href="#/props">Props board ›</a><span class="micro faint">Market prices only — no released prop model.</span>`
       : '<p class="micro">No book has posted player markets for this game in the latest stored snapshot.</p><a class="gold micro" href="#/props">Props board ›</a>'));
 
-  cells.push(cell('Fight activity', duo(intel, s => (s.fights ? `<b>${s.fights.fights}</b><span class="micro">fights · ${s.fights.distinct_fighters} fighters</span><span class="micro faint">Fan-vote ${s.fights.fan_vote_record.w}-${s.fights.fan_vote_record.l}-${s.fights.fan_vote_record.d}</span>` : '<span class="micro faint">No fights on record this season</span>')) + '<a class="gold micro" href="#/fights">Fight ledger ›</a>'));
+  cells.push(cell('Fight activity', duo(intel, s => (s.fights ? `<b>${s.fights.fights}</b><span class="micro">fights · ${s.fights.distinct_fighters} fighters</span><span class="micro faint">Community W-L-D ${s.fights.fan_vote_record.w}-${s.fights.fan_vote_record.l}-${s.fights.fan_vote_record.d}</span>` : '<span class="micro faint">No fights on record this season</span>')) + '<a class="gold micro" href="#/fights">Fight ledger ›</a>'));
 
   return `<section class="pbe-panel gx" aria-label="Game intelligence">
     <div class="panel-head"><h3>Game intelligence</h3><span class="micro faint">${intel.captured_at ? `computed ${esc(new Date(intel.captured_at).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }))}` : ''}</span></div>

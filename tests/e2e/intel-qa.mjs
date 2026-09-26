@@ -73,8 +73,10 @@ const ROUTES = [
   }) },
   { key: 'fights', hash: '#/fights?season=20252026', wait: '.ft-card', checks: async p => ({
     cards: (await p.$$('.ft-card')).length >= 1,
-    not_official_label: /NOT OFFICIAL/.test(await p.textContent('#ft-body')),
-    descriptive_label: /not causal/i.test(await p.textContent('#ft-body'))
+    page_disclosure: /the NHL does not declare fight winners/.test(await p.textContent('main')),
+    community_label: /COMMUNITY RESULT|No community result/.test(await p.textContent('#ft-body')),
+    no_per_card_not_official: !/NOT OFFICIAL/i.test(await p.textContent('#ft-body')),
+    descriptive_footnote: /not causal/i.test(await p.textContent('#ft-body'))
   }) },
   { key: 'goalies', hash: `#/goalies/${gameId}`, wait: '.dk-gi, .dk-game', timeout: 30000, checks: async p => ({
     ladder_kept: (await p.$$('.dk-ladder')).length >= 1,

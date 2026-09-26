@@ -142,16 +142,15 @@ function fightResult(fight) {
   const r = fight?.result;
   if (r?.type === 'fan_vote' && r?.status === 'available' && r.winner_name) {
     return `<div class="fightdesk__result fightdesk__result--available">
-      <span class="fightdesk__result-k">FAN-VOTED RESULT · NOT OFFICIAL</span>
+      <span class="fightdesk__result-k">COMMUNITY RESULT</span>
       <strong>${esc(r.winner_name)}</strong>
       <span class="mono">${Number.isFinite(Number(r.winner_pct)) ? `${Number(r.winner_pct)}%` : 'winner'}${Number.isFinite(Number(r.vote_count)) ? ` · ${Number(r.vote_count)} vote${Number(r.vote_count) === 1 ? '' : 's'}` : ''}</span>
       ${Number.isFinite(Number(r.rating)) ? `<span class="micro">Fight rating ${Number(r.rating).toFixed(2).replace(/\.00$/, '')}/10</span>` : ''}
     </div>`;
   }
   return `<div class="fightdesk__result fightdesk__result--pending">
-    <span class="fightdesk__result-k">FAN-VOTE RESULT</span>
+    <span class="fightdesk__result-k">COMMUNITY RESULT</span>
     <strong>Result pending</strong>
-    <span class="micro">The NHL does not declare an official fight winner.</span>
   </div>`;
 }
 
@@ -168,7 +167,7 @@ function fightDesk(cast) {
       <div class="fightdesk__fighter-copy">
         <span class="fightdesk__team mono">${esc(p.team_abbrev || '')}${p.sweater_number !== null && p.sweater_number !== undefined ? ` · #${esc(p.sweater_number)}` : ''}</span>
         ${p.player_id ? `<a href="#/player/${esc(p.player_id)}">${esc(p.name || 'Unknown fighter')}</a>` : `<strong>${esc(p.name || 'Unknown fighter')}</strong>`}
-        ${winner ? '<span class="fightdesk__winner">Fan-vote winner</span>' : ''}
+        ${winner ? '<span class="fightdesk__winner">Community result</span>' : ''}
       </div>
     </div>`;
   };
@@ -184,7 +183,7 @@ function fightDesk(cast) {
       ${fighter(b, 'home')}
       ${fightResult(fight)}
     </div>
-    <p class="fightdesk__note micro">Fight detection comes from paired NHL fighting majors. Any winner shown is a HockeyFights fan vote delivered through PropSports, not an NHL decision.</p>
+    <p class="fightdesk__note micro">Community voting; NHL does not declare fight winners.</p>
   </section>`;
 }
 
@@ -195,8 +194,8 @@ function fightFeed(cast) {
     const [a, b] = fight.fighters || [];
     const r = fight.result;
     const result = r?.type === 'fan_vote' && r?.status === 'available'
-      ? `<span class="fight-feed__result"><b>Fan vote:</b> ${esc(r.winner_name || 'winner')}${Number.isFinite(Number(r.winner_pct)) ? ` ${Number(r.winner_pct)}%` : ''}${Number.isFinite(Number(r.vote_count)) ? ` · ${Number(r.vote_count)} votes` : ''}</span>`
-      : '<span class="fight-feed__result dim">Fan-vote result pending</span>';
+      ? `<span class="fight-feed__result"><b>Community result:</b> ${esc(r.winner_name || 'winner')}${Number.isFinite(Number(r.winner_pct)) ? ` ${Number(r.winner_pct)}%` : ''}${Number.isFinite(Number(r.vote_count)) ? ` · ${Number(r.vote_count)} votes` : ''}</span>`
+      : '<span class="fight-feed__result dim">Community result pending</span>';
     return `<li class="feed-item feed-item--fight">
       <span class="feed-loc feed-loc--none" aria-hidden="true">🥊</span>
       <span class="feed-time mono">${esc(fight.clock || '')}</span>
@@ -248,7 +247,7 @@ function penaltyBox(cast, st) {
             <span>${esc(titleCase(x.infraction || 'penalty'))}</span>
             <span class="dim">${x.duration_min ? `${x.duration_min}:00` : ''}${x.coincidental ? ' · coincidental' : ''}${x.affects_manpower ? '' : ' · no manpower change'}</span>
           </div>
-          ${fight ? `<div class="pbox__fight-tag">🥊 FIGHT${opponent?.name ? ` · vs ${esc(opponent.name)}` : ''}${fanWinner ? ' · FAN-VOTE WINNER' : ''}</div>` : ''}
+          ${fight ? `<div class="pbox__fight-tag">🥊 FIGHT${opponent?.name ? ` · vs ${esc(opponent.name)}` : ''}${fanWinner ? ' · COMMUNITY RESULT' : ''}</div>` : ''}
         </div>
       </div>
       ${x.remaining_seconds !== null

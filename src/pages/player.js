@@ -141,7 +141,7 @@ function seasonLine(p, totals, gameType, fights = null) {
   // the ledger does not cover reads '—' (unknown), never 0-0-0.
   const fr = fights ? fightRecordFor(fights, totals.season) : null;
   const fightRecord = fights === null ? '…' : recordText(fr?.record);
-  const fightTitle = fr ? `${fr.label} regular season + playoffs · HockeyFights fan vote, not an official NHL result` : 'Not covered by the fight ledger';
+  const fightTitle = fr ? `${fr.label} regular season + playoffs · based on community fight results` : 'Not covered by the fight ledger';
   const cells = goalie
     ? [cell('GP', num(totals.gamesPlayed)), cell('GS', num(totals.gamesStarted)), cell('W', num(totals.wins)), cell('L', num(totals.losses)), cell('OTL', num(totals.otLosses)),
       cell('SV%', svPct(totals.savePctg)), cell('GAA', num(totals.gaa, 2)), cell('SA', num(totals.shotsAgainst)), cell('SO', num(totals.shutouts)),
@@ -305,10 +305,10 @@ function fightSection(ledger, fights, scope) {
   const rows = view.rows.map(item => {
     const v = item.fight?.result || {};
     const vote = v.type === 'fan_vote' && v.status === 'available'
-      ? [v.winner_name ? `Fan-vote winner: ${v.winner_name}` : null,
+      ? [v.winner_name ? `Community result: ${v.winner_name}` : null,
          Number.isFinite(Number(v.winner_pct)) ? `${Number(v.winner_pct)}%` : null,
          Number.isFinite(Number(v.vote_count)) ? `${Number(v.vote_count)} vote${Number(v.vote_count) === 1 ? '' : 's'}` : null].filter(Boolean).join(' · ')
-      : 'Fan-vote result pending';
+      : 'Community result pending';
     const shown = item.decided ? item.outcome : item.outcome === 'TOO_FEW_VOTES' ? 'TOO FEW VOTES' : 'NO DECISION';
     const badge = item.outcome === 'WIN' ? 'pbe-badge--good' : item.outcome === 'LOSS' ? 'pbe-badge--alert' : item.outcome === 'DRAW' ? 'pbe-badge--sched' : '';
     return `<li class="rs-fight-row" data-fight-outcome="${esc(item.outcome)}">
@@ -324,7 +324,7 @@ function fightSection(ledger, fights, scope) {
   const others = fights.filter(f => f.season !== view.scope && f.record.fights);
   const empty = view.scope === 'career' ? 'No documented regular-season or playoff fights in the ledger seasons.'
     : `No documented regular-season or playoff fights in ${view.label}.${others.length ? ` See ${others.map(f => `${f.label} (${f.record.fights})`).join(', ')}.` : ''}`;
-  return `${panelHead(title, `<span class="micro" data-fight-scope-label>${esc(view.scope === 'career' ? `Career · ${view.label}` : view.label)} · NHL fight occurrence + fan vote</span>`)}
+  return `${panelHead(title, `<span class="micro" data-fight-scope-label>${esc(view.scope === 'career' ? `Career · ${view.label}` : view.label)} · NHL fight occurrence + community result</span>`)}
     <div class="rs-bar" role="group" aria-label="Fight history season">${tabs}</div>
     <div class="rs-fight-summary">
       <div class="rs-fight-record"><span class="eyebrow">FIGHT W-L-D</span><b data-fight-history="${esc(view.scope)}">${esc(recordText(r))}</b><small>${r.fights} counted fight${r.fights === 1 ? '' : 's'}${r.undecided ? ` · ${r.undecided} undecided` : ''}${r.preseason ? ` · ${r.preseason} preseason not counted` : ''}</small></div>
@@ -336,7 +336,7 @@ function fightSection(ledger, fights, scope) {
         <div><dt>Win%</dt><dd>${decided ? `${Math.round((r.w / decided) * 100)}%` : '—'}</dd></div>
       </dl>
     </div>
-    <p class="micro rs-fight-note">Fights come from paired NHL fighting majors. W-L-D is the HockeyFights fan vote (at least 5 votes), matched to the fighter by NHL player ID. It is not an official NHL result. Regular season and playoffs count; preseason fights are listed but not counted.</p>
+    <p class="micro rs-fight-note">Fights come from paired NHL fighting majors. W-L-D uses community fight results (at least 5 votes), matched to the fighter by NHL player ID. Regular season and playoffs count; preseason fights are listed but not counted.</p>
     ${rows ? `<ol class="rs-fight-list">${rows}</ol>` : `<p class="dim small">${esc(empty)}</p>`}`;
 }
 

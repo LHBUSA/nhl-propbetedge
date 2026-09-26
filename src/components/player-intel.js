@@ -48,9 +48,9 @@ function fightScoreBlock(s, fights) {
   if (!seasons.length) return '<p class="micro faint">No documented fights in the fight ledger (current or previous season).</p>';
   return seasons.map(x => {
     const r = x.record;
-    const score = x.summary && Number.isFinite(Number(x.summary.score)) ? ` · PBE Fight Score <b class="mono">${fmtScore(x.summary.score, 1)}</b>${x.summary.provisional ? ' (provisional)' : ''}` : '';
-    return `<div class="micro" data-fight-intel="${esc(x.season)}"><b>${esc(x.label)}</b> · ${r.fights} fight${r.fights === 1 ? '' : 's'} · fan-vote <b>${r.w}-${r.l}-${r.d}</b>${r.preseason ? ` · ${r.preseason} preseason not counted` : ''}${score}</div>`;
-  }).join('') + '<p class="micro faint">Fan votes are not official NHL results. <a class="gold" href="#/fights">Fight ledger ›</a></p>';
+    const score = x.summary && Number.isFinite(Number(x.summary.score)) ? ` · <span title="Based on community fight results.">PBE Fight Score ⓘ</span> <b class="mono">${fmtScore(x.summary.score, 1)}</b>${x.summary.provisional ? ' (provisional)' : ''}` : '';
+    return `<div class="micro" data-fight-intel="${esc(x.season)}"><b>${esc(x.label)}</b> · ${r.fights} fight${r.fights === 1 ? '' : 's'} · community W-L-D <b>${r.w}-${r.l}-${r.d}</b>${r.preseason ? ` · ${r.preseason} preseason not counted` : ''}${score}</div>`;
+  }).join('') + '<p class="micro faint"><a class="gold" href="#/fights">Fight ledger ›</a></p>';
 }
 
 export function playerIntelSection(p, st, fights = null) {

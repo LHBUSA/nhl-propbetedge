@@ -107,7 +107,7 @@ test('stat strip, intelligence card and Fight History agree for the same season'
 
   const seasons = fightSeasons(stutzle, STUTZLE);
   const card = playerIntelSection({ position: 'C' }, { tier: 'free', fightLedger: { data: stutzle }, winhl: null, fatigue: null }, seasons);
-  const cardRow = card.match(/data-fight-intel="20252026"><b>2025-26<\/b> · (\d+) fights? · fan-vote <b>([\d-]+)<\/b>/);
+  const cardRow = card.match(/data-fight-intel="20252026"><b>2025-26<\/b> · (\d+) fights? · community W-L-D <b>([\d-]+)<\/b>/);
   assert.ok(cardRow, 'card names the 2025-26 season explicitly');
   assert.equal(cardRow[2], recordText(fightRecordFor(seasons, '20252026').record));
   assert.equal(cardRow[1], '1');

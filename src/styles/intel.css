@@ -100,7 +100,10 @@
 .ft-fighter a, .ft-fighter b { overflow-wrap: anywhere; }
 .ft-fighter.is-fan-winner a, .ft-fighter.is-fan-winner b { color: var(--pbe-gold-bright); }
 .ft-vs { font-family: var(--pbe-font-display); color: var(--pbe-faint); }
-.ft-result { font-size: var(--fs-label); color: var(--pbe-dim); }
+.ft-result { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px; font-size: var(--fs-label); color: var(--pbe-dim); }
+.ft-result b { color: var(--pbe-text, inherit); font-size: var(--fs-sm); }
+.ft-result__badge { flex-basis: 100%; font-size: 10px; font-weight: 700; letter-spacing: .08em; color: var(--pbe-faint, var(--pbe-dim)); }
+.ft-mom__label { display: block; margin: 6px 0 2px; }
 .ft-mom { width: 100%; font-size: var(--fs-label); }
 .ft-mom th, .ft-mom td { padding: 3px 6px; text-align: right; }
 .ft-mom th:first-child, .ft-mom td:first-child { text-align: left; }
