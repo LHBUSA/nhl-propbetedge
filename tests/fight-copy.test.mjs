@@ -39,6 +39,8 @@ test('4. no card claims an official winner; 5. NOT OFFICIAL / causal disclaimer 
   assert.doesNotMatch(cards, /NOT OFFICIAL/i);
   assert.doesNotMatch(cards, /official (NHL )?(winner|result)/i);
   assert.doesNotMatch(cards, /does not declare/i);
+  assert.doesNotMatch(cards, /not causal/i, 'causal disclaimer lives in the team footnote + methodology, not in cards');
+  assert.match(cards, /Descriptive window/, 'expanded panel carries the small Descriptive window label');
   const collapsed = cards.match(/<summary[^>]*>([^<]*)<\/summary>/g) || [];
   assert.ok(collapsed.length && collapsed.every(s => />5:00 before \/ after</.test(s)), 'collapsed window label carries no causal disclaimer');
   for (const f of ['pages/cast.js', 'pages/player.js', 'components/player-intel.js', 'components/game-intel.js']) {
