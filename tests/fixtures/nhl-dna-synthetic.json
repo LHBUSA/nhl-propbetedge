@@ -1,0 +1,2819 @@
+{
+ "note": "SYNTHETIC test fixture: invented players and numbers in the nhl-skater-dna/1.0.0-research snapshot shape. Contains no real NHL data.",
+ "alpha": {
+  "snapshots": [
+   {
+    "version": "nhl-skater-dna/1.0.0-research",
+    "kind": "skater",
+    "player_id": 9990001,
+    "name": "Synth Alpha",
+    "season": 20222023,
+    "season_state": "FINAL",
+    "as_of": "20222023-synthetic",
+    "peer_group": "forward",
+    "position": "C",
+    "position_mix": {
+     "F": 80,
+     "D": 0,
+     "codes": {}
+    },
+    "team_context": {
+     "latest_team": "AAA",
+     "teams": [
+      "AAA"
+     ],
+     "traded": false,
+     "rule": "chronological latest game"
+    },
+    "rookie": false,
+    "qualification": {
+     "rule": "toi_min>=500",
+     "metric": "toi_min",
+     "base": 500,
+     "k": 1,
+     "threshold": 500,
+     "sample": 1500,
+     "qualified": true
+    },
+    "population": {
+     "peer_group": "forward",
+     "n": 400,
+     "rule": "toi_min>=500",
+     "low_population": false
+    },
+    "rank_claim": true,
+    "calculated": true,
+    "sample": {
+     "gp": 80,
+     "toi_min": 1500,
+     "shots": 200
+    },
+    "dimension_order": [
+     "shot_generation",
+     "shot_location",
+     "goal_scoring",
+     "finishing",
+     "playmaking",
+     "power_play",
+     "faceoffs",
+     "shot_blocking",
+     "physicality",
+     "penalty_differential"
+    ],
+    "dimensions": {
+     "shot_generation": {
+      "status": "LIVE",
+      "score": 90,
+      "confidence": 1,
+      "label": "HIGH",
+      "flags": [],
+      "reason": null,
+      "sample": {
+       "metric": "toi_min",
+       "value": 900
+      },
+      "components": {
+       "sog_per60": {
+        "value": 1.5,
+        "percentile": 92,
+        "n": 400,
+        "direction": 1
+       },
+       "unblocked_attempts_per60": {
+        "value": 1.75,
+        "percentile": 88,
+        "n": 400,
+        "direction": 1
+       },
+       "attempts_per60": {
+        "value": 2,
+        "percentile": 92,
+        "n": 400,
+        "direction": 1
+       }
+      },
+      "population_n": 400
+     },
+     "shot_location": {
+      "status": "PROXY",
+      "score": 95,
+      "confidence": 0.7,
+      "label": "MEDIUM",
+      "flags": [],
+      "reason": null,
+      "sample": {
+       "metric": "loc_n",
+       "value": 900
+      },
+      "components": {
+       "avg_unblocked_distance_ft": {
+        "value": 1.5,
+        "percentile": 97,
+        "n": 400,
+        "direction": -1
+       },
+       "inner_share": {
+        "value": 1.75,
+        "percentile": 93,
+        "n": 400,
+        "direction": 1
+       },
+       "inner_attempts_per60": {
+        "value": 2,
+        "percentile": 97,
+        "n": 400,
+        "direction": 1
+       }
+      },
+      "population_n": 400
+     },
+     "goal_scoring": {
+      "status": "LIVE",
+      "score": 80,
+      "confidence": 0.9,
+      "label": "HIGH",
+      "flags": [],
+      "reason": null,
+      "sample": {
+       "metric": "toi_min",
+       "value": 900
+      },
+      "components": {
+       "goals_per60": {
+        "value": 1.5,
+        "percentile": 82,
+        "n": 400,
+        "direction": 1
+       }
+      },
+      "population_n": 400
+     },
+     "finishing": {
+      "status": "LIVE",
+      "score": 58,
+      "confidence": 0.7,
+      "label": "MEDIUM",
+      "flags": [],
+      "reason": null,
+      "sample": {
+       "metric": "sog_non_en",
+       "value": 900
+      },
+      "components": {
+       "shooting_pct": {
+        "value": 1.5,
+        "percentile": 60,
+        "n": 400,
+        "direction": 1
+       },
+       "unblocked_finishing_pct": {
+        "value": 1.75,
+        "percentile": 56,
+        "n": 400,
+        "direction": 1
+       }
+      },
+      "population_n": 400
+     },
+     "playmaking": {
+      "status": "LIVE",
+      "score": 70,
+      "confidence": 0.95,
+      "label": "HIGH",
+      "flags": [],
+      "reason": null,
+      "sample": {
+       "metric": "toi_min",
+       "value": 900
+      },
+      "components": {
+       "primary_assists_per60": {
+        "value": 1.5,
+        "percentile": 72,
+        "n": 400,
+        "direction": 1
+       },
+       "assists_per60": {
+        "value": 1.75,
+        "percentile": 68,
+        "n": 400,
+        "direction": 1
+       }
+      },
+      "population_n": 400
+     },
+     "power_play": {
+      "status": "LIVE",
+      "score": 60,
+      "confidence": 0.8,
+      "label": "HIGH",
+      "flags": [],
+      "reason": null,
+      "sample": {
+       "metric": "pp_toi_min",
+       "value": 900
+      },
+      "components": {
+       "pp_points_per60": {
+        "value": 1.5,
+        "percentile": 62,
+        "n": 400,
+        "direction": 1
+       },
+       "pp_primary_points_per60": {
+        "value": 1.75,
+        "percentile": 58,
+        "n": 400,
+        "direction": 1
+       }
+      },
+      "population_n": 400
+     },
+     "faceoffs": {
+      "status": "LIVE",
+      "score": 40,
+      "confidence": 1,
+      "label": "HIGH",
+      "flags": [],
+      "reason": null,
+      "sample": {
+       "metric": "faceoffs",
+       "value": 900
+      },
+      "components": {
+       "faceoff_win_pct": {
+        "value": 1.5,
+        "percentile": 42,
+        "n": 400,
+        "direction": 1
+       }
+      },
+      "population_n": 400
+     },
+     "shot_blocking": {
+      "status": "LIVE",
+      "score": 20,
+      "confidence": 0.9,
+      "label": "HIGH",
+      "flags": [],
+      "reason": null,
+      "sample": {
+       "metric": "toi_min",
+       "value": 900
+      },
+      "components": {
+       "blocks_per60": {
+        "value": 1.5,
+        "percentile": 22,
+        "n": 400,
+        "direction": 1
+       }
+      },
+      "population_n": 400
+     },
+     "physicality": {
+      "status": "NOT_AVAILABLE_THIS_SEASON",
+      "score": null,
+      "confidence": null,
+      "label": null,
+      "flags": [],
+      "reason": "SOURCE_REALTIME_UNBIASED_NOT_TRUSTED_THIS_SEASON",
+      "sample": {
+       "metric": "toi_min",
+       "value": 900
+      },
+      "components": {
+       "hits_per60": {
+        "value": 1.5,
+        "percentile": null,
+        "n": null,
+        "direction": 1
+       }
+      }
+     },
+     "penalty_differential": {
+      "status": "LIVE",
+      "score": 50,
+      "confidence": 0.8,
+      "label": "HIGH",
+      "flags": [],
+      "reason": null,
+      "sample": {
+       "metric": "toi_min",
+       "value": 900
+      },
+      "components": {
+       "penalties_drawn_per60": {
+        "value": 1.5,
+        "percentile": 52,
+        "n": 400,
+        "direction": 1
+       },
+       "penalties_taken_per60": {
+        "value": 1.75,
+        "percentile": 48,
+        "n": 400,
+        "direction": -1
+       }
+      },
+      "population_n": 400
+     }
+    },
+    "traits": {
+     "rules": "nhl-dna-traits/1.0.0-research",
+     "basis": "SCORE_BANDS_LIVE_MEDIUM_CONFIDENCE",
+     "strongest": [
+      "shot_generation",
+      "goal_scoring",
+      "playmaking"
+     ],
+     "watch": [
+      "shot_blocking"
+     ]
+    },
+    "context": {
+     "toi_per_gp_min": 18
+    },
+    "descriptive": {},
+    "provenance": {
+     "note": "synthetic"
+    },
+    "content_hash": "synthetic"
+   },
+   {
+    "version": "nhl-skater-dna/1.0.0-research",
+    "kind": "skater",
+    "player_id": 9990001,
+    "name": "Synth Alpha",
+    "season": 20232024,
+    "season_state": "FINAL",
+    "as_of": "20232024-synthetic",
+    "peer_group": "forward",
+    "position": "C",
+    "position_mix": {
+     "F": 80,
+     "D": 0,
+     "codes": {}
+    },
+    "team_context": {
+     "latest_team": "AAA",
+     "teams": [
+      "AAA"
+     ],
+     "traded": false,
+     "rule": "chronological latest game"
+    },
+    "rookie": false,
+    "qualification": {
+     "rule": "toi_min>=500",
+     "metric": "toi_min",
+     "base": 500,
+     "k": 1,
+     "threshold": 500,
+     "sample": 1500,
+     "qualified": true
+    },
+    "population": {
+     "peer_group": "forward",
+     "n": 400,
+     "rule": "toi_min>=500",
+     "low_population": false
+    },
+    "rank_claim": true,
+    "calculated": true,
+    "sample": {
+     "gp": 80,
+     "toi_min": 1500,
+     "shots": 200
+    },
+    "dimension_order": [
+     "shot_generation",
+     "shot_location",
+     "goal_scoring",
+     "finishing",
+     "playmaking",
+     "power_play",
+     "faceoffs",
+     "shot_blocking",
+     "physicality",
+     "penalty_differential"
+    ],
+    "dimensions": {
+     "shot_generation": {
+      "status": "LIVE",
+      "score": 91,
+      "confidence": 1,
+      "label": "HIGH",
+      "flags": [],
+      "reason": null,
+      "sample": {
+       "metric": "toi_min",
+       "value": 900
+      },
+      "components": {
+       "sog_per60": {
+        "value": 1.5,
+        "percentile": 93,
+        "n": 400,
+        "direction": 1
+       },
+       "unblocked_attempts_per60": {
+        "value": 1.75,
+        "percentile": 89,
+        "n": 400,
+        "direction": 1
+       },
+       "attempts_per60": {
+        "value": 2,
+        "percentile": 93,
+        "n": 400,
+        "direction": 1
+       }
+      },
+      "population_n": 400
+     },
+     "shot_location": {
+      "status": "PROXY",
+      "score": 95,
+      "confidence": 0.7,
+      "label": "MEDIUM",
+      "flags": [],
+      "reason": null,
+      "sample": {
+       "metric": "loc_n",
+       "value": 900
+      },
+      "components": {
+       "avg_unblocked_distance_ft": {
+        "value": 1.5,
+        "percentile": 97,
+        "n": 400,
+        "direction": -1
+       },
+       "inner_share": {
+        "value": 1.75,
+        "percentile": 93,
+        "n": 400,
+        "direction": 1
+       },
+       "inner_attempts_per60": {
+        "value": 2,
+        "percentile": 97,
+        "n": 400,
+        "direction": 1
+       }
+      },
+      "population_n": 400
+     },
+     "goal_scoring": {
+      "status": "LIVE",
+      "score": 75,
+      "confidence": 0.9,
+      "label": "HIGH",
+      "flags": [],
+      "reason": null,
+      "sample": {
+       "metric": "toi_min",
+       "value": 900
+      },
+      "components": {
+       "goals_per60": {
+        "value": 1.5,
+        "percentile": 77,
+        "n": 400,
+        "direction": 1
+       }
+      },
+      "population_n": 400
+     },
+     "finishing": {
+      "status": "LIVE",
+      "score": 58,
+      "confidence": 0.7,
+      "label": "MEDIUM",
+      "flags": [],
+      "reason": null,
+      "sample": {
+       "metric": "sog_non_en",
+       "value": 900
+      },
+      "components": {
+       "shooting_pct": {
+        "value": 1.5,
+        "percentile": 60,
+        "n": 400,
+        "direction": 1
+       },
+       "unblocked_finishing_pct": {
+        "value": 1.75,
+        "percentile": 56,
+        "n": 400,
+        "direction": 1
+       }
+      },
+      "population_n": 400
+     },
+     "playmaking": {
+      "status": "LIVE",
+      "score": 71,
+      "confidence": 0.95,
+      "label": "HIGH",
+      "flags": [],
+      "reason": null,
+      "sample": {
+       "metric": "toi_min",
+       "value": 900
+      },
+      "components": {
+       "primary_assists_per60": {
+        "value": 1.5,
+        "percentile": 73,
+        "n": 400,
+        "direction": 1
+       },
+       "assists_per60": {
+        "value": 1.75,
+        "percentile": 69,
+        "n": 400,
+        "direction": 1
+       }
+      },
+      "population_n": 400
+     },
+     "power_play": {
+      "status": "LIVE",
+      "score": 60,
+      "confidence": 0.8,
+      "label": "HIGH",
+      "flags": [],
+      "reason": null,
+      "sample": {
+       "metric": "pp_toi_min",
+       "value": 900
+      },
+      "components": {
+       "pp_points_per60": {
+        "value": 1.5,
+        "percentile": 62,
+        "n": 400,
+        "direction": 1
+       },
+       "pp_primary_points_per60": {
+        "value": 1.75,
+        "percentile": 58,
+        "n": 400,
+        "direction": 1
+       }
+      },
+      "population_n": 400
+     },
+     "faceoffs": {
+      "status": "LIVE",
+      "score": 40,
+      "confidence": 1,
+      "label": "HIGH",
+      "flags": [],
+      "reason": null,
+      "sample": {
+       "metric": "faceoffs",
+       "value": 900
+      },
+      "components": {
+       "faceoff_win_pct": {
+        "value": 1.5,
+        "percentile": 42,
+        "n": 400,
+        "direction": 1
+       }
+      },
+      "population_n": 400
+     },
+     "shot_blocking": {
+      "status": "LIVE",
+      "score": 30,
+      "confidence": 0.9,
+      "label": "HIGH",
+      "flags": [],
+      "reason": null,
+      "sample": {
+       "metric": "toi_min",
+       "value": 900
+      },
+      "components": {
+       "blocks_per60": {
+        "value": 1.5,
+        "percentile": 32,
+        "n": 400,
+        "direction": 1
+       }
+      },
+      "population_n": 400
+     },
+     "physicality": {
+      "status": "NOT_AVAILABLE_THIS_SEASON",
+      "score": null,
+      "confidence": null,
+      "label": null,
+      "flags": [],
+      "reason": "SOURCE_REALTIME_UNBIASED_NOT_TRUSTED_THIS_SEASON",
+      "sample": {
+       "metric": "toi_min",
+       "value": 900
+      },
+      "components": {
+       "hits_per60": {
+        "value": 1.5,
+        "percentile": null,
+        "n": null,
+        "direction": 1
+       }
+      }
+     },
+     "penalty_differential": {
+      "status": "LIVE",
+      "score": 50,
+      "confidence": 0.8,
+      "label": "HIGH",
+      "flags": [],
+      "reason": null,
+      "sample": {
+       "metric": "toi_min",
+       "value": 900
+      },
+      "components": {
+       "penalties_drawn_per60": {
+        "value": 1.5,
+        "percentile": 52,
+        "n": 400,
+        "direction": 1
+       },
+       "penalties_taken_per60": {
+        "value": 1.75,
+        "percentile": 48,
+        "n": 400,
+        "direction": -1
+       }
+      },
+      "population_n": 400
+     }
+    },
+    "traits": {
+     "rules": "nhl-dna-traits/1.0.0-research",
+     "basis": "SCORE_BANDS_LIVE_MEDIUM_CONFIDENCE",
+     "strongest": [
+      "shot_generation",
+      "goal_scoring",
+      "playmaking"
+     ],
+     "watch": [
+      "shot_blocking"
+     ]
+    },
+    "context": {
+     "toi_per_gp_min": 18
+    },
+    "descriptive": {},
+    "provenance": {
+     "note": "synthetic"
+    },
+    "content_hash": "synthetic"
+   },
+   {
+    "version": "nhl-skater-dna/1.0.0-research",
+    "kind": "skater",
+    "player_id": 9990001,
+    "name": "Synth Alpha",
+    "season": 20242025,
+    "season_state": "FINAL",
+    "as_of": "20242025-synthetic",
+    "peer_group": "forward",
+    "position": "C",
+    "position_mix": {
+     "F": 80,
+     "D": 0,
+     "codes": {}
+    },
+    "team_context": {
+     "latest_team": "AAA",
+     "teams": [
+      "AAA"
+     ],
+     "traded": false,
+     "rule": "chronological latest game"
+    },
+    "rookie": false,
+    "qualification": {
+     "rule": "toi_min>=500",
+     "metric": "toi_min",
+     "base": 500,
+     "k": 1,
+     "threshold": 500,
+     "sample": 1500,
+     "qualified": true
+    },
+    "population": {
+     "peer_group": "forward",
+     "n": 400,
+     "rule": "toi_min>=500",
+     "low_population": false
+    },
+    "rank_claim": true,
+    "calculated": true,
+    "sample": {
+     "gp": 80,
+     "toi_min": 1500,
+     "shots": 200
+    },
+    "dimension_order": [
+     "shot_generation",
+     "shot_location",
+     "goal_scoring",
+     "finishing",
+     "playmaking",
+     "power_play",
+     "faceoffs",
+     "shot_blocking",
+     "physicality",
+     "penalty_differential"
+    ],
+    "dimensions": {
+     "shot_generation": {
+      "status": "LIVE",
+      "score": 92,
+      "confidence": 1,
+      "label": "HIGH",
+      "flags": [],
+      "reason": null,
+      "sample": {
+       "metric": "toi_min",
+       "value": 900
+      },
+      "components": {
+       "sog_per60": {
+        "value": 1.5,
+        "percentile": 94,
+        "n": 400,
+        "direction": 1
+       },
+       "unblocked_attempts_per60": {
+        "value": 1.75,
+        "percentile": 90,
+        "n": 400,
+        "direction": 1
+       },
+       "attempts_per60": {
+        "value": 2,
+        "percentile": 94,
+        "n": 400,
+        "direction": 1
+       }
+      },
+      "population_n": 400
+     },
+     "shot_location": {
+      "status": "PROXY",
+      "score": 95,
+      "confidence": 0.7,
+      "label": "MEDIUM",
+      "flags": [],
+      "reason": null,
+      "sample": {
+       "metric": "loc_n",
+       "value": 900
+      },
+      "components": {
+       "avg_unblocked_distance_ft": {
+        "value": 1.5,
+        "percentile": 97,
+        "n": 400,
+        "direction": -1
+       },
+       "inner_share": {
+        "value": 1.75,
+        "percentile": 93,
+        "n": 400,
+        "direction": 1
+       },
+       "inner_attempts_per60": {
+        "value": 2,
+        "percentile": 97,
+        "n": 400,
+        "direction": 1
+       }
+      },
+      "population_n": 400
+     },
+     "goal_scoring": {
+      "status": "LIVE",
+      "score": 70,
+      "confidence": 0.9,
+      "label": "HIGH",
+      "flags": [],
+      "reason": null,
+      "sample": {
+       "metric": "toi_min",
+       "value": 900
+      },
+      "components": {
+       "goals_per60": {
+        "value": 1.5,
+        "percentile": 72,
+        "n": 400,
+        "direction": 1
+       }
+      },
+      "population_n": 400
+     },
+     "finishing": {
+      "status": "LIVE",
+      "score": 58,
+      "confidence": 0.7,
+      "label": "MEDIUM",
+      "flags": [],
+      "reason": null,
+      "sample": {
+       "metric": "sog_non_en",
+       "value": 900
+      },
+      "components": {
+       "shooting_pct": {
+        "value": 1.5,
+        "percentile": 60,
+        "n": 400,
+        "direction": 1
+       },
+       "unblocked_finishing_pct": {
+        "value": 1.75,
+        "percentile": 56,
+        "n": 400,
+        "direction": 1
+       }
+      },
+      "population_n": 400
+     },
+     "playmaking": {
+      "status": "LIVE",
+      "score": 72,
+      "confidence": 0.95,
+      "label": "HIGH",
+      "flags": [],
+      "reason": null,
+      "sample": {
+       "metric": "toi_min",
+       "value": 900
+      },
+      "components": {
+       "primary_assists_per60": {
+        "value": 1.5,
+        "percentile": 74,
+        "n": 400,
+        "direction": 1
+       },
+       "assists_per60": {
+        "value": 1.75,
+        "percentile": 70,
+        "n": 400,
+        "direction": 1
+       }
+      },
+      "population_n": 400
+     },
+     "power_play": {
+      "status": "LIVE",
+      "score": 60,
+      "confidence": 0.8,
+      "label": "HIGH",
+      "flags": [],
+      "reason": null,
+      "sample": {
+       "metric": "pp_toi_min",
+       "value": 900
+      },
+      "components": {
+       "pp_points_per60": {
+        "value": 1.5,
+        "percentile": 62,
+        "n": 400,
+        "direction": 1
+       },
+       "pp_primary_points_per60": {
+        "value": 1.75,
+        "percentile": 58,
+        "n": 400,
+        "direction": 1
+       }
+      },
+      "population_n": 400
+     },
+     "faceoffs": {
+      "status": "LIVE",
+      "score": 40,
+      "confidence": 1,
+      "label": "HIGH",
+      "flags": [],
+      "reason": null,
+      "sample": {
+       "metric": "faceoffs",
+       "value": 900
+      },
+      "components": {
+       "faceoff_win_pct": {
+        "value": 1.5,
+        "percentile": 42,
+        "n": 400,
+        "direction": 1
+       }
+      },
+      "population_n": 400
+     },
+     "shot_blocking": {
+      "status": "LIVE",
+      "score": 40,
+      "confidence": 0.9,
+      "label": "HIGH",
+      "flags": [],
+      "reason": null,
+      "sample": {
+       "metric": "toi_min",
+       "value": 900
+      },
+      "components": {
+       "blocks_per60": {
+        "value": 1.5,
+        "percentile": 42,
+        "n": 400,
+        "direction": 1
+       }
+      },
+      "population_n": 400
+     },
+     "physicality": {
+      "status": "LIVE",
+      "score": 15,
+      "confidence": 0.9,
+      "label": "HIGH",
+      "flags": [],
+      "reason": null,
+      "sample": {
+       "metric": "toi_min",
+       "value": 900
+      },
+      "components": {
+       "hits_per60": {
+        "value": 1.5,
+        "percentile": 17,
+        "n": 400,
+        "direction": 1
+       }
+      },
+      "population_n": 400
+     },
+     "penalty_differential": {
+      "status": "LIVE",
+      "score": 50,
+      "confidence": 0.8,
+      "label": "HIGH",
+      "flags": [],
+      "reason": null,
+      "sample": {
+       "metric": "toi_min",
+       "value": 900
+      },
+      "components": {
+       "penalties_drawn_per60": {
+        "value": 1.5,
+        "percentile": 52,
+        "n": 400,
+        "direction": 1
+       },
+       "penalties_taken_per60": {
+        "value": 1.75,
+        "percentile": 48,
+        "n": 400,
+        "direction": -1
+       }
+      },
+      "population_n": 400
+     }
+    },
+    "traits": {
+     "rules": "nhl-dna-traits/1.0.0-research",
+     "basis": "SCORE_BANDS_LIVE_MEDIUM_CONFIDENCE",
+     "strongest": [
+      "shot_generation",
+      "goal_scoring",
+      "playmaking"
+     ],
+     "watch": [
+      "physicality"
+     ]
+    },
+    "context": {
+     "toi_per_gp_min": 18
+    },
+    "descriptive": {},
+    "provenance": {
+     "note": "synthetic"
+    },
+    "content_hash": "synthetic"
+   },
+   {
+    "version": "nhl-skater-dna/1.0.0-research",
+    "kind": "skater",
+    "player_id": 9990001,
+    "name": "Synth Alpha",
+    "season": 20252026,
+    "season_state": "FINAL",
+    "as_of": "20252026-synthetic",
+    "peer_group": "forward",
+    "position": "C",
+    "position_mix": {
+     "F": 80,
+     "D": 0,
+     "codes": {}
+    },
+    "team_context": {
+     "latest_team": "AAA",
+     "teams": [
+      "AAA"
+     ],
+     "traded": false,
+     "rule": "chronological latest game"
+    },
+    "rookie": false,
+    "qualification": {
+     "rule": "toi_min>=500",
+     "metric": "toi_min",
+     "base": 500,
+     "k": 1,
+     "threshold": 500,
+     "sample": 1500,
+     "qualified": true
+    },
+    "population": {
+     "peer_group": "forward",
+     "n": 400,
+     "rule": "toi_min>=500",
+     "low_population": false
+    },
+    "rank_claim": true,
+    "calculated": true,
+    "sample": {
+     "gp": 80,
+     "toi_min": 1500,
+     "shots": 200
+    },
+    "dimension_order": [
+     "shot_generation",
+     "shot_location",
+     "goal_scoring",
+     "finishing",
+     "playmaking",
+     "power_play",
+     "faceoffs",
+     "shot_blocking",
+     "physicality",
+     "penalty_differential"
+    ],
+    "dimensions": {
+     "shot_generation": {
+      "status": "LIVE",
+      "score": 93,
+      "confidence": 1,
+      "label": "HIGH",
+      "flags": [],
+      "reason": null,
+      "sample": {
+       "metric": "toi_min",
+       "value": 900
+      },
+      "components": {
+       "sog_per60": {
+        "value": 1.5,
+        "percentile": 95,
+        "n": 400,
+        "direction": 1
+       },
+       "unblocked_attempts_per60": {
+        "value": 1.75,
+        "percentile": 91,
+        "n": 400,
+        "direction": 1
+       },
+       "attempts_per60": {
+        "value": 2,
+        "percentile": 95,
+        "n": 400,
+        "direction": 1
+       }
+      },
+      "population_n": 400
+     },
+     "shot_location": {
+      "status": "PROXY",
+      "score": 95,
+      "confidence": 0.7,
+      "label": "MEDIUM",
+      "flags": [],
+      "reason": null,
+      "sample": {
+       "metric": "loc_n",
+       "value": 900
+      },
+      "components": {
+       "avg_unblocked_distance_ft": {
+        "value": 1.5,
+        "percentile": 97,
+        "n": 400,
+        "direction": -1
+       },
+       "inner_share": {
+        "value": 1.75,
+        "percentile": 93,
+        "n": 400,
+        "direction": 1
+       },
+       "inner_attempts_per60": {
+        "value": 2,
+        "percentile": 97,
+        "n": 400,
+        "direction": 1
+       }
+      },
+      "population_n": 400
+     },
+     "goal_scoring": {
+      "status": "LIVE",
+      "score": 65,
+      "confidence": 0.9,
+      "label": "HIGH",
+      "flags": [],
+      "reason": null,
+      "sample": {
+       "metric": "toi_min",
+       "value": 900
+      },
+      "components": {
+       "goals_per60": {
+        "value": 1.5,
+        "percentile": 67,
+        "n": 400,
+        "direction": 1
+       }
+      },
+      "population_n": 400
+     },
+     "finishing": {
+      "status": "LIVE",
+      "score": 58,
+      "confidence": 0.7,
+      "label": "MEDIUM",
+      "flags": [],
+      "reason": null,
+      "sample": {
+       "metric": "sog_non_en",
+       "value": 900
+      },
+      "components": {
+       "shooting_pct": {
+        "value": 1.5,
+        "percentile": 60,
+        "n": 400,
+        "direction": 1
+       },
+       "unblocked_finishing_pct": {
+        "value": 1.75,
+        "percentile": 56,
+        "n": 400,
+        "direction": 1
+       }
+      },
+      "population_n": 400
+     },
+     "playmaking": {
+      "status": "LIVE",
+      "score": 73,
+      "confidence": 0.95,
+      "label": "HIGH",
+      "flags": [],
+      "reason": null,
+      "sample": {
+       "metric": "toi_min",
+       "value": 900
+      },
+      "components": {
+       "primary_assists_per60": {
+        "value": 1.5,
+        "percentile": 75,
+        "n": 400,
+        "direction": 1
+       },
+       "assists_per60": {
+        "value": 1.75,
+        "percentile": 71,
+        "n": 400,
+        "direction": 1
+       }
+      },
+      "population_n": 400
+     },
+     "power_play": {
+      "status": "LIVE",
+      "score": 60,
+      "confidence": 0.8,
+      "label": "HIGH",
+      "flags": [],
+      "reason": null,
+      "sample": {
+       "metric": "pp_toi_min",
+       "value": 900
+      },
+      "components": {
+       "pp_points_per60": {
+        "value": 1.5,
+        "percentile": 62,
+        "n": 400,
+        "direction": 1
+       },
+       "pp_primary_points_per60": {
+        "value": 1.75,
+        "percentile": 58,
+        "n": 400,
+        "direction": 1
+       }
+      },
+      "population_n": 400
+     },
+     "faceoffs": {
+      "status": "LIVE",
+      "score": 40,
+      "confidence": 1,
+      "label": "HIGH",
+      "flags": [],
+      "reason": null,
+      "sample": {
+       "metric": "faceoffs",
+       "value": 900
+      },
+      "components": {
+       "faceoff_win_pct": {
+        "value": 1.5,
+        "percentile": 42,
+        "n": 400,
+        "direction": 1
+       }
+      },
+      "population_n": 400
+     },
+     "shot_blocking": {
+      "status": "LIVE",
+      "score": 50,
+      "confidence": 0.9,
+      "label": "HIGH",
+      "flags": [],
+      "reason": null,
+      "sample": {
+       "metric": "toi_min",
+       "value": 900
+      },
+      "components": {
+       "blocks_per60": {
+        "value": 1.5,
+        "percentile": 52,
+        "n": 400,
+        "direction": 1
+       }
+      },
+      "population_n": 400
+     },
+     "physicality": {
+      "status": "LIVE",
+      "score": 15,
+      "confidence": 0.9,
+      "label": "HIGH",
+      "flags": [],
+      "reason": null,
+      "sample": {
+       "metric": "toi_min",
+       "value": 900
+      },
+      "components": {
+       "hits_per60": {
+        "value": 1.5,
+        "percentile": 17,
+        "n": 400,
+        "direction": 1
+       }
+      },
+      "population_n": 400
+     },
+     "penalty_differential": {
+      "status": "LIVE",
+      "score": 50,
+      "confidence": 0.8,
+      "label": "HIGH",
+      "flags": [],
+      "reason": null,
+      "sample": {
+       "metric": "toi_min",
+       "value": 900
+      },
+      "components": {
+       "penalties_drawn_per60": {
+        "value": 1.5,
+        "percentile": 52,
+        "n": 400,
+        "direction": 1
+       },
+       "penalties_taken_per60": {
+        "value": 1.75,
+        "percentile": 48,
+        "n": 400,
+        "direction": -1
+       }
+      },
+      "population_n": 400
+     }
+    },
+    "traits": {
+     "rules": "nhl-dna-traits/1.0.0-research",
+     "basis": "SCORE_BANDS_LIVE_MEDIUM_CONFIDENCE",
+     "strongest": [
+      "shot_generation",
+      "playmaking"
+     ],
+     "watch": [
+      "physicality"
+     ]
+    },
+    "context": {
+     "toi_per_gp_min": 18
+    },
+    "descriptive": {},
+    "provenance": {
+     "note": "synthetic"
+    },
+    "content_hash": "synthetic"
+   },
+   {
+    "version": "nhl-skater-dna/1.0.0-research",
+    "kind": "skater",
+    "player_id": 9990001,
+    "name": "Synth Alpha",
+    "season": 20262027,
+    "season_state": "IN_PROGRESS",
+    "as_of": "20262027-synthetic",
+    "peer_group": "forward",
+    "position": "C",
+    "position_mix": {
+     "F": 6,
+     "D": 0,
+     "codes": {}
+    },
+    "team_context": {
+     "latest_team": "AAA",
+     "teams": [
+      "AAA"
+     ],
+     "traded": false,
+     "rule": "chronological latest game"
+    },
+    "rookie": false,
+    "qualification": {
+     "rule": "toi_min>=500",
+     "metric": "toi_min",
+     "base": 500,
+     "k": 1,
+     "threshold": 500,
+     "sample": 120,
+     "qualified": false,
+     "withheld": "EARLY_SEASON"
+    },
+    "population": {
+     "peer_group": "forward",
+     "n": 400,
+     "rule": "toi_min>=500",
+     "low_population": false
+    },
+    "rank_claim": false,
+    "calculated": false,
+    "sample": {
+     "gp": 6,
+     "toi_min": 120,
+     "shots": 200
+    },
+    "dimension_order": [
+     "shot_generation",
+     "shot_location",
+     "goal_scoring",
+     "finishing",
+     "playmaking",
+     "power_play",
+     "faceoffs",
+     "shot_blocking",
+     "physicality",
+     "penalty_differential"
+    ],
+    "dimensions": {
+     "shot_generation": {
+      "status": "LIVE",
+      "score": null,
+      "confidence": null,
+      "label": null,
+      "flags": [],
+      "reason": "EARLY_SEASON",
+      "sample": {
+       "metric": "toi_min",
+       "value": 900
+      },
+      "components": {
+       "sog_per60": {
+        "value": 1.5,
+        "percentile": null,
+        "n": null,
+        "direction": 1
+       },
+       "unblocked_attempts_per60": {
+        "value": 1.75,
+        "percentile": null,
+        "n": null,
+        "direction": 1
+       },
+       "attempts_per60": {
+        "value": 2,
+        "percentile": null,
+        "n": null,
+        "direction": 1
+       }
+      }
+     },
+     "shot_location": {
+      "status": "PROXY",
+      "score": null,
+      "confidence": null,
+      "label": null,
+      "flags": [],
+      "reason": "EARLY_SEASON",
+      "sample": {
+       "metric": "loc_n",
+       "value": 900
+      },
+      "components": {
+       "avg_unblocked_distance_ft": {
+        "value": 1.5,
+        "percentile": null,
+        "n": null,
+        "direction": -1
+       },
+       "inner_share": {
+        "value": 1.75,
+        "percentile": null,
+        "n": null,
+        "direction": 1
+       },
+       "inner_attempts_per60": {
+        "value": 2,
+        "percentile": null,
+        "n": null,
+        "direction": 1
+       }
+      }
+     },
+     "goal_scoring": {
+      "status": "LIVE",
+      "score": null,
+      "confidence": null,
+      "label": null,
+      "flags": [],
+      "reason": "EARLY_SEASON",
+      "sample": {
+       "metric": "toi_min",
+       "value": 900
+      },
+      "components": {
+       "goals_per60": {
+        "value": 1.5,
+        "percentile": null,
+        "n": null,
+        "direction": 1
+       }
+      }
+     },
+     "finishing": {
+      "status": "LIVE",
+      "score": null,
+      "confidence": null,
+      "label": null,
+      "flags": [],
+      "reason": "EARLY_SEASON",
+      "sample": {
+       "metric": "sog_non_en",
+       "value": 900
+      },
+      "components": {
+       "shooting_pct": {
+        "value": 1.5,
+        "percentile": null,
+        "n": null,
+        "direction": 1
+       },
+       "unblocked_finishing_pct": {
+        "value": 1.75,
+        "percentile": null,
+        "n": null,
+        "direction": 1
+       }
+      }
+     },
+     "playmaking": {
+      "status": "LIVE",
+      "score": null,
+      "confidence": null,
+      "label": null,
+      "flags": [],
+      "reason": "EARLY_SEASON",
+      "sample": {
+       "metric": "toi_min",
+       "value": 900
+      },
+      "components": {
+       "primary_assists_per60": {
+        "value": 1.5,
+        "percentile": null,
+        "n": null,
+        "direction": 1
+       },
+       "assists_per60": {
+        "value": 1.75,
+        "percentile": null,
+        "n": null,
+        "direction": 1
+       }
+      }
+     },
+     "power_play": {
+      "status": "LIVE",
+      "score": null,
+      "confidence": null,
+      "label": null,
+      "flags": [],
+      "reason": "EARLY_SEASON",
+      "sample": {
+       "metric": "pp_toi_min",
+       "value": 900
+      },
+      "components": {
+       "pp_points_per60": {
+        "value": 1.5,
+        "percentile": null,
+        "n": null,
+        "direction": 1
+       },
+       "pp_primary_points_per60": {
+        "value": 1.75,
+        "percentile": null,
+        "n": null,
+        "direction": 1
+       }
+      }
+     },
+     "faceoffs": {
+      "status": "LIVE",
+      "score": null,
+      "confidence": null,
+      "label": null,
+      "flags": [],
+      "reason": "EARLY_SEASON",
+      "sample": {
+       "metric": "faceoffs",
+       "value": 900
+      },
+      "components": {
+       "faceoff_win_pct": {
+        "value": 1.5,
+        "percentile": null,
+        "n": null,
+        "direction": 1
+       }
+      }
+     },
+     "shot_blocking": {
+      "status": "LIVE",
+      "score": null,
+      "confidence": null,
+      "label": null,
+      "flags": [],
+      "reason": "EARLY_SEASON",
+      "sample": {
+       "metric": "toi_min",
+       "value": 900
+      },
+      "components": {
+       "blocks_per60": {
+        "value": 1.5,
+        "percentile": null,
+        "n": null,
+        "direction": 1
+       }
+      }
+     },
+     "physicality": {
+      "status": "LIVE",
+      "score": null,
+      "confidence": null,
+      "label": null,
+      "flags": [],
+      "reason": "EARLY_SEASON",
+      "sample": {
+       "metric": "toi_min",
+       "value": 900
+      },
+      "components": {
+       "hits_per60": {
+        "value": 1.5,
+        "percentile": null,
+        "n": null,
+        "direction": 1
+       }
+      }
+     },
+     "penalty_differential": {
+      "status": "LIVE",
+      "score": null,
+      "confidence": null,
+      "label": null,
+      "flags": [],
+      "reason": "EARLY_SEASON",
+      "sample": {
+       "metric": "toi_min",
+       "value": 900
+      },
+      "components": {
+       "penalties_drawn_per60": {
+        "value": 1.5,
+        "percentile": null,
+        "n": null,
+        "direction": 1
+       },
+       "penalties_taken_per60": {
+        "value": 1.75,
+        "percentile": null,
+        "n": null,
+        "direction": -1
+       }
+      }
+     }
+    },
+    "traits": {
+     "rules": "nhl-dna-traits/1.0.0-research",
+     "basis": "EARLY_SEASON",
+     "strongest": [],
+     "watch": []
+    },
+    "context": {
+     "toi_per_gp_min": 18
+    },
+    "descriptive": {},
+    "provenance": {
+     "note": "synthetic"
+    },
+    "content_hash": "synthetic"
+   }
+  ],
+  "history": {
+   "rules": "nhl-dna-history/1.0.0-research",
+   "active_season": 20262027,
+   "active_ranked": false,
+   "seasons": [
+    {
+     "season": 20222023,
+     "season_state": "FINAL",
+     "peer_group": "forward",
+     "ranked": true,
+     "reason": null,
+     "population_n": 400
+    },
+    {
+     "season": 20232024,
+     "season_state": "FINAL",
+     "peer_group": "forward",
+     "ranked": true,
+     "reason": null,
+     "population_n": 400
+    },
+    {
+     "season": 20242025,
+     "season_state": "FINAL",
+     "peer_group": "forward",
+     "ranked": true,
+     "reason": null,
+     "population_n": 400
+    },
+    {
+     "season": 20252026,
+     "season_state": "FINAL",
+     "peer_group": "forward",
+     "ranked": true,
+     "reason": null,
+     "population_n": 400
+    },
+    {
+     "season": 20262027,
+     "season_state": "IN_PROGRESS",
+     "peer_group": "forward",
+     "ranked": false,
+     "reason": "EARLY_SEASON",
+     "population_n": 400
+    }
+   ],
+   "trends": [
+    {
+     "key": "shot_generation",
+     "status": "LIVE",
+     "points": [
+      {
+       "season": 20222023,
+       "score": 90,
+       "confidence": 1,
+       "label": "HIGH",
+       "peer_group": "forward"
+      },
+      {
+       "season": 20232024,
+       "score": 91,
+       "confidence": 1,
+       "label": "HIGH",
+       "peer_group": "forward"
+      },
+      {
+       "season": 20242025,
+       "score": 92,
+       "confidence": 1,
+       "label": "HIGH",
+       "peer_group": "forward"
+      },
+      {
+       "season": 20252026,
+       "score": 93,
+       "confidence": 1,
+       "label": "HIGH",
+       "peer_group": "forward"
+      },
+      {
+       "season": 20262027,
+       "score": null,
+       "reason": "UNRANKED_SEASON",
+       "measured": true
+      }
+     ]
+    },
+    {
+     "key": "shot_location",
+     "status": "PROXY",
+     "points": [
+      {
+       "season": 20222023,
+       "score": 95,
+       "confidence": 0.7,
+       "label": "MEDIUM",
+       "peer_group": "forward"
+      },
+      {
+       "season": 20232024,
+       "score": 95,
+       "confidence": 0.7,
+       "label": "MEDIUM",
+       "peer_group": "forward"
+      },
+      {
+       "season": 20242025,
+       "score": 95,
+       "confidence": 0.7,
+       "label": "MEDIUM",
+       "peer_group": "forward"
+      },
+      {
+       "season": 20252026,
+       "score": 95,
+       "confidence": 0.7,
+       "label": "MEDIUM",
+       "peer_group": "forward"
+      },
+      {
+       "season": 20262027,
+       "score": null,
+       "reason": "UNRANKED_SEASON",
+       "measured": true
+      }
+     ]
+    },
+    {
+     "key": "goal_scoring",
+     "status": "LIVE",
+     "points": [
+      {
+       "season": 20222023,
+       "score": 80,
+       "confidence": 0.9,
+       "label": "HIGH",
+       "peer_group": "forward"
+      },
+      {
+       "season": 20232024,
+       "score": 75,
+       "confidence": 0.9,
+       "label": "HIGH",
+       "peer_group": "forward"
+      },
+      {
+       "season": 20242025,
+       "score": 70,
+       "confidence": 0.9,
+       "label": "HIGH",
+       "peer_group": "forward"
+      },
+      {
+       "season": 20252026,
+       "score": 65,
+       "confidence": 0.9,
+       "label": "HIGH",
+       "peer_group": "forward"
+      },
+      {
+       "season": 20262027,
+       "score": null,
+       "reason": "UNRANKED_SEASON",
+       "measured": true
+      }
+     ]
+    },
+    {
+     "key": "finishing",
+     "status": "LIVE",
+     "points": [
+      {
+       "season": 20222023,
+       "score": 58,
+       "confidence": 0.7,
+       "label": "MEDIUM",
+       "peer_group": "forward"
+      },
+      {
+       "season": 20232024,
+       "score": 58,
+       "confidence": 0.7,
+       "label": "MEDIUM",
+       "peer_group": "forward"
+      },
+      {
+       "season": 20242025,
+       "score": 58,
+       "confidence": 0.7,
+       "label": "MEDIUM",
+       "peer_group": "forward"
+      },
+      {
+       "season": 20252026,
+       "score": 58,
+       "confidence": 0.7,
+       "label": "MEDIUM",
+       "peer_group": "forward"
+      },
+      {
+       "season": 20262027,
+       "score": null,
+       "reason": "UNRANKED_SEASON",
+       "measured": true
+      }
+     ]
+    },
+    {
+     "key": "playmaking",
+     "status": "LIVE",
+     "points": [
+      {
+       "season": 20222023,
+       "score": 70,
+       "confidence": 0.95,
+       "label": "HIGH",
+       "peer_group": "forward"
+      },
+      {
+       "season": 20232024,
+       "score": 71,
+       "confidence": 0.95,
+       "label": "HIGH",
+       "peer_group": "forward"
+      },
+      {
+       "season": 20242025,
+       "score": 72,
+       "confidence": 0.95,
+       "label": "HIGH",
+       "peer_group": "forward"
+      },
+      {
+       "season": 20252026,
+       "score": 73,
+       "confidence": 0.95,
+       "label": "HIGH",
+       "peer_group": "forward"
+      },
+      {
+       "season": 20262027,
+       "score": null,
+       "reason": "UNRANKED_SEASON",
+       "measured": true
+      }
+     ]
+    },
+    {
+     "key": "power_play",
+     "status": "LIVE",
+     "points": [
+      {
+       "season": 20222023,
+       "score": 60,
+       "confidence": 0.8,
+       "label": "HIGH",
+       "peer_group": "forward"
+      },
+      {
+       "season": 20232024,
+       "score": 60,
+       "confidence": 0.8,
+       "label": "HIGH",
+       "peer_group": "forward"
+      },
+      {
+       "season": 20242025,
+       "score": 60,
+       "confidence": 0.8,
+       "label": "HIGH",
+       "peer_group": "forward"
+      },
+      {
+       "season": 20252026,
+       "score": 60,
+       "confidence": 0.8,
+       "label": "HIGH",
+       "peer_group": "forward"
+      },
+      {
+       "season": 20262027,
+       "score": null,
+       "reason": "UNRANKED_SEASON",
+       "measured": true
+      }
+     ]
+    },
+    {
+     "key": "faceoffs",
+     "status": "LIVE",
+     "points": [
+      {
+       "season": 20222023,
+       "score": 40,
+       "confidence": 1,
+       "label": "HIGH",
+       "peer_group": "forward"
+      },
+      {
+       "season": 20232024,
+       "score": 40,
+       "confidence": 1,
+       "label": "HIGH",
+       "peer_group": "forward"
+      },
+      {
+       "season": 20242025,
+       "score": 40,
+       "confidence": 1,
+       "label": "HIGH",
+       "peer_group": "forward"
+      },
+      {
+       "season": 20252026,
+       "score": 40,
+       "confidence": 1,
+       "label": "HIGH",
+       "peer_group": "forward"
+      },
+      {
+       "season": 20262027,
+       "score": null,
+       "reason": "UNRANKED_SEASON",
+       "measured": true
+      }
+     ]
+    },
+    {
+     "key": "shot_blocking",
+     "status": "LIVE",
+     "points": [
+      {
+       "season": 20222023,
+       "score": 20,
+       "confidence": 0.9,
+       "label": "HIGH",
+       "peer_group": "forward"
+      },
+      {
+       "season": 20232024,
+       "score": 30,
+       "confidence": 0.9,
+       "label": "HIGH",
+       "peer_group": "forward"
+      },
+      {
+       "season": 20242025,
+       "score": 40,
+       "confidence": 0.9,
+       "label": "HIGH",
+       "peer_group": "forward"
+      },
+      {
+       "season": 20252026,
+       "score": 50,
+       "confidence": 0.9,
+       "label": "HIGH",
+       "peer_group": "forward"
+      },
+      {
+       "season": 20262027,
+       "score": null,
+       "reason": "UNRANKED_SEASON",
+       "measured": true
+      }
+     ]
+    },
+    {
+     "key": "physicality",
+     "status": "LIVE",
+     "points": [
+      {
+       "season": 20222023,
+       "score": null,
+       "reason": "NOT_AVAILABLE_THIS_SEASON"
+      },
+      {
+       "season": 20232024,
+       "score": null,
+       "reason": "NOT_AVAILABLE_THIS_SEASON"
+      },
+      {
+       "season": 20242025,
+       "score": 15,
+       "confidence": 0.9,
+       "label": "HIGH",
+       "peer_group": "forward"
+      },
+      {
+       "season": 20252026,
+       "score": 15,
+       "confidence": 0.9,
+       "label": "HIGH",
+       "peer_group": "forward"
+      },
+      {
+       "season": 20262027,
+       "score": null,
+       "reason": "UNRANKED_SEASON",
+       "measured": true
+      }
+     ]
+    },
+    {
+     "key": "penalty_differential",
+     "status": "LIVE",
+     "points": [
+      {
+       "season": 20222023,
+       "score": 50,
+       "confidence": 0.8,
+       "label": "HIGH",
+       "peer_group": "forward"
+      },
+      {
+       "season": 20232024,
+       "score": 50,
+       "confidence": 0.8,
+       "label": "HIGH",
+       "peer_group": "forward"
+      },
+      {
+       "season": 20242025,
+       "score": 50,
+       "confidence": 0.8,
+       "label": "HIGH",
+       "peer_group": "forward"
+      },
+      {
+       "season": 20252026,
+       "score": 50,
+       "confidence": 0.8,
+       "label": "HIGH",
+       "peer_group": "forward"
+      },
+      {
+       "season": 20262027,
+       "score": null,
+       "reason": "UNRANKED_SEASON",
+       "measured": true
+      }
+     ]
+    }
+   ],
+   "summary": {
+    "basis": "ranked forward seasons only",
+    "ranked_seasons": [
+     20222023,
+     20232024,
+     20242025,
+     20252026
+    ],
+    "biggest_gain": {
+     "key": "shot_blocking",
+     "from_season": 20242025,
+     "to_season": 20252026,
+     "from": 40,
+     "to": 50,
+     "delta": 10
+    },
+    "biggest_drop": null,
+    "top_current": {
+     "key": "shot_generation",
+     "season": 20252026,
+     "score": 93,
+     "confidence": 1
+    },
+    "most_volatile": {
+     "key": "shot_blocking",
+     "seasons": 4,
+     "sd": 12.9,
+     "min": 20,
+     "max": 50
+    }
+   }
+  }
+ },
+ "bravo": {
+  "snapshot": {
+   "version": "nhl-skater-dna/1.0.0-research",
+   "kind": "skater",
+   "player_id": 9990002,
+   "name": "Synth Bravo",
+   "season": 20252026,
+   "season_state": "FINAL",
+   "as_of": "20252026-synthetic",
+   "peer_group": "forward",
+   "position": "C",
+   "position_mix": {
+    "F": 80,
+    "D": 0,
+    "codes": {}
+   },
+   "team_context": {
+    "latest_team": "AAA",
+    "teams": [
+     "AAA"
+    ],
+    "traded": false,
+    "rule": "chronological latest game"
+   },
+   "rookie": false,
+   "qualification": {
+    "rule": "toi_min>=500",
+    "metric": "toi_min",
+    "base": 500,
+    "k": 1,
+    "threshold": 500,
+    "sample": 1500,
+    "qualified": true
+   },
+   "population": {
+    "peer_group": "forward",
+    "n": 400,
+    "rule": "toi_min>=500",
+    "low_population": false
+   },
+   "rank_claim": true,
+   "calculated": true,
+   "sample": {
+    "gp": 80,
+    "toi_min": 1500,
+    "shots": 200
+   },
+   "dimension_order": [
+    "shot_generation",
+    "shot_location",
+    "goal_scoring",
+    "finishing",
+    "playmaking",
+    "power_play",
+    "faceoffs",
+    "shot_blocking",
+    "physicality",
+    "penalty_differential"
+   ],
+   "dimensions": {
+    "shot_generation": {
+     "status": "LIVE",
+     "score": 40,
+     "confidence": 0.8,
+     "label": "HIGH",
+     "flags": [],
+     "reason": null,
+     "sample": {
+      "metric": "toi_min",
+      "value": 900
+     },
+     "components": {
+      "sog_per60": {
+       "value": 1.5,
+       "percentile": 42,
+       "n": 400,
+       "direction": 1
+      },
+      "unblocked_attempts_per60": {
+       "value": 1.75,
+       "percentile": 38,
+       "n": 400,
+       "direction": 1
+      },
+      "attempts_per60": {
+       "value": 2,
+       "percentile": 42,
+       "n": 400,
+       "direction": 1
+      }
+     },
+     "population_n": 400
+    },
+    "shot_location": {
+     "status": "PROXY",
+     "score": 42,
+     "confidence": 0.8,
+     "label": "HIGH",
+     "flags": [],
+     "reason": null,
+     "sample": {
+      "metric": "loc_n",
+      "value": 900
+     },
+     "components": {
+      "avg_unblocked_distance_ft": {
+       "value": 1.5,
+       "percentile": 44,
+       "n": 400,
+       "direction": -1
+      },
+      "inner_share": {
+       "value": 1.75,
+       "percentile": 40,
+       "n": 400,
+       "direction": 1
+      },
+      "inner_attempts_per60": {
+       "value": 2,
+       "percentile": 44,
+       "n": 400,
+       "direction": 1
+      }
+     },
+     "population_n": 400
+    },
+    "goal_scoring": {
+     "status": "LIVE",
+     "score": 44,
+     "confidence": 0.8,
+     "label": "HIGH",
+     "flags": [],
+     "reason": null,
+     "sample": {
+      "metric": "toi_min",
+      "value": 900
+     },
+     "components": {
+      "goals_per60": {
+       "value": 1.5,
+       "percentile": 46,
+       "n": 400,
+       "direction": 1
+      }
+     },
+     "population_n": 400
+    },
+    "finishing": {
+     "status": "LIVE",
+     "score": 46,
+     "confidence": 0.8,
+     "label": "HIGH",
+     "flags": [],
+     "reason": null,
+     "sample": {
+      "metric": "sog_non_en",
+      "value": 900
+     },
+     "components": {
+      "shooting_pct": {
+       "value": 1.5,
+       "percentile": 48,
+       "n": 400,
+       "direction": 1
+      },
+      "unblocked_finishing_pct": {
+       "value": 1.75,
+       "percentile": 44,
+       "n": 400,
+       "direction": 1
+      }
+     },
+     "population_n": 400
+    },
+    "playmaking": {
+     "status": "LIVE",
+     "score": 48,
+     "confidence": 0.8,
+     "label": "HIGH",
+     "flags": [],
+     "reason": null,
+     "sample": {
+      "metric": "toi_min",
+      "value": 900
+     },
+     "components": {
+      "primary_assists_per60": {
+       "value": 1.5,
+       "percentile": 50,
+       "n": 400,
+       "direction": 1
+      },
+      "assists_per60": {
+       "value": 1.75,
+       "percentile": 46,
+       "n": 400,
+       "direction": 1
+      }
+     },
+     "population_n": 400
+    },
+    "power_play": {
+     "status": "LIVE",
+     "score": 50,
+     "confidence": 0.8,
+     "label": "HIGH",
+     "flags": [],
+     "reason": null,
+     "sample": {
+      "metric": "pp_toi_min",
+      "value": 900
+     },
+     "components": {
+      "pp_points_per60": {
+       "value": 1.5,
+       "percentile": 52,
+       "n": 400,
+       "direction": 1
+      },
+      "pp_primary_points_per60": {
+       "value": 1.75,
+       "percentile": 48,
+       "n": 400,
+       "direction": 1
+      }
+     },
+     "population_n": 400
+    },
+    "faceoffs": {
+     "status": "NOT_APPLICABLE",
+     "score": null,
+     "confidence": null,
+     "label": null,
+     "flags": [],
+     "reason": "NO_FACEOFF_ROLE",
+     "sample": {
+      "metric": "faceoffs",
+      "value": 900
+     },
+     "components": {
+      "faceoff_win_pct": {
+       "value": 1.5,
+       "percentile": null,
+       "n": null,
+       "direction": 1
+      }
+     }
+    },
+    "shot_blocking": {
+     "status": "LIVE",
+     "score": 54,
+     "confidence": 0.8,
+     "label": "HIGH",
+     "flags": [],
+     "reason": null,
+     "sample": {
+      "metric": "toi_min",
+      "value": 900
+     },
+     "components": {
+      "blocks_per60": {
+       "value": 1.5,
+       "percentile": 56,
+       "n": 400,
+       "direction": 1
+      }
+     },
+     "population_n": 400
+    },
+    "physicality": {
+     "status": "LIVE",
+     "score": 56,
+     "confidence": 0.8,
+     "label": "HIGH",
+     "flags": [],
+     "reason": null,
+     "sample": {
+      "metric": "toi_min",
+      "value": 900
+     },
+     "components": {
+      "hits_per60": {
+       "value": 1.5,
+       "percentile": 58,
+       "n": 400,
+       "direction": 1
+      }
+     },
+     "population_n": 400
+    },
+    "penalty_differential": {
+     "status": "LIVE",
+     "score": 58,
+     "confidence": 0.8,
+     "label": "HIGH",
+     "flags": [],
+     "reason": null,
+     "sample": {
+      "metric": "toi_min",
+      "value": 900
+     },
+     "components": {
+      "penalties_drawn_per60": {
+       "value": 1.5,
+       "percentile": 60,
+       "n": 400,
+       "direction": 1
+      },
+      "penalties_taken_per60": {
+       "value": 1.75,
+       "percentile": 56,
+       "n": 400,
+       "direction": -1
+      }
+     },
+     "population_n": 400
+    }
+   },
+   "traits": {
+    "rules": "nhl-dna-traits/1.0.0-research",
+    "basis": "SCORE_BANDS_LIVE_MEDIUM_CONFIDENCE",
+    "strongest": [],
+    "watch": []
+   },
+   "context": {
+    "toi_per_gp_min": 18
+   },
+   "descriptive": {},
+   "provenance": {
+    "note": "synthetic"
+   },
+   "content_hash": "synthetic"
+  }
+ },
+ "charlie": {
+  "snapshot": {
+   "version": "nhl-skater-dna/1.0.0-research",
+   "kind": "skater",
+   "player_id": 9990003,
+   "name": "Synth Charlie",
+   "season": 20252026,
+   "season_state": "FINAL",
+   "as_of": "20252026-synthetic",
+   "peer_group": "defense",
+   "position": "D",
+   "position_mix": {
+    "F": 0,
+    "D": 12,
+    "codes": {}
+   },
+   "team_context": {
+    "latest_team": "AAA",
+    "teams": [
+     "AAA"
+    ],
+    "traded": false,
+    "rule": "chronological latest game"
+   },
+   "rookie": false,
+   "qualification": {
+    "rule": "toi_min>=500",
+    "metric": "toi_min",
+    "base": 500,
+    "k": 1,
+    "threshold": 500,
+    "sample": 210,
+    "qualified": false
+   },
+   "population": {
+    "peer_group": "defense",
+    "n": 215,
+    "rule": "toi_min>=500",
+    "low_population": false
+   },
+   "rank_claim": false,
+   "calculated": false,
+   "sample": {
+    "gp": 12,
+    "toi_min": 210,
+    "shots": 200
+   },
+   "dimension_order": [
+    "shot_generation",
+    "shot_location",
+    "goal_scoring",
+    "finishing",
+    "playmaking",
+    "power_play",
+    "faceoffs",
+    "shot_blocking",
+    "physicality",
+    "penalty_differential"
+   ],
+   "dimensions": {
+    "shot_generation": {
+     "status": "LIVE",
+     "score": null,
+     "confidence": null,
+     "label": null,
+     "flags": [],
+     "reason": "INSUFFICIENT_SAMPLE",
+     "sample": {
+      "metric": "toi_min",
+      "value": 900
+     },
+     "components": {
+      "sog_per60": {
+       "value": 1.5,
+       "percentile": null,
+       "n": null,
+       "direction": 1
+      },
+      "unblocked_attempts_per60": {
+       "value": 1.75,
+       "percentile": null,
+       "n": null,
+       "direction": 1
+      },
+      "attempts_per60": {
+       "value": 2,
+       "percentile": null,
+       "n": null,
+       "direction": 1
+      }
+     }
+    },
+    "shot_location": {
+     "status": "PROXY",
+     "score": null,
+     "confidence": null,
+     "label": null,
+     "flags": [],
+     "reason": "INSUFFICIENT_SAMPLE",
+     "sample": {
+      "metric": "loc_n",
+      "value": 900
+     },
+     "components": {
+      "avg_unblocked_distance_ft": {
+       "value": 1.5,
+       "percentile": null,
+       "n": null,
+       "direction": -1
+      },
+      "inner_share": {
+       "value": 1.75,
+       "percentile": null,
+       "n": null,
+       "direction": 1
+      },
+      "inner_attempts_per60": {
+       "value": 2,
+       "percentile": null,
+       "n": null,
+       "direction": 1
+      }
+     }
+    },
+    "goal_scoring": {
+     "status": "LIVE",
+     "score": null,
+     "confidence": null,
+     "label": null,
+     "flags": [],
+     "reason": "INSUFFICIENT_SAMPLE",
+     "sample": {
+      "metric": "toi_min",
+      "value": 900
+     },
+     "components": {
+      "goals_per60": {
+       "value": 1.5,
+       "percentile": null,
+       "n": null,
+       "direction": 1
+      }
+     }
+    },
+    "finishing": {
+     "status": "LIVE",
+     "score": null,
+     "confidence": null,
+     "label": null,
+     "flags": [],
+     "reason": "INSUFFICIENT_SAMPLE",
+     "sample": {
+      "metric": "sog_non_en",
+      "value": 900
+     },
+     "components": {
+      "shooting_pct": {
+       "value": 1.5,
+       "percentile": null,
+       "n": null,
+       "direction": 1
+      },
+      "unblocked_finishing_pct": {
+       "value": 1.75,
+       "percentile": null,
+       "n": null,
+       "direction": 1
+      }
+     }
+    },
+    "playmaking": {
+     "status": "LIVE",
+     "score": null,
+     "confidence": null,
+     "label": null,
+     "flags": [],
+     "reason": "INSUFFICIENT_SAMPLE",
+     "sample": {
+      "metric": "toi_min",
+      "value": 900
+     },
+     "components": {
+      "primary_assists_per60": {
+       "value": 1.5,
+       "percentile": null,
+       "n": null,
+       "direction": 1
+      },
+      "assists_per60": {
+       "value": 1.75,
+       "percentile": null,
+       "n": null,
+       "direction": 1
+      }
+     }
+    },
+    "power_play": {
+     "status": "NOT_APPLICABLE",
+     "score": null,
+     "confidence": null,
+     "label": null,
+     "flags": [],
+     "reason": "NO_PP_ROLE",
+     "sample": {
+      "metric": "pp_toi_min",
+      "value": 900
+     },
+     "components": {
+      "pp_points_per60": {
+       "value": 1.5,
+       "percentile": null,
+       "n": null,
+       "direction": 1
+      },
+      "pp_primary_points_per60": {
+       "value": 1.75,
+       "percentile": null,
+       "n": null,
+       "direction": 1
+      }
+     }
+    },
+    "faceoffs": {
+     "status": "NOT_APPLICABLE",
+     "score": null,
+     "confidence": null,
+     "label": null,
+     "flags": [],
+     "reason": "NOT_APPLICABLE_DEFENSE",
+     "sample": {
+      "metric": "faceoffs",
+      "value": 900
+     },
+     "components": {
+      "faceoff_win_pct": {
+       "value": 1.5,
+       "percentile": null,
+       "n": null,
+       "direction": 1
+      }
+     }
+    },
+    "shot_blocking": {
+     "status": "LIVE",
+     "score": null,
+     "confidence": null,
+     "label": null,
+     "flags": [],
+     "reason": "INSUFFICIENT_SAMPLE",
+     "sample": {
+      "metric": "toi_min",
+      "value": 900
+     },
+     "components": {
+      "blocks_per60": {
+       "value": 1.5,
+       "percentile": null,
+       "n": null,
+       "direction": 1
+      }
+     }
+    },
+    "physicality": {
+     "status": "LIVE",
+     "score": null,
+     "confidence": null,
+     "label": null,
+     "flags": [],
+     "reason": "INSUFFICIENT_SAMPLE",
+     "sample": {
+      "metric": "toi_min",
+      "value": 900
+     },
+     "components": {
+      "hits_per60": {
+       "value": 1.5,
+       "percentile": null,
+       "n": null,
+       "direction": 1
+      }
+     }
+    },
+    "penalty_differential": {
+     "status": "LIVE",
+     "score": null,
+     "confidence": null,
+     "label": null,
+     "flags": [],
+     "reason": "INSUFFICIENT_SAMPLE",
+     "sample": {
+      "metric": "toi_min",
+      "value": 900
+     },
+     "components": {
+      "penalties_drawn_per60": {
+       "value": 1.5,
+       "percentile": null,
+       "n": null,
+       "direction": 1
+      },
+      "penalties_taken_per60": {
+       "value": 1.75,
+       "percentile": null,
+       "n": null,
+       "direction": -1
+      }
+     }
+    }
+   },
+   "traits": {
+    "rules": "nhl-dna-traits/1.0.0-research",
+    "basis": "NOT_QUALIFIED",
+    "strongest": [],
+    "watch": []
+   },
+   "context": {
+    "toi_per_gp_min": 18
+   },
+   "descriptive": {},
+   "provenance": {
+    "note": "synthetic"
+   },
+   "content_hash": "synthetic"
+  }
+ }
+}

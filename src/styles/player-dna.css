@@ -1,0 +1,122 @@
+/* NHL Skater DNA research card. Light, readable analytics surface scoped under
+   .nhl-dna (the rest of the site stays dark). Not imported anywhere while the
+   rights gate is closed. */
+.nhl-dna {
+  --dna-bg: #ffffff;
+  --dna-soft: #f5f7fa;
+  --dna-line: #e3e8ef;
+  --dna-ink: #0f1a2a;
+  --dna-mute: #5b6778;
+  --dna-accent: #1f5fd6;
+  --dna-strong: #127a4a;
+  --dna-watch: #b4412c;
+  --dna-proxy: #8a6d1f;
+  --dna-bar: linear-gradient(90deg, #9db8ec, #1f5fd6);
+  background: var(--dna-bg);
+  color: var(--dna-ink);
+  border: 1px solid var(--dna-line);
+  border-radius: 14px;
+  padding: 20px 22px;
+  font-family: var(--pbe-font-ui, system-ui, sans-serif);
+  font-size: 15px;
+  line-height: 1.45;
+  box-shadow: 0 1px 2px rgba(15, 26, 42, .06), 0 8px 24px rgba(15, 26, 42, .06);
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+.nhl-dna * { box-sizing: border-box; }
+.nhl-dna .num { font-family: var(--pbe-font-data, ui-monospace, monospace); font-variant-numeric: tabular-nums; text-align: right; }
+.nhl-dna small { color: var(--dna-mute); font-size: .82em; font-weight: 500; }
+
+.nhl-dna__head { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px 20px; }
+.nhl-dna__eyebrow { margin: 0; font-size: 12px; letter-spacing: .14em; font-weight: 800; color: var(--dna-accent); }
+.nhl-dna__tabs { display: flex; gap: 6px; margin-top: 6px; }
+.nhl-dna__tab { font-size: 13px; font-weight: 800; letter-spacing: .06em; padding: 6px 10px; border-radius: 8px; background: var(--dna-soft); color: var(--dna-mute); }
+.nhl-dna__tab.is-active { background: var(--dna-ink); color: #fff; }
+.nhl-dna__seasons { display: flex; flex-wrap: wrap; gap: 6px; }
+.nhl-dna__season { font: inherit; font-size: 13px; font-weight: 700; border: 1px solid var(--dna-line); background: #fff; color: var(--dna-ink); border-radius: 999px; padding: 5px 12px; cursor: pointer; display: inline-flex; flex-direction: column; align-items: center; line-height: 1.15; }
+.nhl-dna__season small { font-size: 10px; }
+.nhl-dna__season.is-active { border-color: var(--dna-accent); background: #eaf1fe; color: var(--dna-accent); }
+
+.nhl-dna__meta { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin: 18px 0 12px; }
+.nhl-dna__meta > div { background: var(--dna-soft); border-radius: 10px; padding: 10px 12px; min-width: 0; }
+.nhl-dna__meta dt { font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--dna-mute); font-weight: 700; }
+.nhl-dna__meta dd { margin: 2px 0 0; font-weight: 800; }
+
+.nhl-dna__banner { margin: 0 0 12px; padding: 10px 12px; border-radius: 10px; background: #fff7e6; border: 1px solid #f3dfb2; color: #6b4a07; font-size: 14px; }
+.nhl-dna__neutral { margin: 0; color: var(--dna-mute); font-size: 14px; }
+
+.nhl-dna__traits { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin: 4px 0 16px; }
+.nhl-dna__traits h4 { margin: 0 0 6px; font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: var(--dna-mute); }
+.nhl-dna__traits ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.nhl-dna__trait { display: flex; justify-content: space-between; gap: 8px; padding: 8px 12px; border-radius: 10px; font-weight: 700; }
+.nhl-dna__trait b { font-family: var(--pbe-font-data, monospace); }
+.nhl-dna__trait--strong { background: #e8f6ee; color: var(--dna-strong); }
+.nhl-dna__trait--watch { background: #fbece8; color: var(--dna-watch); }
+.nhl-dna__traits > .nhl-dna__neutral { grid-column: 1 / -1; background: var(--dna-soft); border-radius: 10px; padding: 10px 12px; }
+
+.nhl-dna__scale { display: flex; justify-content: space-between; gap: 8px; margin: 0 0 6px; font-size: 11px; color: var(--dna-mute); letter-spacing: .04em; }
+.nhl-dna__dim-row { border-top: 1px solid var(--dna-line); }
+.nhl-dna__dim-row > summary { list-style: none; display: grid; grid-template-columns: minmax(150px, 220px) minmax(0, 1fr) 40px 74px; align-items: center; gap: 12px; padding: 10px 2px; cursor: pointer; }
+.nhl-dna__dim-row > summary::-webkit-details-marker { display: none; }
+.nhl-dna__dim-row.is-gap > summary { grid-template-columns: minmax(150px, 220px) minmax(0, 1fr); }
+.nhl-dna__dim-name { font-weight: 700; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.nhl-dna__bar { height: 10px; border-radius: 999px; background: var(--dna-soft); overflow: hidden; }
+.nhl-dna__bar i { display: block; height: 100%; background: var(--dna-bar); border-radius: inherit; }
+.nhl-dna__dim-row.is-proxy .nhl-dna__bar i { background: repeating-linear-gradient(135deg, #d9c89a 0 6px, #e9dcb8 6px 12px); }
+.nhl-dna__score { font-family: var(--pbe-font-data, monospace); font-weight: 800; font-size: 17px; text-align: right; }
+.nhl-dna__gap, .nhl-dna__measured { color: var(--dna-mute); font-size: 14px; }
+.nhl-dna__measured b { color: var(--dna-ink); font-family: var(--pbe-font-data, monospace); }
+.nhl-dna__chip { font-size: 10px; font-weight: 800; letter-spacing: .08em; padding: 2px 6px; border-radius: 6px; }
+.nhl-dna__chip--proxy { background: #f6efdc; color: var(--dna-proxy); }
+.nhl-dna__chip--muted { background: var(--dna-soft); color: var(--dna-mute); }
+.nhl-dna__conf { font-size: 10px; font-weight: 800; letter-spacing: .08em; padding: 3px 6px; border-radius: 6px; text-align: center; }
+.nhl-dna__conf--high { background: #e8f6ee; color: var(--dna-strong); }
+.nhl-dna__conf--medium { background: #eaf1fe; color: var(--dna-accent); }
+.nhl-dna__conf--low { background: var(--dna-soft); color: var(--dna-mute); }
+.nhl-dna__evidence { padding: 0 2px 12px; }
+.nhl-dna__evidence table, .nhl-dna__table table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.nhl-dna__evidence th, .nhl-dna__evidence td, .nhl-dna__table th, .nhl-dna__table td { padding: 5px 6px; border-bottom: 1px solid var(--dna-line); text-align: left; font-weight: 500; }
+.nhl-dna__evidence thead th, .nhl-dna__table thead th { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--dna-mute); }
+.nhl-dna__evidence td.num, .nhl-dna__evidence th.num, .nhl-dna__table .num { text-align: right; }
+.nhl-dna__dim { color: var(--dna-mute); font-size: 13px; }
+.nhl-dna__dir { color: var(--dna-mute); }
+.nhl-dna__caveat { margin: 8px 0 0; font-size: 13px; color: #6b4a07; background: #fff7e6; border-radius: 8px; padding: 8px 10px; }
+
+.nhl-dna__history { margin-top: 22px; padding-top: 16px; border-top: 2px solid var(--dna-ink); }
+.nhl-dna__history h3 { margin: 0 0 10px; font-size: 18px; }
+.nhl-dna__insights { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+.nhl-dna__insight { background: var(--dna-soft); border-radius: 10px; padding: 10px 12px; min-width: 0; }
+.nhl-dna__insight span { display: block; font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--dna-mute); font-weight: 700; }
+.nhl-dna__insight b { display: block; margin-top: 2px; font-size: 14px; }
+.nhl-dna__insight em { font-style: normal; font-family: var(--pbe-font-data, monospace); color: var(--dna-accent); }
+.nhl-dna__basis { margin: 8px 0 12px; }
+.nhl-dna__trends { display: grid; gap: 2px; }
+.nhl-dna__tgroup h5 { margin: 10px 0 4px; font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--dna-mute); }
+.nhl-dna__trow { display: grid; grid-template-columns: minmax(130px, 220px) minmax(0, 1fr); gap: 10px; align-items: center; }
+.nhl-dna__tname { font: inherit; font-size: 14px; font-weight: 600; text-align: left; background: none; border: 0; padding: 4px 0; color: var(--dna-ink); cursor: pointer; }
+.nhl-dna__tcells { display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 4px; }
+.nhl-dna__cell { font-family: var(--pbe-font-data, monospace); font-size: 13px; font-weight: 700; text-align: center; padding: 5px 0; border-radius: 6px;
+  background: color-mix(in srgb, var(--dna-accent) calc(var(--v, 0) * 0.35%), #fff); color: var(--dna-ink); }
+.nhl-dna__cell.is-gap { background: var(--dna-soft); color: var(--dna-mute); font-weight: 500; }
+.nhl-dna__cell--head { background: none; color: var(--dna-mute); font-size: 11px; }
+.nhl-dna__cell--head.is-unranked { font-style: italic; }
+.nhl-dna__history[data-focus] .nhl-dna__trow:not(.is-focus):not(.nhl-dna__trow--head) { opacity: .35; }
+.nhl-dna__trow.is-focus .nhl-dna__tname { color: var(--dna-accent); }
+.nhl-dna__table { margin-top: 12px; }
+.nhl-dna__table > summary { cursor: pointer; font-weight: 700; font-size: 14px; color: var(--dna-accent); }
+.nhl-dna__scroll { overflow-x: auto; margin-top: 8px; }
+.nhl-dna__foot { display: flex; justify-content: space-between; flex-wrap: wrap; gap: 6px; margin-top: 16px; padding-top: 10px; border-top: 1px solid var(--dna-line); font-size: 12px; color: var(--dna-mute); }
+
+@media (max-width: 900px) {
+  .nhl-dna__meta, .nhl-dna__insights { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 560px) {
+  .nhl-dna { padding: 16px 14px; border-radius: 12px; }
+  .nhl-dna__traits { grid-template-columns: 1fr; }
+  .nhl-dna__dim-row > summary { grid-template-columns: minmax(0, 1fr) 36px 64px; row-gap: 6px; }
+  .nhl-dna__dim-row > summary .nhl-dna__dim-name { grid-column: 1 / -1; }
+  .nhl-dna__dim-row.is-gap > summary { grid-template-columns: 1fr; }
+  .nhl-dna__trow { grid-template-columns: 1fr; gap: 2px; }
+  .nhl-dna__cell { font-size: 12px; }
+}
