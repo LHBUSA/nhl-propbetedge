@@ -44,7 +44,9 @@ test('free game payload: facts render, scores are Pro prompts', () => {
   assert.doesNotMatch(html, /Goalie Form components/, 'no Form component breakdown for free');
   // Workload facts and the 14-day timeline are free.
   assert.match(html, /gi-timeline/);
-  assert.match(html, /NHL Edge save % by shot location/);
+  assert.match(html, /Save % by shot location/);
+  assert.match(html, /tracking data via PropSports/);
+  assert.doesNotMatch(html, /NHL Edge/, 'customer-facing source brand is PropSports');
   const panel = gameIntelPanel(free, { pro: false, props: { count: 0, markets: new Set() } });
   assert.match(panel, /Fatigue score \+ edge · Pro/);
   assert.match(panel, /Back-to-back/, 'the NYR back-to-back fact is free');

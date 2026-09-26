@@ -466,7 +466,7 @@ function pregamePanel(cast, market = null) {
     <p class="dim">${esc(dayET(g.start_time_utc, true))} · ${esc(timeET(g.start_time_utc))} · ${esc(g.venue || '')}</p>
     ${c && !c.done ? `<p class="mono cast-pregame__cd">Puck drop in ${c.days ? `${c.days}d ` : ''}${c.hours}h ${c.mins}m</p>` : ''}
     <ul class="cast-pregame__list">
-      <li><span class="pbe-badge pbe-badge--unknown">Starter watch</span> NHL.com projections appear when published; the NHL box score confirms the starter at puck drop.</li>
+      <li><span class="pbe-badge pbe-badge--unknown">Starter watch</span> Projected starters appear when published; the official box score confirms the starter at puck drop.</li>
       ${market
         ? `<li><span class="pbe-badge pbe-badge--sched">Odds</span> Scheduled market snapshot below (08:00 / 13:00 / 18:00 ET). Not a live feed.</li>`
         : `<li><span class="pbe-badge pbe-badge--unavailable">Odds</span> No market snapshot for this game yet. Nothing is estimated.</li>`}

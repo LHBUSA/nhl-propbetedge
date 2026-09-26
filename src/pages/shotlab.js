@@ -449,7 +449,7 @@ function definitions() {
         <div><dt>Blocked attempts</dt><dd>Location is the block location reported by the source, not where the shot was released. The shooting team comes from the game roster.</dd></div>
         <div><dt>Missing data</dt><dd>An attempt without coordinates stays in every total and in the table. It is never placed on the rink.</dd></div>
       </dl>
-      <p class="micro">Source: NHL play-by-play. Full method on the <a class="gold link-u" href="#/methodology">Methodology</a> page.</p>
+      <p class="micro">Source: PropSports play-by-play. Full method on the <a class="gold link-u" href="#/methodology">Methodology</a> page.</p>
     </footer>`;
 }
 

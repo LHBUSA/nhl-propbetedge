@@ -61,15 +61,15 @@ export function seasonVsRecent(g) {
   return `<div class="gi-cmp">
     <div><span class="micro">${esc(seasonLabel)} SV%</span><b>${pct3(season)}</b><span class="micro faint">${esc(g?.season_line?.shots_against ?? g?.baseline_line?.shots_against ?? DASH)} SA</span></div>
     <div><span class="micro">Recent SV%</span><b>${pct3(r?.save_pct)}</b><span class="micro faint">${r?.appearances ? `${r.appearances} apps · ${r.shots} SA` : 'No recent sample'}</span></div>
-    <div><span class="micro">League SV%</span><b>${pct3(league)}</b><span class="micro faint">${formOf(g) ? 'season baseline' : 'NHL Edge league avg'}</span></div>
+    <div><span class="micro">League SV%</span><b>${pct3(league)}</b><span class="micro faint">${formOf(g) ? 'season baseline' : 'tracking-data league avg'}</span></div>
   </div>`;
 }
 
 export function edgeSplits(g) {
   const e = g?.edge;
-  if (!e?.locations?.length) return '<p class="micro faint">NHL Edge location splits unavailable for this goalie.</p>';
+  if (!e?.locations?.length) return '<p class="micro faint">Shot-location tracking splits unavailable for this goalie.</p>';
   const season = e.season ? `${String(e.season).slice(0, 4)}-${String(e.season).slice(6, 8)}` : '';
-  return `<div><span class="micro">NHL Edge save % by shot location${season ? ` · ${esc(season)}` : ''} · as published by the NHL</span>
+  return `<div><span class="micro">Save % by shot location${season ? ` · ${esc(season)}` : ''} · tracking data via PropSports</span>
     <table class="pbe-table gi-split"><thead><tr><th>Location</th><th>SV%</th><th>League</th><th>Pctile</th><th>Saves</th></tr></thead>
     <tbody>${e.locations.filter(l => LOC[l.location]).map(l => `<tr><td>${esc(LOC[l.location])}</td><td class="mono">${pct3(l.save_pct)}</td><td class="mono faint">${pct3(l.league_save_pct)}</td><td class="mono">${Number.isFinite(l.percentile) ? `${Math.round(l.percentile * 100)}` : DASH}</td><td class="mono">${l.saves ?? DASH}</td></tr>`).join('')}</tbody></table></div>`;
 }
@@ -123,7 +123,7 @@ export function goalieIntelCards(intel, { pro = false, big = false } = {}) {
     if (!list.length) return `<div class="iq-na"><b>${esc(t.team)}</b><span>No goalie appearance on record in the last 14 days.</span></div>`;
     return list.map(g => goalieCard(g, { team: t.team, gameDate: date, pro })).join('');
   };
-  return `<section class="gi" aria-label="Goalie intelligence"><div class="dk-tablehead"><span class="micro">Goalie intelligence · workload, rest, season vs recent, NHL Edge</span></div><div class="gi-cards">${cards('away')}${cards('home')}</div></section>`;
+  return `<section class="gi" aria-label="Goalie intelligence"><div class="dk-tablehead"><span class="micro">Goalie intelligence · workload, rest, season vs recent, shot-location tracking</span></div><div class="gi-cards">${cards('away')}${cards('home')}</div></section>`;
 }
 
 export function goalieIntelSection(intel, { pro = false, big = false } = {}) {

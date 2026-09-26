@@ -25,10 +25,11 @@ export function freshnessState({ meta, failed = false, hasData = true, unavailab
 // never stay CURRENT after refreshes stop.
 export function freshStamp(meta, { failed = false, hasData = true, unavailable = false, source = null, label = null } = {}) {
   const state = freshnessState({ meta, failed, hasData, unavailable });
-  const src = source || meta?.source || 'NHL';
+  const src = source || 'PropSports';
+  const provenance = meta?.source || '';
   const fetchedAt = meta?.fetched_at || '';
   const age = fetchedAt ? (Date.now() - Date.parse(fetchedAt)) / 1000 : NaN;
-  return `<span class="fresh" data-state="${state}" data-fetched="${esc(fetchedAt)}" data-ttl="${meta?.ttl_s ?? ''}" data-stale="${meta?.stale_after_s ?? ''}" data-failed="${failed ? '1' : ''}" data-has="${hasData ? '1' : ''}"${fetchedAt ? ` title="Source: ${esc(src)} · fetched ${esc(clockET(fetchedAt))}${meta?.source_urls?.length ? ` · ${esc(meta.source_urls.join(' , '))}` : ''}"` : ''}>
+  return `<span class="fresh" data-state="${state}" data-fetched="${esc(fetchedAt)}" data-ttl="${meta?.ttl_s ?? ''}" data-stale="${meta?.stale_after_s ?? ''}" data-failed="${failed ? '1' : ''}" data-has="${hasData ? '1' : ''}" data-provenance="${esc(provenance)}"${fetchedAt ? ` title="Source: ${esc(src)} · fetched ${esc(clockET(fetchedAt))}${meta?.source_urls?.length ? ` · ${esc(meta.source_urls.join(' , '))}` : ''}"` : ''}>
     <i class="fresh__dot" aria-hidden="true"></i><b class="fresh__state">${state}</b>${label ? ` · ${esc(label)}` : ''} · ${esc(src)}${fetchedAt ? ` · <span class="fresh__age">${esc(ageText(age))}</span>` : ''}
   </span>`;
 }

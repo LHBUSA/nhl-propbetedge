@@ -100,7 +100,7 @@ function premiumFooter() {
         </section>
         <section>
           <span class="footer-premium__label">DATA & TRUST</span>
-          <p class="footer-premium__source">Game, play-by-play and player data is sourced from the NHL through PropSports infrastructure. Volatile panels expose source and age rather than pretending stale data is live.</p>
+          <p class="footer-premium__source">Game, play-by-play and player data is delivered by PropSports. Volatile panels expose source and age rather than pretending stale data is live.</p>
           <div class="footer-premium__links footer-premium__links--compact">
             ${trustLinks.map(([label, href]) => `<a href="${href}">${label}<span>→</span></a>`).join('')}
           </div>
