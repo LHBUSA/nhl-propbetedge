@@ -9,6 +9,19 @@ test('network registry carries the canonical X account', () => {
   assert.equal(PBE_NETWORK.xHandle, '@PROPBETEDGE');
 });
 
+test('network registry lists Tennis after UFC; footers and sheet read it from the registry', () => {
+  const ids = PBE_NETWORK.sports.map((s) => s.id);
+  assert.deepEqual(ids, ['mlb', 'nfl', 'nba', 'wnba', 'nhl', 'ufc', 'tennis']);
+  const tennis = PBE_NETWORK.sports.find((s) => s.id === 'tennis');
+  assert.equal(tennis.label, 'Tennis');
+  assert.equal(tennis.href, 'https://tennis.propbetedge.ai/');
+  for (const file of ['src/components/shell.js', 'src/components/chrome-upgrade.js']) {
+    const src = fs.readFileSync(file, 'utf8');
+    assert.doesNotMatch(src, /tennis\.propbetedge\.ai/, `${file} must not hard-code the Tennis URL`);
+    assert.match(src, /PBE_NETWORK\.sports\.map/);
+  }
+});
+
 for (const file of ['src/components/shell.js', 'src/components/chrome-upgrade.js']) {
   test(`${file}: one footer X link, new tab, safe rel, accessible name`, () => {
     const src = fs.readFileSync(file, 'utf8');
