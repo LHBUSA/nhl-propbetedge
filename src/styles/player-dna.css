@@ -303,3 +303,5 @@
   .nhl-dna__scale-track { margin: 6px 0 2px; }
   .nhl-dna__trait--watch { flex-direction: column; align-items: flex-start; gap: 2px; }
 }
+.nhl-dna .nhl-dna__avail { font-size: 12px; font-weight: 600; letter-spacing: .04em; color: var(--dna-muted, #64748b); margin-left: 8px; }
+.nhl-dna .nhl-dna__insights--single { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }

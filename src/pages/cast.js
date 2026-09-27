@@ -12,6 +12,7 @@ import { createPoller } from '../lib/poll.js';
 import { resolveRecentCompleted } from '../lib/recent-games.js';
 import { teamAccent } from '../lib/teams.js';
 import { STATE, clockText, specialTeams } from '../lib/special-teams.js';
+import { compactLines, loadDna, momentContext, peekDna, renderCompactDna, roleLabel } from '../lib/cast-dna.js';
 import { stateBadge, stateOf, teamMark } from '../components/game.js';
 import { LAYERS, attachRinkInspector, renderRink, rinkInspector, rinkLegend, shotLabel } from '../components/rink.js';
 import { SPEEDS, replayBar, seek, sliceCast } from '../components/replay.js';
@@ -321,6 +322,40 @@ function header(cast, meta, failed) {
     </div>
     ${fightDesk(cast)}
     ${penaltyBox(cast, specialTeamsOf(cast))}`;
+}
+
+// Current moment + compact Skater DNA (stored nhl-skater-dna/1.0.0 snapshots).
+// The moment is the selected event, else the latest eligible event at the
+// cursor; players come from that play's own canonical ids. DNA is context for
+// the player, never an explanation of the event. Fails closed to nothing.
+function momentCard(view, full, selectedSort) {
+  try {
+    const ctx = momentContext(view.plays, { selectedSort, roster: full.roster || [] });
+    if (!ctx) return '<div id="cast-moment"></div>';
+    const season = full.game?.season ?? null;
+    const teams = full.game?.teams || {};
+    const [lead, ...rest] = ctx.actors;
+    const dnaFor = a => {
+      const e = peekDna(a.id, season);
+      if (!e || e.status === 'pending') return '<div class="cast-dna cast-dna--pending" aria-busy="true"><span class="cast-dna__eyebrow">PLAYER DNA</span></div>';
+      if (e.status !== 'ready') return '';
+      return renderCompactDna(e.snapshot, a, { gameSeason: season });
+    };
+    const who = (a, size) => `<div class="cast-moment__who">${playerIdentity({ id: a.id, name: a.name, team: teams[a.side]?.abbrev, number: a.number, size, href: `#/player/${esc(a.id)}` })}
+      <div><a href="#/player/${esc(a.id)}"><b>${esc(a.name || 'Unknown')}</b></a><span class="micro">${esc(roleLabel(a.role))}${a.power_play ? ' · power play' : ''}${teams[a.side]?.abbrev ? ` · ${esc(teams[a.side].abbrev)}` : ''}</span></div></div>`;
+    const secondary = rest.map(a => {
+      const e = peekDna(a.id, season);
+      const l = e?.status === 'ready' ? compactLines(e.snapshot, a.priority, { max: 1 })[0] : null;
+      return `<li class="cast-moment__also" data-actor="${esc(a.id)}"><a href="#/player/${esc(a.id)}">${esc(a.name || 'Unknown')}</a> <span class="micro">${esc(roleLabel(a.role))}</span>${l ? ` <span class="cast-moment__line">${esc(l.label)} <b class="mono">${esc(l.score)}</b></span>` : ''}</li>`;
+    }).join('');
+    return `<section class="pbe-panel cast-card cast-moment" id="cast-moment" data-moment-sort="${esc(ctx.sort_order)}" aria-label="Current moment">
+      <div class="panel-head"><h3>Current moment</h3><span class="micro">${ctx.period ? `P${esc(ctx.period)} ` : ''}${esc(ctx.clock || '')} · ${esc(roleLabel(lead.role))}</span></div>
+      <div class="cast-moment__body">${who(lead, 'md')}${dnaFor(lead)}</div>
+      ${secondary ? `<ul class="cast-moment__rest">${secondary}</ul>` : ''}
+    </section>`;
+  } catch {
+    return '<div id="cast-moment"></div>';
+  }
 }
 
 function pressureChart(plays, game) {
@@ -662,6 +697,7 @@ export function mount(root, params, ctx) {
             ${rinkLegend()}
             ${omittedTotal ? `<p class="micro rink-omit">Not plotted: ${rink.omitted.coordinates ? `${rink.omitted.coordinates} without source coordinates` : ''}${rink.omitted.coordinates && rink.omitted.direction ? ' · ' : ''}${rink.omitted.direction ? `${rink.omitted.direction} with unknown attack direction (switch off “Normalize ends” to show as recorded)` : ''}. They remain in the feed and totals.</p>` : ''}
           </section>
+          ${momentCard(cast, full, state.selected)}
           <section class="pbe-panel cast-card">
             <div class="panel-head"><h3>5-minute pressure</h3><span class="pbe-badge pbe-badge--heuristic">Descriptive · not a model</span></div>
             ${pressureChart(cast.plays, g)}
@@ -682,6 +718,28 @@ export function mount(root, params, ctx) {
     if (scroller) scroller.scrollTop = feedScroll;
     markArrivingShots(body);
     mountInspector();
+    state.view = cast;
+    ensureMomentDna();
+  }
+
+  // Load stored DNA for the moment's players once per session (cached by id +
+  // season + version); on arrival re-render ONLY the moment card. Never blocks
+  // or breaks score / rink / replay / play-by-play / penalty box.
+  function refreshMoment() {
+    const el = $('#cast-moment', body);
+    if (!el || !state.view || !state.cast) return;
+    el.outerHTML = momentCard(state.view, state.cast, state.selected);
+  }
+  function ensureMomentDna() {
+    try {
+      if (!state.view || !state.cast) return;
+      const ctx = momentContext(state.view.plays, { selectedSort: state.selected, roster: state.cast.roster || [] });
+      const season = state.cast.game?.season ?? null;
+      for (const a of ctx?.actors || []) {
+        if (peekDna(a.id, season)) continue;
+        loadDna(a.id, season).then(() => refreshMoment()).catch(() => {});
+      }
+    } catch { /* DNA is optional */ }
   }
 
   // ONE inspector per render pass. The body is replaced wholesale each poll, so
@@ -693,7 +751,7 @@ export function mount(root, params, ctx) {
     inspector?.dispose();
     inspector = attachRinkInspector(body, {
       teams: state.cast?.game?.teams || {},
-      onPin: id => { if (id !== null) { state.selected = id; syncFeedSelection(); } }
+      onPin: id => { if (id !== null) { state.selected = id; syncFeedSelection(); refreshMoment(); ensureMomentDna(); } }
     });
     if (wasPinned !== null) inspector.pin(wasPinned);
   }

@@ -375,9 +375,19 @@ function trajectorySvg(t, key, activeSeason, { W, H, L, Rp, T, B, cls, aria, sho
       return `${lab}<text class="nhl-dna__gapmark" x="${x(i)}" y="${y(50)}" text-anchor="middle" data-gap="${esc(p.season)}">—<title>${esc(`${seasonLabel(p.season)} · ${dimLabel(key)} · ${reasonText(p.reason, p.reason)}`)}</title></text>`;
     }
     const tip = `${seasonLabel(p.season)} · ${dimLabel(key)} · ${ordinal(p.score)} percentile · ${p.label || ''}`;
-    return `${lab}<g class="nhl-dna__tpt${cur ? ' is-current' : ''}${proxy ? ' is-proxy' : ''}" data-season="${esc(p.season)}" data-score="${esc(p.score)}"><circle cx="${x(i)}" cy="${y(clamp(p.score))}" r="${cur ? 9 : 6}"><title>${esc(tip)}</title></circle><text class="nhl-dna__tval" x="${x(i)}" y="${y(clamp(p.score)) - (cur ? 15 : 12)}" text-anchor="middle">${esc(p.score)}</text></g>`;
+    return `${lab}<g class="nhl-dna__tpt${cur ? ' is-current' : ''}${proxy ? ' is-proxy' : ''}" data-season="${esc(p.season)}" data-score="${esc(p.score)}"><circle cx="${x(i)}" cy="${y(clamp(p.score))}" r="${cur ? 9 : 6}"><title>${esc(tip)}</title></circle>${valueLabel(x(i), y(clamp(p.score)), p.score, cur, i === 0 && n > 1)}</g>`;
   }).join('');
   return `<svg class="nhl-dna__trajsvg nhl-dna__trajsvg--${cls}" viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(aria)}"${cls === 'compact' ? ' aria-hidden="true"' : ''}>${grid}${segs.join('')}${dots}</svg>`;
+}
+
+// Data label above a trajectory dot. The FIRST season sits on the y-axis
+// edge, beside the 0/33/67/100 tick labels: its label is anchored to the
+// right of the dot instead, so a stored 100 never collides with the axis 100.
+// The dot and the scale never move.
+function valueLabel(cx, cy, score, cur, leftEdge) {
+  const dy = cur ? 15 : 12;
+  if (leftEdge) return `<text class="nhl-dna__tval" x="${r1(cx + (cur ? 13 : 10))}" y="${r1(cy - dy + 6)}" text-anchor="start" data-label-edge="left">${esc(score)}</text>`;
+  return `<text class="nhl-dna__tval" x="${cx}" y="${r1(cy - dy)}" text-anchor="middle">${esc(score)}</text>`;
 }
 
 function heatmap(history, focus) {
@@ -406,9 +416,10 @@ function heatmap(history, focus) {
   </div>`;
 }
 
-function historyBlock(history, focus) {
+function historyBlock(history, focus, activeSnapshot = null) {
   if (!history || !history.trends?.length) return '';
   const sm = history.summary || {};
+  const rankedCount = (sm.ranked_seasons || []).length;
   const delta = r => (r ? `${esc(dimLabel(r.key))} <em>${r.delta > 0 ? '+' : ''}${esc(r.delta)}</em> <small>${esc(seasonLabel(r.from_season))} → ${esc(seasonLabel(r.to_season))} · ${esc(r.from)} → ${esc(r.to)}</small>` : '<small>No high-confidence move of 10+ points</small>');
   const strip = `<div class="nhl-dna__insights">
     ${insight('Biggest gain', delta(sm.biggest_gain), sm.biggest_gain ? ' is-gain' : ' is-none')}
@@ -433,6 +444,19 @@ function historyBlock(history, focus) {
     <thead><tr><th scope="col">Dimension</th>${seasons.map(s => `<th scope="col" class="num">${esc(seasonLabel(s.season))}${s.ranked ? '' : '<br><small>measured</small>'}</th>`).join('')}</tr></thead>
     <tbody>${history.trends.map(t => `<tr><th scope="row">${esc(dimLabel(t.key))}</th>${t.points.map(p => `<td class="num">${!scored(p) ? `<span class="nhl-dna__dim" title="${esc(reasonText(p.reason, p.reason))}">—</span>` : esc(p.score)}</td>`).join('')}</tr>`).join('')}</tbody>
   </table></div></details>`;
+  // Fewer than two ranked seasons: no multi-year trajectory or heatmap (they
+  // would be mostly empty). Show what is stored, fabricate nothing; the exact
+  // season table stays. Two or more ranked seasons -> the full career view.
+  if (rankedCount < 2) {
+    const strongest = activeSnapshot && ranked(activeSnapshot) ? (activeSnapshot.traits?.strongest || []) : [];
+    const avail = seasons.length === 1 ? '1 season available' : `${seasons.length} seasons stored · ${rankedCount} ranked`;
+    return `<section class="nhl-dna__history nhl-dna__history--single" aria-label="DNA over time">
+    <h3>Career DNA <small class="nhl-dna__avail">${esc(avail)}</small></h3>
+    ${sm.top_current ? `<div class="nhl-dna__insights nhl-dna__insights--single">${insight(`Highest current · ${seasonLabel(sm.top_current.season)}`, `${esc(dimLabel(sm.top_current.key))} <em>${esc(sm.top_current.score)}</em>`, ' is-top')}${strongest.length ? insight('Current defining strengths', strongest.map(k => `${esc(dimLabel(k))} <em>${esc(activeSnapshot.dimensions[k].score)}</em>`).join(' · ')) : ''}</div>` : ''}
+    <p class="nhl-dna__neutral">Career trends appear once two seasons are ranked. No history is filled in.</p>
+    ${table}
+  </section>`;
+  }
   return `<section class="nhl-dna__history" aria-label="DNA over time"${focus ? ` data-focus="${esc(focus)}"` : ''}>
     <h3>Career DNA</h3>
     ${strip}
@@ -465,7 +489,7 @@ export function renderSkaterDna({ snapshot, history = null, season = null, focus
     ${traitsBlock(snapshot)}
   </div>
   ${dimensionBlock(snapshot)}
-  ${historyBlock(history, focus)}
+  ${historyBlock(history, focus, history && String(snapshot.season) === String(history.active_season) ? snapshot : null)}
   <footer class="nhl-dna__foot">
     <span>Data · PropSports</span>
     <span>${esc(snapshot.version || '')}${snapshot.season_state === 'IN_PROGRESS' ? ' · season in progress' : ''}</span>

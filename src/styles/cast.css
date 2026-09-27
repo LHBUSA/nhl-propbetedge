@@ -887,3 +887,24 @@ a.pbox__name:hover { color: var(--pbe-gold-bright); }
   .stx__mp { font-size: 1.15rem; }
 }
 @media (prefers-reduced-motion: reduce) { .pbox__bar i { transition: none; } }
+
+/* ---- Current moment + compact Skater DNA (stored nhl-skater-dna/1.0.0) ---- */
+.cast-moment__body { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr); gap: 12px; align-items: start; }
+.cast-moment__who { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.cast-moment__who > div { display: grid; min-width: 0; }
+.cast-moment__who a b { overflow-wrap: anywhere; }
+.cast-moment__rest { list-style: none; margin: 10px 0 0; padding: 8px 0 0; border-top: 1px solid var(--pbe-line); display: grid; gap: 4px; font-size: var(--fs-sm); }
+.cast-moment__line { color: var(--pbe-dim); }
+.cast-dna { border: 1px solid var(--pbe-line); border-left: 3px solid var(--pbe-gold, #d4a72c); border-radius: var(--r-sm); padding: 8px 10px; display: grid; gap: 6px; min-width: 0; }
+.cast-dna--pending { min-height: 64px; opacity: .55; }
+.cast-dna__head { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; align-items: baseline; }
+.cast-dna__eyebrow { font-size: 10px; font-weight: 800; letter-spacing: .1em; color: var(--pbe-gold, #d4a72c); }
+.cast-dna__meta { font-size: 11px; color: var(--pbe-dim); letter-spacing: .04em; }
+.cast-dna__lines { list-style: none; margin: 0; padding: 0; display: grid; gap: 3px; }
+.cast-dna__lines li { display: flex; justify-content: space-between; gap: 8px; font-size: var(--fs-sm); }
+.cast-dna__lines li b { font-size: 1.05rem; }
+.cast-dna__lines li.is-related span { color: var(--pbe-text, #fff); font-weight: 700; }
+.cast-dna__proxy { font-size: 10px; letter-spacing: .08em; color: var(--pbe-dim); border: 1px dashed currentColor; border-radius: 3px; padding: 0 3px; }
+.cast-dna__pop, .cast-dna__quiet { margin: 0; font-size: 11px; color: var(--pbe-dim); }
+.cast-dna__link { font-size: 12px; color: var(--pbe-gold, #d4a72c); justify-self: start; }
+@media (max-width: 520px) { .cast-moment__body { grid-template-columns: minmax(0, 1fr); } }

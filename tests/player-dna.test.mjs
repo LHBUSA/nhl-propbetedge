@@ -210,3 +210,39 @@ test('V2 unqualified current season is labelled; footer keeps attribution + mode
   assert.match(renderSkaterDna({ snapshot: latest, history, season: latest.season }), /CURRENT SEASON · EARLY SEASON · MEASURED, NOT RANKED/);
   assert.match(html, /<footer class="nhl-dna__foot">\s*<span>Data · PropSports<\/span>\s*<span>nhl-skater-dna\/1\.0\.0/);
 });
+
+// ---- final visual polish (owner 2026-09-26) ---------------------------------
+import { trajectory } from '../src/components/player-dna.js';
+
+test('trajectory: a first-season point at 100 is labelled to the right of the dot, clear of the axis 100', () => {
+  const h = structuredClone(history);
+  const t = h.trends.find(x => x.key === 'shot_generation');
+  t.points[0] = { ...t.points.find(p => p.score !== null && p.score !== undefined), season: t.points[0].season, score: 100 };
+  const svg = trajectory(h, 'shot_generation', h.active_season);
+  const edge = svg.match(/<text class="nhl-dna__tval" x="([\d.]+)" y="[\d.]+" text-anchor="start" data-label-edge="left">100<\/text>/);
+  assert.ok(edge, 'edge label anchored start');
+  const circle = svg.match(/<circle cx="([\d.]+)" cy="([\d.]+)" r="\d+"><title>[^<]*100th percentile/);
+  assert.ok(circle && Number(edge[1]) > Number(circle[1]), 'label sits right of the dot; the dot itself is unchanged');
+});
+
+test('single ranked season: compact Career DNA, no trajectory/heatmap, exact table kept, nothing filled in', () => {
+  const one = structuredClone(history);
+  const keep = one.summary.ranked_seasons.at(-1);
+  one.summary.ranked_seasons = [keep];
+  one.summary.biggest_gain = null; one.summary.biggest_drop = null; one.summary.most_volatile = null;
+  one.seasons = one.seasons.filter(s => s.season === keep);
+  one.trends = one.trends.map(t => ({ ...t, points: t.points.filter(p => p.season === keep) }));
+  one.active_season = keep;
+  const snapFor = alpha.find(s => s.season === keep);
+  const html = renderSkaterDna({ snapshot: snapFor, history: one });
+  assert.match(html, /Career DNA <small class="nhl-dna__avail">1 season available<\/small>/);
+  assert.doesNotMatch(html, /nhl-dna__trajfig|nhl-dna__heat/);
+  assert.match(html, /Exact season table/);
+  assert.match(html, /Career trends appear once two seasons are ranked/);
+});
+
+test('two or more ranked seasons keep the full career view', () => {
+  const html = renderSkaterDna({ snapshot: ranked, history });
+  assert.match(html, /nhl-dna__trajfig/);
+  assert.match(html, /nhl-dna__heat/);
+});
