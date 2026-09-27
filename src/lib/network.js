@@ -9,7 +9,8 @@ export const PROPBETEDGE_DISCORD_URL = 'https://discord.gg/kb5zCTHbME';
 
 export const PBE_NETWORK = {
   hub: 'https://www.propbetedge.ai/',
-  news: 'https://propbetedge.ai/',
+  // NHL's own section of the PropBetEdge newsroom (news <-> intelligence pair).
+  news: 'https://propbetedge.ai/news/nhl',
   learn: 'https://learn.propbetedge.ai/',
   store: 'https://ufc.propbetedge.ai/store',
   discord: PROPBETEDGE_DISCORD_URL,

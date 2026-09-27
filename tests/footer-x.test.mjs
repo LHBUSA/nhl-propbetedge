@@ -32,3 +32,8 @@ for (const file of ['src/components/shell.js', 'src/components/chrome-upgrade.js
     assert.doesNotMatch(src, /MLBHRALERTSPBE|propbetedgeai|X \/ Twitter/i);
   });
 }
+
+test('NHL news link points at the NHL section of the PropBetEdge newsroom', async () => {
+  const { PBE_NETWORK } = await import('../src/lib/network.js');
+  assert.equal(PBE_NETWORK.news, 'https://propbetedge.ai/news/nhl');
+});

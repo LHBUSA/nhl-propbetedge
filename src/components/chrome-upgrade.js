@@ -23,7 +23,7 @@ function mobileNetwork() {
       ${PBE_NETWORK.sports.map(sport => sportLink(sport, 'sheet-network__sport')).join('')}
     </div>
     <div class="sheet-network__links">
-      <a href="${PBE_NETWORK.news}">Sports News ↗</a>
+      <a href="${PBE_NETWORK.news}">NHL News ↗</a>
       <a href="${PBE_NETWORK.learn}">Learn ↗</a>
       <a href="${PBE_NETWORK.store}">Store ↗</a>
       <a href="${PBE_NETWORK.discord}" target="_blank" rel="noopener">Discord ↗</a>
@@ -89,7 +89,7 @@ function premiumFooter() {
           <div class="footer-premium__links">
             <a class="footer-premium__aa" href="${ALL_ACCESS_URL}" rel="noopener" data-pbe-footer-all-access>ALL ACCESS <span>↗</span></a>
             <a class="footer-premium__aa" href="${ALL_ACCESS_URL}" rel="noopener" data-pbe-footer-all-access-included>WHAT'S INCLUDED <span>↗</span></a>
-            <a href="${PBE_NETWORK.news}">Sports News <span>↗</span></a>
+            <a href="${PBE_NETWORK.news}">NHL News <span>↗</span></a>
             <a href="${PBE_NETWORK.learn}">Learn PropBetEdge <span>↗</span></a>
             <a href="${PBE_NETWORK.store}">PBE Store <span>↗</span></a>
             <a href="https://billing.stripe.com/p/login/cNi3cv2vY7em3lr4oj7wA00" target="_blank" rel="noopener noreferrer">Manage billing <span>↗</span></a>
