@@ -9,9 +9,9 @@ test('network registry carries the canonical X account', () => {
   assert.equal(PBE_NETWORK.xHandle, '@PROPBETEDGE');
 });
 
-test('network registry lists Tennis after UFC; footers and sheet read it from the registry', () => {
+test('network registry lists Soccer after Tennis; footers and sheet read it from the registry', () => {
   const ids = PBE_NETWORK.sports.map((s) => s.id);
-  assert.deepEqual(ids, ['mlb', 'nfl', 'nba', 'wnba', 'nhl', 'ufc', 'tennis']);
+  assert.deepEqual(ids, ['mlb', 'nfl', 'nba', 'wnba', 'nhl', 'ufc', 'tennis', 'soccer']);
   const tennis = PBE_NETWORK.sports.find((s) => s.id === 'tennis');
   assert.equal(tennis.label, 'Tennis');
   assert.equal(tennis.href, 'https://tennis.propbetedge.ai/');
