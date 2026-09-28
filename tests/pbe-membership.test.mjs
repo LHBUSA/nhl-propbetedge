@@ -102,7 +102,7 @@ test('free readers: the All Access hero FIRST, then ONLY WANT NHL?, then both NH
   assert.match(offer, /aria-label="\$29\/month"><strong>\$29<\/strong>\/month/);
   assert.match(offer, /<b class="nhl-aa-code">THEEDGE25<\/b>/);
   assert.match(offer, /BEST VALUE · MOST COMPLETE/);
-  assert.match(offer, /MLB · NFL · NBA · NHL · WNBA · UFC · Tennis/);
+  assert.match(offer, /MLB · NFL · NBA · NHL · WNBA · UFC · Tennis · Soccer/);
   assert.doesNotMatch(offer, /Labs/i, 'no Labs / future computational products are sold as included');
   assert.ok(offer.indexOf('data-nhl-all-access="hero"') < offer.indexOf('data-nhl-all-access="divider"'), 'hero, then the seam');
   assert.match(offer, /<span>ONLY WANT NHL\?<\/span>/);
