@@ -12,12 +12,12 @@ test('network registry carries the canonical X account', () => {
 test('network registry lists Soccer after Tennis; footers and sheet read it from the registry', () => {
   const ids = PBE_NETWORK.sports.map((s) => s.id);
   assert.deepEqual(ids, ['mlb', 'nfl', 'nba', 'wnba', 'nhl', 'ufc', 'tennis', 'soccer']);
-  const tennis = PBE_NETWORK.sports.find((s) => s.id === 'tennis');
-  assert.equal(tennis.label, 'Tennis');
-  assert.equal(tennis.href, 'https://tennis.propbetedge.ai/');
+  const soccer = PBE_NETWORK.sports.find((s) => s.id === 'soccer');
+  assert.equal(soccer.label, 'Soccer');
+  assert.equal(soccer.href, 'https://soccer.propbetedge.ai/');
   for (const file of ['src/components/shell.js', 'src/components/chrome-upgrade.js']) {
     const src = fs.readFileSync(file, 'utf8');
-    assert.doesNotMatch(src, /tennis\.propbetedge\.ai/, `${file} must not hard-code the Tennis URL`);
+    assert.doesNotMatch(src, /soccer\.propbetedge\.ai/, `${file} must not hard-code the Soccer URL`);
     assert.match(src, /PBE_NETWORK\.sports\.map/);
   }
 });
