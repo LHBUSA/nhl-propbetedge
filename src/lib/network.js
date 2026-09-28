@@ -24,6 +24,7 @@ export const PBE_NETWORK = {
     { id: 'wnba', label: 'WNBA', icon: '🏀', href: 'https://wnba.propbetedge.ai/', status: 'LIVE' },
     { id: 'nhl', label: 'NHL', icon: '🏒', href: 'https://nhl.propbetedge.ai/', status: 'LIVE', current: true },
     { id: 'ufc', label: 'UFC', icon: '🥊', href: 'https://ufc.propbetedge.ai/', status: 'LIVE' },
-    { id: 'tennis', label: 'Tennis', icon: '🎾', href: 'https://tennis.propbetedge.ai/', status: 'LIVE' }
+    { id: 'tennis', label: 'Tennis', icon: '🎾', href: 'https://tennis.propbetedge.ai/', status: 'LIVE' },
+    { id: 'soccer', label: 'Soccer', icon: '⚽', href: 'https://soccer.propbetedge.ai/', status: 'LIVE' }
   ]
 };
