@@ -206,6 +206,44 @@ assert.doesNotMatch(apiSource, /credentials: 'include'/, 'api.js (public data) n
   assert.match(castCss, /\.mk--home \{ fill: var\(--pbe-gold-bright\)/, 'home attempts stay filled');
 }
 
+// 1e-bis. PBEcast Live Rink: the rink is the hero of every game page.
+{
+  const cast = fs.readFileSync('src/pages/cast.js', 'utf8');
+  const castCss = fs.readFileSync('src/styles/cast.css', 'utf8');
+  const bodyStart = cast.indexOf('body.innerHTML = `\n      ${header(cast, state.meta, state.failed)}');
+  assert.ok(bodyStart > 0, 'the game body opens with the score header');
+  const order = ['${header(cast', '${liveRink(cast', '${castSub(cast)', 'replayBar(state', '${fightDesk(cast)', '<div class="cast-grid"'].map(s => cast.indexOf(s, bodyStart));
+  assert.ok(order.every(i => i > 0), 'every broadcast block is rendered');
+  assert.deepEqual([...order].sort((a, b) => a - b), order, 'score header, then the Live Rink, then everything else');
+  assert.match(cast, /<h3>PBEcast Live Rink<\/h3>/, 'PBEcast owns the rink headline');
+  assert.match(cast, /Live shot and event visualization/, 'the rink carries its subtitle');
+  assert.ok(!/<h3>Shot map<\/h3>/.test(cast), 'the Cast no longer headlines a generic "Shot map" card');
+  assert.ok(!/data-tab="rink"|\['rink', 'Shot map'\]/.test(cast), 'the rink is never hidden behind a mobile tab');
+  for (const hook of ['data-layer-select', 'data-team-select', 'select class="lr-sel" data-period', 'data-normalize', 'data-rink-filters']) {
+    assert.ok(cast.includes(hook), `the compact toolbar keeps ${hook}`);
+  }
+  assert.match(castCss, /grid-template-columns: minmax\(0, 1fr\) clamp\(260px, 26%, 330px\)/, 'desktop: the rink column takes ~74% of the stage');
+  assert.match(castCss, /\.lr-tools\.is-open \.lr-tools__set \{ display: flex; \}/, 'phones reach the filters through one Filters button');
+  assert.match(castCss, /\.lr \.mk-g\[data-recency="aged"\]/, 'older attempts recede while live');
+  assert.match(castCss, /@keyframes lr-lamp/, 'a newly arrived goal lights the lamp');
+  const rmAll = castCss.slice(castCss.lastIndexOf('@media (prefers-reduced-motion: reduce)'));
+  assert.ok(rmAll.includes('.mk-burst'), 'the goal lamp honours reduced motion');
+
+  const { renderRink } = await import('../src/components/rink.js');
+  const mk = (sort, type, side, x) => ({
+    sort_order: sort, type, side, period: 1, period_type: 'REG', time_in_period: '10:00', players: [], strength: null,
+    shot: { has_coordinates: true, x, y: 0, target_net_x: side === 'home' ? 89 : -89, on_goal: type !== 'blocked-shot', unblocked: type !== 'blocked-shot', goal: type === 'goal', shootout: false }
+  });
+  const plays = [mk(1, 'goal', 'home', 70), mk(2, 'shot-on-goal', 'home', 60), mk(3, 'blocked-shot', 'away', -50), mk(4, 'shot-on-goal', 'away', -60)];
+  const out = renderRink(plays, { latest: 4, recent: new Set([3, 4]) }).svg;
+  assert.ok(/data-sort="4"[^>]*data-recency="latest"/.test(out), 'the newest attempt is marked latest');
+  assert.ok(/data-sort="2"[^>]*data-recency="aged"/.test(out), 'an attempt outside the recent window recedes');
+  assert.ok(!/data-sort="1"[^>]*data-recency/.test(out), 'a goal never recedes');
+  assert.ok(out.includes('cx="70"') && out.includes('cx="-60"'), 'recency never moves a marker off its source coordinate');
+  assert.equal((out.match(/class="mk-burst"/g) || []).length, 1, 'only goals carry the lamp ring');
+  assert.ok(!/data-recency/.test(renderRink(plays, {}).svg), 'without live context every attempt renders equally');
+}
+
 // 1f. Shot inspector: every plotted shot is inspectable, from real fields only.
 {
   const rinkSrc = fs.readFileSync('src/components/rink.js', 'utf8');

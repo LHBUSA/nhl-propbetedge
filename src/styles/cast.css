@@ -67,7 +67,7 @@
   .cast-grid { grid-template-columns: 1fr; margin-top: 0; }
   .cast-col--stats { grid-template-columns: 1fr; }
   .cast-grid[data-tab="feed"] > :not(.cast-col--feed),
-  .cast-grid[data-tab="rink"] > :not(.cast-col--rink),
+  .cast-grid[data-tab="moment"] > :not(.cast-col--moment),
   .cast-grid[data-tab="stats"] > :not(.cast-col--stats) { display: none; }
   .feed-scroll { max-height: none; }
 }
@@ -908,3 +908,226 @@ a.pbox__name:hover { color: var(--pbe-gold-bright); }
 .cast-dna__pop, .cast-dna__quiet { margin: 0; font-size: 11px; color: var(--pbe-dim); }
 .cast-dna__link { font-size: 12px; color: var(--pbe-gold, #d4a72c); justify-self: start; }
 @media (max-width: 520px) { .cast-moment__body { grid-template-columns: minmax(0, 1fr); } }
+
+/* ========================================================================
+   PBEcast Live Rink
+   The playing surface is the product. The stage sits directly under the
+   score header, the rink owns ~74% of the width, and a compact rail carries
+   the latest attempt and recent events. Nothing here moves a marker: every
+   attempt is still drawn at its source coordinate by rink.js.
+   ======================================================================== */
+.mk-burst { display: none; }
+
+.lr {
+  position: relative; margin-top: var(--s-3); padding: 14px 16px 16px;
+  border: 1px solid var(--pbe-line-strong); border-radius: var(--r-md);
+  background:
+    radial-gradient(55% 80% at 37% 58%, rgba(140,175,220,.10), transparent 70%),
+    linear-gradient(180deg, #17191c, #0d0e10);
+  box-shadow: 0 22px 60px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.05);
+}
+.lr__head { display: flex; align-items: center; justify-content: space-between; gap: 8px 18px; flex-wrap: wrap; margin-bottom: 10px; }
+.lr__title h3 { font: 800 19px/1.1 var(--pbe-font-ui); letter-spacing: .01em; margin: 0; }
+.lr__title .micro { display: block; margin-top: 3px; color: var(--pbe-dim); letter-spacing: .06em; }
+
+/* broadcast score strip */
+.lr-bug { display: flex; align-items: center; gap: 8px 12px; flex-wrap: wrap; font-size: 14px; }
+.lr-bug__team { display: inline-flex; align-items: center; gap: 7px; font-weight: 800; letter-spacing: .03em; }
+.lr-bug__score { font-size: 22px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.lr-bug__score i { font-style: normal; color: var(--pbe-faint); margin: 0 7px; font-weight: 400; }
+.lr-bug__at { color: var(--pbe-faint); }
+.lr-bug__status {
+  padding: 4px 8px; border: 1px solid var(--pbe-line-strong); border-radius: var(--r-xs);
+  font-size: 12px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--pbe-paper);
+}
+.lr-bug__status.is-live { color: #fff; border-color: color-mix(in srgb, var(--pbe-crimson-bright) 70%, transparent); background: color-mix(in srgb, var(--pbe-crimson-bright) 18%, transparent); }
+.lr-bug__sog { color: var(--pbe-paper-2); font-weight: 600; }
+.lr-bug__sog small { font-size: var(--fs-micro); letter-spacing: .12em; color: var(--pbe-dim); margin-right: 3px; }
+
+/* layout: phones and tablets read top to bottom in broadcast order */
+.lr__body {
+  display: grid; gap: 10px 18px; grid-template-columns: minmax(0, 1fr);
+  grid-template-areas: "ends" "ice" "latest" "tools" "recent" "legend";
+}
+.lr__ends { grid-area: ends; }
+.lr__ice { grid-area: ice; min-width: 0; }
+.lr__latest { grid-area: latest; min-width: 0; }
+.lr__tools { grid-area: tools; min-width: 0; }
+.lr__recent { grid-area: recent; min-width: 0; }
+.lr__legend { grid-area: legend; min-width: 0; }
+.lr__legend .rink-legend { margin: 0; }
+@media (min-width: 1024px) {
+  .lr__body {
+    grid-template-columns: minmax(0, 1fr) clamp(260px, 26%, 330px);
+    grid-template-rows: auto auto 1fr auto;
+    grid-template-areas: "ends latest" "ice latest" "ice recent" "tools legend";
+  }
+  /* The rink sets the row height; the event list scrolls inside it rather
+     than stretching the stage. */
+  .lr__recent { contain: size; overflow-y: auto; scrollbar-width: thin; }
+}
+
+/* attack direction: team + mark + arrow at each end, nothing louder */
+.lr__ends { display: flex; justify-content: space-between; align-items: center; min-height: 22px; }
+.lr-end { display: inline-flex; align-items: center; gap: 6px; font: 800 12px/1 var(--pbe-font-data); letter-spacing: .06em; color: var(--pbe-paper); }
+.lr-end i { font-style: normal; color: var(--pbe-gold-bright); font-size: 15px; }
+.lr-end--raw { color: var(--pbe-dim); margin-inline: auto; }
+
+/* the ice: the brightest, highest-contrast surface on the page */
+.lr__ice .rink-wrap { border-radius: 14px; }
+.lr #pbe-ice stop:nth-child(1) { stop-color: #33383f; }
+.lr #pbe-ice stop:nth-child(2) { stop-color: #262a2f; }
+.lr #pbe-ice stop:nth-child(3) { stop-color: #191b1e; }
+.lr .rk-boards { stroke: rgba(255,245,220,.5); stroke-width: 2; }
+.lr .rk-red { stroke-width: 2; }
+.lr .rk-blue { stroke-width: 2.4; }
+.lr .rk-thin, .lr .rk-circle { stroke-width: 1; }
+.lr .rk-crease, .lr .rk-net { stroke-width: 1; }
+
+/* markers read at broadcast scale; strokes are screen pixels */
+.lr .mk { stroke-width: 1.4; }
+.lr .mk--x { stroke-width: 1.8; }
+.lr .mk--goal { stroke-width: 2.2; }
+.lr .mk-g:hover .mk, .lr .mk-g:focus-visible .mk { stroke-width: 2.4; }
+.lr .mk-g.is-inspected .mk { stroke-width: 2.6; }
+.lr .mk-ring { stroke-width: 1.5; }
+/* the halo doubles as a finger-sized hit area on every marker */
+.lr .mk-hover-ring { pointer-events: all; }
+.lr .mk-g { cursor: pointer; }
+
+/* recency: the newest attempt keeps a quiet halo, older attempts recede
+   (goals are never given the aged state) */
+.lr .mk-g[data-recency="aged"] { opacity: .5; }
+.lr .mk-g[data-recency="latest"] .mk-hover-ring { stroke: var(--pbe-paper); stroke-width: 1; stroke-opacity: .55; }
+
+/* a newly arrived attempt pings; a new goal lights the lamp */
+@keyframes lr-ping {
+  from { stroke: var(--pbe-paper); stroke-opacity: .9; stroke-width: 1; }
+  to   { stroke: var(--pbe-paper); stroke-opacity: 0; stroke-width: 16; }
+}
+@keyframes lr-lamp {
+  0%   { stroke-opacity: 1; stroke-width: 2; }
+  100% { stroke-opacity: 0; stroke-width: 34; }
+}
+.lr .mk-g--arriving .mk-hover-ring { animation: lr-ping 1.4s ease-out 2; }
+.lr .mk-g--arriving .mk-burst { display: block; fill: none; stroke: var(--pbe-crimson-bright); animation: lr-lamp 1.5s ease-out 3 both; }
+
+/* latest-attempt card */
+.lr-latest {
+  display: grid; gap: 5px; width: 100%; margin: 0; padding: 11px 12px; text-align: left;
+  font: inherit; color: inherit; cursor: default;
+  border: 1px solid var(--pbe-line); border-left: 3px solid var(--c, var(--pbe-line)); border-radius: var(--r-sm);
+  background: rgba(255,255,255,.035);
+}
+button.lr-latest { cursor: pointer; }
+button.lr-latest:hover { background: rgba(255,255,255,.06); }
+.lr-latest__k { display: inline-flex; align-items: center; gap: 6px; font: 700 var(--fs-micro)/1 var(--pbe-font-data); letter-spacing: .1em; color: var(--pbe-dim); text-transform: uppercase; }
+.lr-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--pbe-crimson-bright); animation: lr-blink 1.6s ease-in-out infinite; }
+@keyframes lr-blink { 50% { opacity: .35; } }
+.lr-latest__head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; font-size: 16px; line-height: 1.25; }
+.lr-latest__head b { font-family: var(--pbe-font-data); letter-spacing: .06em; }
+.lr-latest--goal .lr-latest__head b { color: var(--pbe-crimson-bright); }
+.lr-latest__detail { color: var(--pbe-paper-2); font-size: var(--fs-sm); }
+.lr-latest--empty p { margin: 4px 0 0; font-size: var(--fs-sm); }
+
+/* recent events */
+.lr__k { display: block; color: var(--pbe-dim); letter-spacing: .1em; margin-bottom: 6px; }
+.lr-recent__list { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+.lr-ev {
+  display: grid; grid-template-columns: 42px 40px minmax(0, 1fr) auto; gap: 6px; align-items: center;
+  min-height: 32px; padding: 4px 6px; border-radius: var(--r-xs); font-size: 13px;
+}
+.lr-ev[data-select] { cursor: pointer; }
+.lr-ev[data-select]:hover { background: rgba(255,255,255,.05); }
+.lr-ev.is-latest { background: rgba(255,255,255,.045); }
+.lr-ev.is-selected { box-shadow: inset 0 0 0 1px var(--pbe-paper); }
+.lr-ev__t { color: var(--pbe-dim); font-size: 12px; }
+.lr-ev__team { font: 800 11px/1 var(--pbe-font-data); letter-spacing: .05em; border-left: 2px solid var(--c); padding-left: 5px; }
+.lr-ev__what { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lr-ev--goal .lr-ev__what { color: var(--pbe-gold-bright); font-weight: 700; }
+.lr-ev__loc { color: var(--pbe-dim); }
+
+/* one compact toolbar */
+.lr-tools { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.lr-tools__toggle { display: none; }
+.lr-tools__set { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.lr-sel {
+  appearance: none; height: 32px; padding: 0 28px 0 11px; cursor: pointer;
+  border: 1px solid var(--pbe-line-strong); border-radius: var(--r-pill); color: var(--pbe-paper);
+  font: 600 12px/1 var(--pbe-font-ui);
+  background-color: var(--pbe-ink-2);
+  background-image: linear-gradient(45deg, transparent 50%, var(--pbe-dim) 50%), linear-gradient(135deg, var(--pbe-dim) 50%, transparent 50%);
+  background-position: calc(100% - 16px) 55%, calc(100% - 11px) 55%;
+  background-size: 5px 5px; background-repeat: no-repeat;
+}
+.lr-sel option { background: var(--pbe-ink-2); color: var(--pbe-paper); }
+.lr-norm {
+  height: 32px; padding: 0 11px; cursor: pointer; border-radius: var(--r-pill);
+  border: 1px dashed var(--pbe-line-strong); background: transparent; color: var(--pbe-dim);
+  font: 600 11px/1 var(--pbe-font-ui); letter-spacing: .02em;
+}
+.lr-norm[aria-pressed="true"] { border-style: solid; color: var(--pbe-paper-2); }
+.lr-tools__count { margin-left: auto; color: var(--pbe-dim); }
+
+@media (prefers-reduced-motion: reduce) {
+  .lr .mk-g--arriving .mk-hover-ring, .lr-dot { animation: none; }
+  .lr .mk-g--arriving .mk-burst { display: none; animation: none; }
+}
+
+@media (max-width: 768px) {
+  /* the ice runs nearly edge to edge */
+  .lr { margin-inline: calc(-1 * var(--nhl-gutter) + 6px); padding: 10px 8px 12px; border-radius: var(--r-sm); }
+  .lr__head { gap: 6px 12px; }
+  .lr__title h3 { font-size: 17px; }
+  .lr__ice .rink-wrap { border-radius: 10px; }
+  .lr-tools__toggle { display: inline-flex; min-height: 40px; }
+  .lr-tools__set { display: none; width: 100%; }
+  .lr-tools.is-open .lr-tools__set { display: flex; }
+  .lr-sel, .lr-norm { height: 40px; font-size: 13px; }
+  .lr-ev { min-height: 40px; }
+}
+
+/* ---- rink above the fold ------------------------------------------------
+   Everything above the Live Rink is compacted so the ice is on screen at
+   first paint: the page intro loses its paragraph (the rink subtitle says
+   it), and the score header tightens. */
+.cast.section { padding-top: var(--s-4); }
+.cast > .section-head { margin-bottom: var(--s-3); padding-bottom: var(--s-2); }
+.cast > .section-head p { display: none; }
+.cast .cast-picker { margin-bottom: var(--s-2); }
+.cast .cast-replay { margin-bottom: var(--s-3); }
+@media (min-width: 769px) {
+  .cast-head { padding: var(--s-3) var(--s-5); }
+  .cast-team__score { font-size: 46px; }
+}
+@media (max-width: 768px) {
+  /* one compact scoreboard row: away | clock | home */
+  .cast-head { grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); padding: 10px 8px; gap: 6px; }
+  .cast-mid { order: 0; flex-direction: column; flex-wrap: nowrap; gap: 5px; min-width: 0; }
+  .cast-team, .cast-team--home { grid-template-columns: 1fr; grid-template-rows: none; justify-items: center; row-gap: 2px; text-align: center; }
+  .cast-team .team-mark { grid-row: auto; width: 30px; height: 30px; }
+  .cast-team__id span { display: none; }
+  .cast-team__id b { font-size: 16px; }
+  .cast-team--home .cast-team__id, .cast-team--home .cast-team__sog { text-align: center; }
+  .cast-team__score { grid-row: auto; grid-column: auto; font-size: 32px; }
+  .cast-team__sog { grid-column: auto; }
+  .cast-clock { font-size: 18px; }
+  .cast-mid .stx { max-width: 150px; }
+  /* the score header sits directly above; the strip keeps status + shots */
+  .lr-bug__team, .lr-bug__score { display: none; }
+}
+
+/* wide screens: game picker and replay controls share one row */
+@media (min-width: 1024px) {
+  #cast-picker { display: flex; align-items: center; gap: var(--s-4); margin-bottom: var(--s-3); }
+  #cast-picker .cast-picker { flex: 1 1 auto; min-width: 0; margin-bottom: 0; }
+  #cast-picker .cast-replay { flex: none; margin-bottom: 0; }
+}
+
+/* 320-360px: the transport wraps instead of pushing the page sideways */
+@media (max-width: 360px) {
+  .replay { padding: var(--s-3) 10px; }
+  .replay__btns { flex-wrap: wrap; }
+  .rp-btn { width: 40px; }
+  .rp-btn--play { width: 46px; }
+}

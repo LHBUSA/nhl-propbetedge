@@ -166,14 +166,17 @@ function shooterName(play) {
   return who?.name || '';
 }
 
-function marker(play, x, y, label, index) {
+// state: '' | 'latest' | 'aged'. Recency is presentation only; the marker is
+// always drawn at its source coordinate.
+function marker(play, x, y, label, index, state = '') {
   const sy = -y;
   const side = play.side === 'home' ? 'home' : 'away';
   const cls = `mk mk--${side}`;
   const shotType = String(play.shot?.shot_type || 'unknown');
   const ns = 'vector-effect="non-scaling-stroke"';
   let shape;
-  if (play.type === 'goal') shape = `<circle cx="${x}" cy="${sy}" r="2.9" class="${cls} mk--goal" ${ns}/><circle cx="${x}" cy="${sy}" r="1.3" class="mk-core mk-core--${side}"/>`;
+  // The burst ring is inert until the page marks a goal as newly arrived.
+  if (play.type === 'goal') shape = `<circle cx="${x}" cy="${sy}" r="2.9" class="mk-burst" ${ns}/><circle cx="${x}" cy="${sy}" r="2.9" class="${cls} mk--goal" ${ns}/><circle cx="${x}" cy="${sy}" r="1.3" class="mk-core mk-core--${side}"/>`;
   else if (play.type === 'shot-on-goal') shape = `<circle cx="${x}" cy="${sy}" r="1.55" class="${cls}" ${ns}/>`;
   else if (play.type === 'missed-shot') shape = `<path d="M${x - 1.4},${sy - 1.4} L${x + 1.4},${sy + 1.4} M${x - 1.4},${sy + 1.4} L${x + 1.4},${sy - 1.4}" class="${cls} mk--x" ${ns}/>`;
   else shape = `<path d="M${x},${sy - 1.8} L${x + 1.7},${sy + 1.2} L${x - 1.7},${sy + 1.2} Z" class="${cls} mk--tri" ${ns}/>`;
@@ -182,7 +185,7 @@ function marker(play, x, y, label, index) {
   // markers. Making 150 markers individual tab stops would bury every control
   // after the rink behind a hundred presses.
   const tab = index === 0 ? '0' : '-1';
-  return `<g class="mk-g" role="button" tabindex="${tab}" aria-label="${esc(label)}" data-sort="${play.sort_order}" data-shot-type="${esc(shotType)}" ${markerData(play)}><title>${esc(label)}</title>${hoverRing}${shape}</g>`;
+  return `<g class="mk-g" role="button" tabindex="${tab}" aria-label="${esc(label)}" data-sort="${play.sort_order}" data-shot-type="${esc(shotType)}"${state ? ` data-recency="${state}"` : ''} ${markerData(play)}><title>${esc(label)}</title>${hoverRing}${shape}</g>`;
 }
 
 export function shotLabel(play, teams) {
@@ -202,7 +205,9 @@ export function shotLabel(play, teams) {
 }
 
 // Returns { svg, plotted, omitted: { coordinates, direction } }.
-export function renderRink(plays, { layer = 'all', team = 'both', period = 'all', normalize = true, teams = {}, highlight = null } = {}) {
+// `latest` (a sort_order) marks the newest attempt; `recent` (a Set of
+// sort_orders) lets every attempt outside it recede. Both are optional.
+export function renderRink(plays, { layer = 'all', team = 'both', period = 'all', normalize = true, teams = {}, highlight = null, latest = null, recent = null } = {}) {
   const omitted = { coordinates: 0, direction: 0 };
   let plotted = 0;
   const marks = [];
@@ -216,7 +221,9 @@ export function renderRink(plays, { layer = 'all', team = 'both', period = 'all'
     const pos = placed(play, normalize);
     if (!pos.ok) { omitted[pos.why] += 1; continue; }
     plotted += 1;
-    marks.push(marker(play, pos.x, pos.y, shotLabel(play, teams), marks.length));
+    const state = latest !== null && play.sort_order === latest ? 'latest'
+      : recent && play.type !== 'goal' && !recent.has(play.sort_order) ? 'aged' : '';
+    marks.push(marker(play, pos.x, pos.y, shotLabel(play, teams), marks.length, state));
   }
   const hl = highlight ? pool.find(p => p.sort_order === highlight) : null;
   const hlPos = hl ? placed(hl, normalize) : null;

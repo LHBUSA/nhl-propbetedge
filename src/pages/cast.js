@@ -294,10 +294,6 @@ function header(cast, meta, failed) {
   const clock = st.key === 'LIVE' || st.key === 'INTERMISSION' || st.key === 'REPLAY'
     ? `${periodLabel(g.status.period, g.status.period_type)} · ${g.status.clock || '—'}${st.key === 'INTERMISSION' ? ' · INT' : ''}`
     : st.key === 'FINAL' ? dayET(g.start_time_utc, true) : `${dayET(g.start_time_utc)} · ${timeET(g.start_time_utc)}`;
-  const gin = cast.goalies_in_net || {};
-  const goalie = side => gin[side]?.name
-    ? `<a class="cast-gin" href="#/player/${esc(gin[side].id)}">${playerIdentity({ id: gin[side].id, name: gin[side].name, team: g.teams[side].abbrev, size: 'sm' })}<span>${esc(gin[side].name)}</span></a>${gin[side].in_net_now === false ? ' <span class="pbe-badge pbe-badge--alert">PULLED</span>' : ''}`
-    : '<span class="faint">no attempt faced yet</span>';
   const team = (t, side) => `<div class="cast-team cast-team--${side}">
       ${teamMark(t, 52)}
       <div class="cast-team__id"><b>${esc(t.abbrev || '')}</b><span>${esc(t.name || '')}</span></div>
@@ -313,15 +309,163 @@ function header(cast, meta, failed) {
         ${cast.replay ? `<span class="micro">Event ${cast.replay.cursor + 1} of ${cast.replay.total} · derived from play-by-play</span>` : freshStamp(meta, { failed })}
       </div>
       ${team(h, 'home')}
-    </div>
-    <div class="cast-sub">
+    </div>`;
+}
+
+// Goalies in net, venue, alerts. Rendered under the rink so the score header
+// leads straight into the ice.
+function castSub(cast) {
+  const g = cast.game;
+  const st = stateOf(g);
+  const a = g.teams.away; const h = g.teams.home;
+  const gin = cast.goalies_in_net || {};
+  const goalie = side => gin[side]?.name
+    ? `<a class="cast-gin" href="#/player/${esc(gin[side].id)}">${playerIdentity({ id: gin[side].id, name: gin[side].name, team: g.teams[side].abbrev, size: 'sm' })}<span>${esc(gin[side].name)}</span></a>${gin[side].in_net_now === false ? ' <span class="pbe-badge pbe-badge--alert">PULLED</span>' : ''}`
+    : '<span class="faint">no attempt faced yet</span>';
+  return `<div class="cast-sub">
       <span><span class="micro">${esc(a.abbrev || 'Away')} in net</span> ${goalie('away')}</span>
       <span><span class="micro">${esc(h.abbrev || 'Home')} in net</span> ${goalie('home')}</span>
       <span class="micro">${esc(gameTypeLabel(g.game_type))} · ${esc(g.venue || '')} · Game ${esc(g.id)}</span>
       ${['FINAL', 'REPLAY'].includes(st.key) ? '' : watchButton(g.id)}
-    </div>
-    ${fightDesk(cast)}
-    ${penaltyBox(cast, specialTeamsOf(cast))}`;
+    </div>`;
+}
+
+// ---- PBEcast Live Rink
+//
+// The rink is the product: it sits directly under the score header, owns the
+// widest column, and carries its own broadcast strip so the reader never has
+// to look elsewhere for score, clock or the latest attempt. Every value below
+// is read from the cast payload (sliced to the replay cursor when replaying);
+// a field the source did not record is simply not shown.
+
+const RESULT = { goal: 'GOAL', 'shot-on-goal': 'SHOT', 'missed-shot': 'MISSED', 'blocked-shot': 'BLOCKED' };
+const RECENT_ATTEMPTS = 6;
+const RECENT_EVENTS = 7;
+
+function scoreBug(cast) {
+  const g = cast.game;
+  const st = stateOf(g);
+  const a = g.teams.away; const h = g.teams.home;
+  const scored = ['LIVE', 'INTERMISSION', 'FINAL', 'REPLAY'].includes(st.key) || Boolean(cast.replay);
+  const status = st.key === 'FINAL' && !cast.replay ? 'FINAL'
+    : scored ? [periodLabel(g.status.period, g.status.period_type), g.status.clock, st.key === 'INTERMISSION' || g.status.in_intermission ? 'INT' : ''].filter(Boolean).join(' · ')
+    : `${dayET(g.start_time_utc)} · ${timeET(g.start_time_utc)}`;
+  const sog = scored && (a.sog ?? null) !== null && (h.sog ?? null) !== null
+    ? `<span class="lr-bug__sog"><small>SHOTS</small> ${esc(a.sog)}–${esc(h.sog)}</span>` : '';
+  return `<div class="lr-bug mono" aria-label="Score">
+      <span class="lr-bug__team">${teamMark(a, 22)}<b>${esc(a.abbrev || '')}</b></span>
+      ${scored ? `<span class="lr-bug__score">${esc(a.score ?? '—')}<i>—</i>${esc(h.score ?? '—')}</span>` : '<span class="lr-bug__at">@</span>'}
+      <span class="lr-bug__team lr-bug__team--home"><b>${esc(h.abbrev || '')}</b>${teamMark(h, 22)}</span>
+      <span class="lr-bug__status${st.key === 'LIVE' && !cast.replay ? ' is-live' : ''}">${esc(status)}</span>
+      ${sog}
+    </div>`;
+}
+
+// "GOAL — Sam Reinhart" / "SHOT — Sebastian Aho", then only the recorded
+// details: shot type, distance, outcome, strength.
+function latestAttemptCard(cast, attempt, { live }) {
+  const g = cast.game;
+  if (!attempt) {
+    const pre = ['SCHEDULED', 'PREGAME'].includes(stateOf(g).key);
+    return `<div class="lr-latest lr-latest--empty"><span class="lr-latest__k">${live ? 'LIVE' : 'LATEST'}</span><p class="dim">${pre ? 'Attempts plot on the rink from puck drop.' : 'No shot attempt recorded yet.'}</p></div>`;
+  }
+  const s = attempt.shot || {};
+  const shooter = who(attempt, 'scorer') || who(attempt, 'shooter');
+  const team = attempt.side ? g.teams[attempt.side] : null;
+  const goalie = who(attempt, 'goalie');
+  const detail = [
+    s.shot_type ? titleCase(s.shot_type) : null,
+    s.distance_ft !== null && s.distance_ft !== undefined ? `${s.distance_ft} ft` : null,
+    attempt.type === 'shot-on-goal' ? (goalie?.name ? `saved by ${goalie.name}` : 'saved') : null,
+    attempt.type === 'blocked-shot' && who(attempt, 'blocker')?.name ? `blocked by ${who(attempt, 'blocker').name}` : null,
+    attempt.type === 'missed-shot' && s.miss_reason ? titleCase(s.miss_reason) : null,
+    attempt.type === 'goal' && s.empty_net_against ? 'empty net' : null,
+    attempt.strength?.label && attempt.strength.label !== '5v5' ? attempt.strength.label : null
+  ].filter(Boolean);
+  const plotted = s.has_coordinates;
+  const tag = plotted ? 'button' : 'div';
+  return `<${tag}${plotted ? ' type="button"' : ''} class="lr-latest lr-latest--${esc(attempt.type)}" style="--c:${team ? teamAccent(team.abbrev) : 'var(--pbe-line)'}"${plotted ? ` data-select="${attempt.sort_order}" aria-label="Show this attempt on the rink"` : ''}>
+      <span class="lr-latest__k">${live ? '<i class="lr-dot" aria-hidden="true"></i>LIVE' : cast.replay ? 'AT CURSOR' : 'LATEST'} · ${esc(periodLabel(attempt.period, attempt.period_type))} ${esc(attempt.time_in_period || '')}</span>
+      <span class="lr-latest__head">${team ? teamMark(team, 20) : ''}<b>${esc(RESULT[attempt.type] || 'ATTEMPT')}</b>${shooter?.name ? `<span>— ${esc(shooter.name)}</span>` : ''}</span>
+      ${detail.length ? `<span class="lr-latest__detail">${esc(detail.join(' · '))}</span>` : ''}
+    </${tag}>`;
+}
+
+function shortEvent(play) {
+  const name = role => who(play, role)?.name || null;
+  switch (play.type) {
+    case 'goal': return ['Goal', name('scorer')];
+    case 'shot-on-goal': return ['Shot on goal', name('shooter')];
+    case 'missed-shot': return ['Missed shot', name('shooter')];
+    case 'blocked-shot': return ['Blocked', name('shooter')];
+    case 'penalty': return [isFightingMajor(play) ? 'Fighting major' : `Penalty · ${titleCase(play.penalty?.desc_key || 'penalty')}`, name('committed_by') || name('served_by')];
+    case 'delayed-penalty': return ['Delayed penalty', null];
+    case 'faceoff': return ['Faceoff won', name('faceoff_winner')];
+    case 'hit': return ['Hit', name('hitter')];
+    case 'giveaway': return ['Giveaway', name('player')];
+    case 'takeaway': return ['Takeaway', name('player')];
+    case 'stoppage': return [`Stoppage${play.reason ? ` · ${titleCase(play.reason)}` : ''}`, null];
+    case 'period-start': return [`Start of ${periodLabel(play.period, play.period_type)}`, null];
+    case 'period-end': return [`End of ${periodLabel(play.period, play.period_type)}`, null];
+    case 'game-end': return ['Game over', null];
+    default: return [titleCase(play.type || 'event'), null];
+  }
+}
+
+function recentEvents(cast, selected) {
+  const plays = cast.plays.slice(-RECENT_EVENTS).reverse();
+  if (!plays.length) return '<p class="dim micro lr-recent__empty">Events stream here from puck drop.</p>';
+  const g = cast.game;
+  return `<ol class="lr-recent__list">${plays.map((p, i) => {
+    const team = p.side ? g.teams[p.side] : null;
+    const [what, name] = shortEvent(p);
+    const pick = p.shot?.has_coordinates;
+    return `<li class="lr-ev lr-ev--${esc(p.kind || p.type)}${i === 0 ? ' is-latest' : ''}${selected === p.sort_order ? ' is-selected' : ''}"${pick ? ` data-select="${p.sort_order}"` : ''}>
+        <span class="lr-ev__t mono">${esc(p.time_in_period || '')}</span>
+        <span class="lr-ev__team" style="--c:${team ? teamAccent(team.abbrev) : 'transparent'}">${team ? esc(team.abbrev) : ''}</span>
+        <span class="lr-ev__what">${esc(what)}${name ? ` <span class="dim">· ${esc(name)}</span>` : ''}</span>
+        ${pick ? '<span class="lr-ev__loc" aria-hidden="true">⌖</span>' : ''}
+      </li>`;
+  }).join('')}</ol>`;
+}
+
+function rinkToolbar(g, state, periods, rink) {
+  const active = (state.layer !== 'all') + (state.team !== 'both') + (state.period !== 'all') + (!state.normalize);
+  return `<div class="lr-tools${state.filtersOpen ? ' is-open' : ''}">
+      <button type="button" class="lr-tools__toggle chip" data-rink-filters aria-expanded="${Boolean(state.filtersOpen)}">Filters${active ? ` · ${active}` : ''}</button>
+      <div class="lr-tools__set" role="group" aria-label="Rink filters">
+        <select class="lr-sel" data-layer-select aria-label="Shot layer">${LAYERS.map(([k, l]) => `<option value="${k}" ${state.layer === k ? 'selected' : ''}>${l}</option>`).join('')}</select>
+        <select class="lr-sel" data-team-select aria-label="Team">${[['both', 'Both teams'], ['away', g.teams.away.abbrev], ['home', g.teams.home.abbrev]].map(([k, l]) => `<option value="${k}" ${state.team === k ? 'selected' : ''}>${esc(l)}</option>`).join('')}</select>
+        <select class="lr-sel" data-period aria-label="Period"><option value="all">All periods</option>${periods.map(p => `<option value="${p}" ${String(state.period) === String(p) ? 'selected' : ''}>${esc(periodLabel(p, p > 3 ? 'OT' : 'REG'))}</option>`).join('')}</select>
+        <button type="button" class="lr-norm" data-normalize aria-pressed="${state.normalize}" title="Rotate each team's attempts so away attacks left and home attacks right">Normalize ends</button>
+      </div>
+      <span class="lr-tools__count micro">${rink.plotted} plotted</span>
+    </div>`;
+}
+
+function liveRink(cast, state, rink, { periods, latest, live }) {
+  const g = cast.game;
+  const a = g.teams.away; const h = g.teams.home;
+  const omittedTotal = rink.omitted.coordinates + rink.omitted.direction;
+  const ends = state.normalize
+    ? `<span class="lr-end lr-end--away"><i aria-hidden="true">←</i>${teamMark(a, 20)}<b>${esc(a.abbrev || '')}</b></span>
+       <span class="lr-end lr-end--home"><b>${esc(h.abbrev || '')}</b>${teamMark(h, 20)}<i aria-hidden="true">→</i></span>`
+    : '<span class="lr-end lr-end--raw micro">Ends as recorded by source</span>';
+  return `<section class="lr${live ? ' is-live' : ''}" id="live-rink" aria-label="PBEcast Live Rink" style="--away:${teamAccent(a.abbrev)};--home:${teamAccent(h.abbrev)}">
+      <header class="lr__head">
+        <div class="lr__title"><h3>PBEcast Live Rink</h3><span class="micro">Live shot and event visualization</span></div>
+        ${scoreBug(cast)}
+      </header>
+      <div class="lr__body">
+        <div class="lr__ends" aria-label="${state.normalize ? `${esc(a.abbrev || 'Away')} attacks left, ${esc(h.abbrev || 'Home')} attacks right` : 'Ends as recorded by source'}">${ends}</div>
+        <div class="lr__ice rink-stage"><div class="rink-wrap">${rink.svg}</div>${rinkInspector()}</div>
+        <div class="lr__latest">${latestAttemptCard(cast, latest, { live })}</div>
+        <div class="lr__tools">${rinkToolbar(g, state, periods, rink)}</div>
+        <div class="lr__recent"><span class="lr__k micro">Recent events</span>${recentEvents(cast, state.selected)}</div>
+        <div class="lr__legend">${rinkLegend()}</div>
+      </div>
+      ${omittedTotal ? `<p class="micro rink-omit">Not plotted: ${rink.omitted.coordinates ? `${rink.omitted.coordinates} without source coordinates` : ''}${rink.omitted.coordinates && rink.omitted.direction ? ' · ' : ''}${rink.omitted.direction ? `${rink.omitted.direction} with unknown attack direction (switch off “Normalize ends” to show as recorded)` : ''}. They remain in the feed and totals.</p>` : ''}
+    </section>`;
 }
 
 // Current moment + compact Skater DNA (stored nhl-skater-dna/1.0.0 snapshots).
@@ -543,7 +687,7 @@ export function mount(root, params, ctx) {
     cast: null, meta: null, failed: false, error: null,
     layer: 'all', team: 'both', period: 'all', normalize: true,
     feed: 'all', selected: null,
-    tab: 'feed',
+    tab: 'feed', filtersOpen: false,
     replayDate: params.date || null,
     pickGames: [], pickLabel: '', recentCompleted: null,
     // Replay: cursor is an index into cast.plays (null = full/live view).
@@ -666,42 +810,42 @@ export function mount(root, params, ctx) {
         .catch(() => {});
     }
     const periods = [...new Set(full.plays.filter(p => p.shot).map(p => p.period))].filter(Boolean);
-    // In replay, ring the most recent attempt at the cursor unless the user picked one.
-    const lastShot = cast.replay ? [...cast.plays].reverse().find(p => p.shot?.has_coordinates) : null;
-    const rink = renderRink(cast.plays, { layer: state.layer, team: state.team, period: state.period, normalize: state.normalize, teams: g.teams, highlight: state.selected ?? lastShot?.sort_order ?? null });
-    const omittedTotal = rink.omitted.coordinates + rink.omitted.direction;
+    const live = ['LIVE', 'INTERMISSION'].includes(st.key) && state.cursor === null;
+    // The newest attempt at the live edge or the replay cursor carries the ring
+    // unless the reader picked another, and older attempts recede. A final game
+    // at full view treats every attempt equally.
+    const attempts = cast.plays.filter(p => p.shot && !p.shot.shootout);
+    const latest = attempts[attempts.length - 1] || null;
+    const tracking = live || Boolean(cast.replay);
+    const lastPlotted = tracking ? [...attempts].reverse().find(p => p.shot?.has_coordinates) : null;
+    const rink = renderRink(cast.plays, {
+      layer: state.layer, team: state.team, period: state.period, normalize: state.normalize, teams: g.teams,
+      highlight: state.selected ?? lastPlotted?.sort_order ?? null,
+      latest: lastPlotted?.sort_order ?? null,
+      recent: tracking ? new Set(attempts.slice(-RECENT_ATTEMPTS).map(p => p.sort_order)) : null
+    });
     const feedScroll = $('.feed-scroll', body)?.scrollTop || 0;
     body.innerHTML = `
       ${header(cast, state.meta, state.failed)}
+      ${liveRink(cast, state, rink, { periods, latest, live })}
+      ${castSub(cast)}
       ${!pre && full.plays.length ? replayBar(state, full, { live: ['LIVE', 'INTERMISSION'].includes(st.key) }) : ''}
+      ${fightDesk(cast)}
+      ${penaltyBox(cast, specialTeamsOf(cast))}
       ${cast.partial?.boxscore || cast.partial?.right_rail ? `<div class="pbe-note" style="margin-top:12px"><b>Partial data.</b> ${cast.partial.boxscore ? 'Box score unavailable. ' : ''}${cast.partial.right_rail ? 'Official team stats unavailable. ' : ''}Play-by-play is current.</div>` : ''}
       <div class="cast-tabs" role="tablist" aria-label="PBE Cast sections">
-        ${[['feed', 'Play-by-play'], ['rink', 'Shot map'], ['stats', 'Intelligence']].map(([k, l]) => `<button role="tab" class="chip" aria-selected="${state.tab === k}" data-tab="${k}">${l}</button>`).join('')}
+        ${[['feed', 'Play-by-play'], ['moment', 'Moment'], ['stats', 'Intelligence']].map(([k, l]) => `<button role="tab" class="chip" aria-selected="${state.tab === k}" data-tab="${k}">${l}</button>`).join('')}
       </div>
       <div class="cast-grid" data-tab="${state.tab}">
-        <div class="cast-col cast-col--rink">
+        <div class="cast-col cast-col--moment">
           ${pre ? pregamePanel(cast, state.market) : ''}
           ${pre && state.intel?.data ? gameIntelStrip(state.intel.data, { pro: state.intel.tier === 'pro' }) : ''}
-          ${state.market && !['FINAL'].includes(st.key) ? `<section class="pbe-panel cast-card"><div class="panel-head"><h3>Market</h3><span class="pbe-badge pbe-badge--sched">Snapshot · not live</span></div>${marketPanel(state.market.event, state.market.meta)}</section>` : ''}
-          <section class="pbe-panel cast-card">
-            <div class="panel-head"><h3>Shot map</h3><span class="micro">${rink.plotted} plotted${omittedTotal ? ` · ${omittedTotal} not plotted` : ''}</span></div>
-            <div class="rink-controls">
-              <div class="chips" role="group" aria-label="Shot layer">${LAYERS.map(([k, l]) => `<button class="chip" data-layer="${k}" aria-pressed="${state.layer === k}">${l}</button>`).join('')}</div>
-              <div class="chips" role="group" aria-label="Team">${[['both', 'Both'], ['away', g.teams.away.abbrev], ['home', g.teams.home.abbrev]].map(([k, l]) => `<button class="chip" data-team="${k}" aria-pressed="${state.team === k}">${esc(l)}</button>`).join('')}
-                <select class="chip chip-select" data-period aria-label="Period"><option value="all">All periods</option>${periods.map(p => `<option value="${p}" ${String(state.period) === String(p) ? 'selected' : ''}>${esc(periodLabel(p, p > 3 ? 'OT' : 'REG'))}</option>`).join('')}</select>
-                <button class="chip" data-normalize aria-pressed="${state.normalize}" title="Rotate each team's attempts so away attacks left and home attacks right">Normalize ends</button>
-              </div>
-            </div>
-            <div class="rink-ends micro" aria-hidden="true">${state.normalize ? `<span>← ${esc(g.teams.away.abbrev)} attack</span><span>${esc(g.teams.home.abbrev)} attack →</span>` : '<span>As recorded by source</span>'}</div>
-            <div class="rink-stage"><div class="rink-wrap">${rink.svg}</div>${rinkInspector()}</div>
-            ${rinkLegend()}
-            ${omittedTotal ? `<p class="micro rink-omit">Not plotted: ${rink.omitted.coordinates ? `${rink.omitted.coordinates} without source coordinates` : ''}${rink.omitted.coordinates && rink.omitted.direction ? ' · ' : ''}${rink.omitted.direction ? `${rink.omitted.direction} with unknown attack direction (switch off “Normalize ends” to show as recorded)` : ''}. They remain in the feed and totals.</p>` : ''}
-          </section>
           ${momentCard(cast, full, state.selected)}
           <section class="pbe-panel cast-card">
             <div class="panel-head"><h3>5-minute pressure</h3><span class="pbe-badge pbe-badge--heuristic">Descriptive · not a model</span></div>
             ${pressureChart(cast.plays, g)}
           </section>
+          ${state.market && !['FINAL'].includes(st.key) ? `<section class="pbe-panel cast-card"><div class="panel-head"><h3>Market</h3><span class="pbe-badge pbe-badge--sched">Snapshot · not live</span></div>${marketPanel(state.market.event, state.market.meta)}</section>` : ''}
         </div>
         <div class="cast-col cast-col--feed">
           <section class="pbe-panel cast-card cast-feed">
@@ -892,8 +1036,9 @@ export function mount(root, params, ctx) {
   }
 
   const disposers = [
-    on(root, 'click', '[data-layer]', (_, b) => { state.layer = b.dataset.layer; renderBody(); }),
-    on(root, 'click', '[data-team]', (_, b) => { state.team = b.dataset.team; renderBody(); }),
+    on(root, 'change', '[data-layer-select]', (_, s) => { state.layer = s.value; renderBody(); }),
+    on(root, 'change', '[data-team-select]', (_, s) => { state.team = s.value; renderBody(); }),
+    on(root, 'click', '[data-rink-filters]', () => { state.filtersOpen = !state.filtersOpen; renderBody(); }),
     on(root, 'change', '[data-period]', (_, s) => { state.period = s.value; renderBody(); }),
     on(root, 'click', '[data-normalize]', () => { state.normalize = !state.normalize; renderBody(); }),
     on(root, 'click', '[data-feed]', (_, b) => { state.feed = b.dataset.feed; renderBody(); }),
@@ -905,7 +1050,10 @@ export function mount(root, params, ctx) {
       state.selected = state.selected === id ? null : id;
       if (state.selected !== null && state.team !== 'both') state.team = 'both';
       renderBody();
-      if (window.matchMedia('(max-width: 768px)').matches && state.selected !== null) { state.tab = 'rink'; renderBody(); }
+      // The rink is always on the page; on a phone, bring it into view.
+      if (state.selected !== null && !li.closest('#live-rink') && window.matchMedia('(max-width: 768px)').matches) {
+        $('#live-rink', body)?.scrollIntoView({ block: 'start', behavior: 'smooth' });
+      }
     }),
     on(root, 'click', '[data-rp]', (_, b) => {
       const n = state.cast?.plays.length || 0;
