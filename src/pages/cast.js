@@ -341,6 +341,7 @@ function castSub(cast) {
 const RESULT = { goal: 'GOAL', 'shot-on-goal': 'SHOT', 'missed-shot': 'MISSED', 'blocked-shot': 'BLOCKED' };
 const RECENT_ATTEMPTS = 6;
 const RECENT_EVENTS = 7;
+const TAP_REACH_PX = 24;
 
 function scoreBug(cast) {
   const g = cast.game;
@@ -1039,6 +1040,20 @@ export function mount(root, params, ctx) {
     on(root, 'change', '[data-layer-select]', (_, s) => { state.layer = s.value; renderBody(); }),
     on(root, 'change', '[data-team-select]', (_, s) => { state.team = s.value; renderBody(); }),
     on(root, 'click', '[data-rink-filters]', () => { state.filtersOpen = !state.filtersOpen; renderBody(); }),
+    // A phone rink draws an attempt a few pixels wide. A tap on open ice
+    // snaps to the nearest attempt within reach; the marker itself never moves.
+    on(root, 'click', '#live-rink svg.rink', (event, svg) => {
+      if (event.target.closest('.mk-g')) return;
+      let best = null; let bestD = TAP_REACH_PX;
+      for (const el of svg.querySelectorAll('.rk-marks .mk-g')) {
+        const r = el.getBoundingClientRect();
+        const d = Math.hypot(event.clientX - (r.left + r.width / 2), event.clientY - (r.top + r.height / 2));
+        if (d <= bestD) { best = el; bestD = d; }
+      }
+      if (!best) return;
+      event.stopPropagation();
+      inspector?.pin(Number(best.dataset.sort));
+    }),
     on(root, 'change', '[data-period]', (_, s) => { state.period = s.value; renderBody(); }),
     on(root, 'click', '[data-normalize]', () => { state.normalize = !state.normalize; renderBody(); }),
     on(root, 'click', '[data-feed]', (_, b) => { state.feed = b.dataset.feed; renderBody(); }),

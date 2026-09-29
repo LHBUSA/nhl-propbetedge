@@ -222,6 +222,8 @@ assert.doesNotMatch(apiSource, /credentials: 'include'/, 'api.js (public data) n
   for (const hook of ['data-layer-select', 'data-team-select', 'select class="lr-sel" data-period', 'data-normalize', 'data-rink-filters']) {
     assert.ok(cast.includes(hook), `the compact toolbar keeps ${hook}`);
   }
+  assert.match(cast, /const TAP_REACH_PX = 24;/, 'a tap on open ice snaps to the nearest attempt within 24px');
+  assert.match(cast, /inspector\?\.pin\(Number\(best\.dataset\.sort\)\)/, 'the snapped attempt opens the existing inspector');
   assert.match(castCss, /grid-template-columns: minmax\(0, 1fr\) clamp\(260px, 26%, 330px\)/, 'desktop: the rink column takes ~74% of the stage');
   assert.match(castCss, /\.lr-tools\.is-open \.lr-tools__set \{ display: flex; \}/, 'phones reach the filters through one Filters button');
   assert.match(castCss, /\.lr \.mk-g\[data-recency="aged"\]/, 'older attempts recede while live');
