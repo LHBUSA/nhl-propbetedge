@@ -1,3 +1,26 @@
+## 2026-09-29 — PBEcast Live Rink (rink is the hero) — PRODUCTION
+
+main `d2046cd` + `98bfb81`, frontend only (no data pipeline change). Rollback: `git revert 98bfb81 d2046cd`.
+
+The shot map was a small card under the Market table (~1,950px down at 1440; behind a "Shot map" tab on phones).
+The Cast now renders: score header → **PBEcast Live Rink** → goalies-in-net row → replay → fight desk / penalty box →
+moment / pressure / market → play-by-play → stats. Desktop (≥1024): rink ~72% of the stage + rail (latest attempt,
+last 7 events, legend). Below 1024: full-width rink, latest attempt, Filters, recent events. One compact toolbar
+(layer / team / period selects + Normalize ends). Live/replay: newest attempt keeps a halo, older non-goal attempts
+recede (`data-recency`), new attempts ping, new goals light a lamp ring; reduced motion honoured. Tap on open ice
+snaps to the nearest attempt within 24px. Markers are still drawn at source coordinates.
+
+Production QA on live FLA @ CAR (2026020001) and final CAR 6–0 NSH (2026010053):
+- 320/360/390/430/768/1024/1440: overflow 0, rink aspect 2.322 (= viewBox) at every width, 0 page errors.
+- Rink in first viewport: fully visible at 320–430; 389/428px at 1440×900 live (420/428 on a final game).
+- Plotted counts == independent count from the raw cast payload for every layer, team, period and normalize
+  on/off at 390/768/1440 (live: 19; final: 91 incl. 6 goals); result shapes distinct; normalized away mean x < 0,
+  home > 0; marker tap/click opens detail; tap snap PASS at 320 (12px off → opens, empty ice → nothing).
+- Fixed a pre-existing 13px overflow at 320 (replay transport now wraps ≤360px).
+
+**Still unproven:** a new attempt arriving on the rink without reload. The game was in the 1st intermission; the
+13-minute production watch across the start of period 2 was stopped by the host (low memory) before it reported.
+
 ## 2026-09-25 — NHL-only checkout OPEN
 
 Owner re-activated the two existing NHL-only Payment Links (no new links/prices). Headless render before the push:
