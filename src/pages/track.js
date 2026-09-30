@@ -500,7 +500,7 @@ async function preseasonLedgerWithFallback(state, signal) {
 
 export function mount(root) {
   const state = {
-    segment: 'preseason',
+    segment: 'regular',
     season: '',
     page: 0,
     modelVersion: '',
