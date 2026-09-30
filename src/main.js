@@ -19,6 +19,7 @@ import './styles/score-ticker.css';
 import './styles/intel.css';
 import './styles/player-dna.css';
 import './styles/chrome-upgrade.css';
+import './styles/preferred-source.css';
 // Shared PropBetEdge membership vocabulary (badge, panel, All Access card).
 // Identity chrome only: it never styles body, so the atmosphere field stays visible.
 import './styles/pbe-membership.css';
@@ -30,6 +31,7 @@ import { daysUntil, dateLabel, todayET } from './lib/format.js';
 import { createRouter } from './lib/router.js';
 import { bindShell, renderShell, setActiveNav, setSeasonChip } from './components/shell.js';
 import { upgradeChrome } from './components/chrome-upgrade.js';
+import { mountPreferredSource } from './components/preferred-source.js';
 import { mountScoreTicker } from './components/score-ticker.js';
 import { bindAlertsUI } from './components/alerts-ui.js';
 import { startWatcher } from './services/watcher.js';
@@ -39,6 +41,7 @@ import { modeRibbon, seasonMode } from './components/mode.js';
 const app = document.querySelector('#app');
 const main = renderShell(app);
 upgradeChrome();
+mountPreferredSource();
 
 // Keep the current compact production nav authoritative. The score rail is
 // additive chrome, so create its single mount point immediately after the

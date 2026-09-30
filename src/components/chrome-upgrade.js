@@ -1,5 +1,6 @@
 import { PBE_NETWORK } from '../lib/network.js';
 import { ALL_ACCESS_URL } from '../lib/pbe-membership.js';
+import { renderPreferredSource } from './preferred-source.js';
 
 const currentYear = new Date().getFullYear();
 
@@ -106,6 +107,8 @@ function premiumFooter() {
           </div>
         </section>
       </div>
+
+      ${renderPreferredSource({ surface: 'footer', sport: 'nhl' })}
 
       <div class="footer-premium__legal">
         <div>
