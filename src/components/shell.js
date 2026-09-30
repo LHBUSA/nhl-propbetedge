@@ -56,8 +56,10 @@ const BOTTOM = ['board', 'picks', 'cast', 'props'];
 // link to the network page in the desktop header, a bottom tab on phones (a
 // prominent first row of the More sheet below 360px, where a sixth tab would
 // clip the flagship label) and two footer links. It is a link to the network
-// page, never a checkout, so it renders for every membership state. It is
-// deliberately NOT part of NAV/ALL_NAV: those are hash routes the palette
+// page, never a checkout. Free/unresolved readers keep the header upgrade CTA;
+// signed-in members use the single NHL Pro/account control, which already
+// carries NHL PRO / ALL ACCESS / OWNER state and opens the account surface.
+// It is deliberately NOT part of NAV/ALL_NAV: those are hash routes the palette
 // and router own, and this destination is external.
 export const ALL_ACCESS_NAV = Object.freeze({ id: 'all-access', href: ALL_ACCESS_URL, label: 'All Access', short: 'All Access' });
 
@@ -417,6 +419,7 @@ export function bindShell(ctx) {
 // never calls a /pro/* route and never infers access from the browser.
 export function bindProButton({ timeoutMs = 6000 } = {}) {
   const button = $('#nhl-pro-btn');
+  const allAccess = $('#nhl-all-access-link');
   let stop = null;
   let disposed = false;
   if (!button) return () => {};
@@ -427,6 +430,10 @@ export function bindProButton({ timeoutMs = 6000 } = {}) {
     button.dataset.account = state;
     const pro = isMember(account);
     button.classList.toggle('is-pro', pro);
+    // Members already have one authoritative account/access control here.
+    // Hide the separate All Access promo so OWNER / ALL ACCESS never render as
+    // two competing status controls in the top-right chrome.
+    if (allAccess) allAccess.hidden = pro;
     const html = proButtonHtml(account);
     if (button.innerHTML !== html) button.innerHTML = html;
     button.setAttribute('aria-label', proButtonLabel(account, authReady));
