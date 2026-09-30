@@ -320,7 +320,7 @@ function castSub(cast) {
   const a = g.teams.away; const h = g.teams.home;
   const gin = cast.goalies_in_net || {};
   const goalie = side => gin[side]?.name
-    ? `<a class="cast-gin" href="#/player/${esc(gin[side].id)}">${playerIdentity({ id: gin[side].id, name: gin[side].name, team: g.teams[side].abbrev, size: 'sm' })}<span>${esc(gin[side].name)}</span></a>${gin[side].in_net_now === false ? ' <span class="pbe-badge pbe-badge--alert">PULLED</span>' : ''}`
+    ? `<a class="cast-gin" href="#/player/${esc(gin[side].id)}">${playerIdentity({ id: gin[side].id, name: gin[side].name, team: g.teams[side].abbrev, size: 'md' })}<span>${esc(gin[side].name)}</span></a>${gin[side].in_net_now === false ? ' <span class="pbe-badge pbe-badge--alert">PULLED</span>' : ''}`
     : '<span class="faint">no attempt faced yet</span>';
   return `<div class="cast-sub">
       <span><span class="micro">${esc(a.abbrev || 'Away')} in net</span> ${goalie('away')}</span>
@@ -545,10 +545,15 @@ function pressureChart(plays, game) {
 
 function cmpRow(label, a, b, fmt = v => v ?? '—') {
   const s = share(a, b);
-  return `<div class="cmp-row"><span class="label"><span>${esc(label)}</span>${s !== null ? `<span class="faint">${pct(s, 0)} / ${pct(1 - s, 0)}</span>` : ''}</span>
-    <span class="cmp-val">${esc(fmt(a))}</span>
+  const av = esc(fmt(a)); const bv = esc(fmt(b));
+  return `<div class="cmp-row cast-cmp-row">
+    <span class="label">
+      <span>${esc(label)}</span>
+      <span class="cast-cmp__values mono" aria-label="Away ${av}, home ${bv}"><b>${av}</b><i aria-hidden="true">–</i><b>${bv}</b></span>
+    </span>
     <span class="cmp-bar">${s !== null ? `<i class="a" style="width:${(s * 100).toFixed(1)}%"></i><i class="h" style="width:${((1 - s) * 100).toFixed(1)}%"></i>` : ''}</span>
-    <span class="cmp-val">${esc(fmt(b))}</span></div>`;
+    ${s !== null ? `<span class="cast-cmp__share faint">${pct(s, 0)} / ${pct(1 - s, 0)}</span>` : ''}
+  </div>`;
 }
 
 function statsPanel(cast) {
