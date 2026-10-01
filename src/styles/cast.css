@@ -993,8 +993,15 @@ a.pbox__name:hover { color: var(--pbe-gold-bright); }
 
 /* attack direction: team + mark + arrow at each end, nothing louder */
 .lr__ends { display: flex; justify-content: space-between; align-items: center; min-height: 22px; }
-.lr-end { display: inline-flex; align-items: center; gap: 6px; font: 800 12px/1 var(--pbe-font-data); letter-spacing: .06em; color: var(--pbe-paper); }
-.lr-end i { font-style: normal; color: var(--pbe-gold-bright); font-size: 15px; }
+.lr-end {
+  display: inline-flex; align-items: center; gap: 6px;
+  font: 850 12px/1 var(--pbe-font-data); letter-spacing: .065em;
+  color: var(--pbe-paper);
+}
+.lr-end--away { color: color-mix(in srgb, var(--away) 68%, var(--pbe-paper)); }
+.lr-end--home { color: color-mix(in srgb, var(--home) 68%, var(--pbe-paper)); }
+.lr-end i { font-style: normal; color: inherit; font-size: 16px; filter: brightness(1.12); }
+.lr-end b { color: inherit; text-shadow: 0 1px 8px rgba(0,0,0,.55); }
 .lr-end--raw { color: var(--pbe-dim); margin-inline: auto; }
 
 /* the ice: the brightest, highest-contrast surface on the page */

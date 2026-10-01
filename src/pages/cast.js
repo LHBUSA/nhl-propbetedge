@@ -386,7 +386,7 @@ function latestAttemptCard(cast, attempt, { live }) {
   const plotted = s.has_coordinates;
   const tag = plotted ? 'button' : 'div';
   return `<${tag}${plotted ? ' type="button"' : ''} class="lr-latest lr-latest--${esc(attempt.type)}" style="--c:${team ? teamAccent(team.abbrev) : 'var(--pbe-line)'}"${plotted ? ` data-select="${attempt.sort_order}" aria-label="Show this attempt on the rink"` : ''}>
-      <span class="lr-latest__k">${live ? '<i class="lr-dot" aria-hidden="true"></i>LIVE' : cast.replay ? 'AT CURSOR' : 'LATEST'} · ${esc(periodLabel(attempt.period, attempt.period_type))} ${esc(attempt.time_in_period || '')}</span>
+      <span class="lr-latest__k">${live ? '<i class="lr-dot" aria-hidden="true"></i>LIVE' : cast.replay ? 'AT CURSOR' : 'LATEST'} · ${esc(periodLabel(attempt.period, attempt.period_type))}${attempt.time_in_period ? ` · ${esc(attempt.time_in_period)} elapsed` : ''}</span>
       <span class="lr-latest__head">${team ? teamMark(team, 20) : ''}<b>${esc(RESULT[attempt.type] || 'ATTEMPT')}</b>${shooter?.name ? `<span>— ${esc(shooter.name)}</span>` : ''}</span>
       ${detail.length ? `<span class="lr-latest__detail">${esc(detail.join(' · '))}</span>` : ''}
     </${tag}>`;
