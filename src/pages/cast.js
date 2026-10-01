@@ -320,7 +320,7 @@ function castSub(cast) {
   const a = g.teams.away; const h = g.teams.home;
   const gin = cast.goalies_in_net || {};
   const goalie = side => gin[side]?.name
-    ? `<a class="cast-gin" href="#/player/${esc(gin[side].id)}">${playerIdentity({ id: gin[side].id, name: gin[side].name, team: g.teams[side].abbrev, size: 'md' })}<span>${esc(gin[side].name)}</span></a>${gin[side].in_net_now === false ? ' <span class="pbe-badge pbe-badge--alert">PULLED</span>' : ''}`
+    ? `<a class="cast-gin" href="#/player/${esc(gin[side].id)}">${playerIdentity({ id: gin[side].id, name: gin[side].name, team: g.teams[side].abbrev, size: 'cast' })}<span>${esc(gin[side].name)}</span></a>${gin[side].in_net_now === false ? ' <span class="pbe-badge pbe-badge--alert">PULLED</span>' : ''}`
     : '<span class="faint">no attempt faced yet</span>';
   return `<div class="cast-sub">
       <span><span class="micro">${esc(a.abbrev || 'Away')} in net</span> ${goalie('away')}</span>

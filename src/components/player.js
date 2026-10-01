@@ -16,7 +16,7 @@ import portraits from '../data/player-portraits.json';
 // stale club abbreviation resolves to the league's generic silhouette rather
 // than to an error the browser could fall back from.
 
-const SIZES = { xs: 24, sm: 32, md: 48, lg: 88, xl: 168 };
+const SIZES = { xs: 24, sm: 32, md: 48, cast: 56, lg: 88, xl: 168 };
 const PHOTOS = portraits?.players || {};
 const IMG_PROXY = 'https://propbet-img-proxy.sales-fd3.workers.dev/?url=';
 const NHL_HEADSHOT_SEASONS = ['20262027', '20252026'];
