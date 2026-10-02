@@ -14,6 +14,7 @@ import { esc, on } from '../lib/dom.js';
 import { describeError, picksLedger, picksPreseasonHistory, picksPreseasonLedger, picksPreseasonRecord, picksTrackRecord } from '../lib/api.js';
 import { freshStamp } from '../lib/freshness.js';
 import { dayET, pct, timeET } from '../lib/format.js';
+import { bookFullName } from '../components/market.js';
 
 const DASH = '—';
 const LEDGER_LIMIT = 25;
@@ -152,6 +153,15 @@ function rowPrice(row) {
   return row && row.price && typeof row.price === 'object' ? row.price : null;
 }
 
+// Tooltip for a PRICED row only; an UNPRICED row gets none.
+function priceTitle(row) {
+  const p = rowPrice(row);
+  if (!p || String(readKey(p, ['state']) || '').toUpperCase() !== 'PRICED') return null;
+  return String(readKey(p, ['source']) || '').toUpperCase() === 'REPAIR'
+    ? 'Price recovered from an archived market observation captured before the official pick lock.'
+    : 'Price captured at official pick lock.';
+}
+
 const LEDGER_COLUMNS = [
   ['Season', '', row => seasonLabel(readKey(row, ['season']))],
   ['Type', '', row => {
@@ -178,11 +188,12 @@ const LEDGER_COLUMNS = [
     const state = p ? readKey(p, ['state']) : readKey(row, ['market_state', 'price_state', 'market_at_lock']);
     if (String(state || '').toUpperCase() === 'UNPRICED') return 'UNPRICED';
     return americanPrice(p ? readKey(p, ['best_price']) : readKey(row, ['recorded_price', 'best_price'])) || (state ? String(state) : null);
-  }],
+  }, priceTitle],
   ['Book', '', row => {
     const p = rowPrice(row);
-    return p ? readKey(p, ['best_book']) : readKey(row, ['recorded_book', 'book', 'best_book']);
-  }],
+    const key = p ? readKey(p, ['best_book']) : readKey(row, ['recorded_book', 'book', 'best_book']);
+    return key ? bookFullName(String(key)) : key;
+  }, priceTitle],
   ['Result', '', row => readKey(row, ['result', 'outcome']) || 'PENDING'],
   ['Graded at', '', row => {
     const at = readKey(row, ['graded_at']);
@@ -205,9 +216,11 @@ function ledgerTable(state) {
   const code = apiReasonCode(state.ledger) || apiReasonCode(activeRecord);
   let body;
   if (rows.length) {
-    body = rows.map(row => '<tr>' + LEDGER_COLUMNS.map(([, cls, read]) => {
+    body = rows.map(row => '<tr>' + LEDGER_COLUMNS.map(([, cls, read, title]) => {
       const value = read(row);
-      return '<td class="' + cls + '">' + (value === null || value === undefined ? DASH : esc(String(value))) + '</td>';
+      const tip = title ? title(row) : null;
+      return '<td class="' + cls + '"' + (tip ? ' title="' + esc(tip) + '"' : '') + '>' +
+        (value === null || value === undefined ? DASH : esc(String(value))) + '</td>';
     }).join('') + '</tr>').join('');
   } else {
     const message = state.ledgerError

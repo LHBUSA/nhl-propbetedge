@@ -9,6 +9,13 @@ export const BOOKS = {
   hardrockbet: 'Hard Rock', betus: 'BetUS', betparx: 'betPARX', fliff: 'Fliff'
 };
 export const bookName = key => BOOKS[key] || key;
+// Full sportsbook names for ledgers, where there is room to spell them out.
+export const BOOK_NAMES = {
+  draftkings: 'DraftKings', fanduel: 'FanDuel', betmgm: 'BetMGM', williamhill_us: 'Caesars', betrivers: 'BetRivers',
+  betonlineag: 'BetOnline', bovada: 'Bovada', mybookieag: 'MyBookie', lowvig: 'LowVig', fanatics: 'Fanatics',
+  espnbet: 'ESPN BET', ballybet: 'Bally Bet', hardrockbet: 'Hard Rock Bet', betus: 'BetUS', betparx: 'betPARX', fliff: 'Fliff'
+};
+export const bookFullName = key => BOOK_NAMES[key] || key;
 export const price = p => (p === null || p === undefined || !Number.isFinite(Number(p)) ? '—' : Number(p) > 0 ? `+${Number(p)}` : `−${Math.abs(Number(p))}`);
 const pct = v => (Number.isFinite(v) ? `${(v * 100).toFixed(1)}%` : '—');
 
