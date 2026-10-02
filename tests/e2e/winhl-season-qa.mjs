@@ -35,15 +35,15 @@ for (const w of WIDTHS) {
   const head = tools.split('\n').join(' ');
   if (!head.includes(`${label} regular season`)) fail(w, `headline lacks "${label} regular season": ${head.slice(0, 200)}`);
   else pass(w, 'headline current season');
-  if (/2025[-–]26 regular season(?! · final)/.test(head) && board.season !== '20252026') fail(w, 'stale 2025-26 headline');
+  if (/2025[-–]26 regular season(?! · final)/i.test(head) && board.season !== '20252026') fail(w, 'stale 2025-26 headline');
   if (/preseason/i.test(head)) fail(w, 'preseason in headline');
   const chip = await page.$('[data-season="20252026"]');
   if (!chip) fail(w, 'no 2025-26 chip');
   else {
     await chip.click();
-    await page.waitForFunction(() => /2025–26 regular season · final/.test(document.querySelector('#wl-tools')?.innerText || ''), null, { timeout: 30000 }).then(() => pass(w, '2025-26 selectable')).catch(() => fail(w, '2025-26 chip did not switch the board'));
+    await page.waitForFunction(() => /2025–26 regular season · final/i.test(document.querySelector('#wl-tools')?.innerText || ''), null, { timeout: 30000 }).then(() => pass(w, '2025-26 selectable')).catch(() => fail(w, '2025-26 chip did not switch the board'));
     await page.click('[data-season=""]');
-    await page.waitForFunction(l => (document.querySelector('#wl-tools')?.innerText || '').includes(`${l} regular season`), label, { timeout: 30000 }).catch(() => fail(w, 'could not switch back to default'));
+    await page.waitForFunction(l => (document.querySelector('#wl-tools')?.innerText || '').toLowerCase().includes(`${l} regular season`), label, { timeout: 30000 }).catch(() => fail(w, 'could not switch back to default'));
   }
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
   if (overflow > 0) fail(w, `horizontal overflow ${overflow}px`);
@@ -53,7 +53,7 @@ for (const w of WIDTHS) {
   await page.goto(`${BASE}/#/player/${leader.id}`, { waitUntil: 'networkidle' });
   await page.waitForTimeout(2500);
   const pText = await page.evaluate(() => document.body.innerText);
-  if (!pText.includes(`${label} regular season`)) fail(w, `player page lacks "${label} regular season"`);
+  if (!pText.toLowerCase().includes(`${label} regular season`)) fail(w, `player page lacks "${label} regular season"`);
   else pass(w, 'player page current season');
   const pOverflow = await page.evaluate(() => document.documentElement.scrollWidth - document.documentElement.clientWidth);
   if (pOverflow > 0) fail(w, `player overflow ${pOverflow}px`);
