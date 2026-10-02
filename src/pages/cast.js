@@ -786,7 +786,7 @@ export function mount(root, params, ctx) {
     }
     renderPicker();
     const live = state.pickGames.some(g => ['LIVE', 'INTERMISSION'].includes(stateOf(g).key));
-    return live ? 10000 : state.pickGames.length ? 60000 : 300000;
+    return live ? 10000 : state.pickGames.length ? 15000 : 300000;
   }
 
   function renderBody() {
@@ -1010,7 +1010,7 @@ export function mount(root, params, ctx) {
     if (key === 'LIVE' || key === 'INTERMISSION') return 5000;
     if (key === 'FINAL' || key === 'POSTPONED' || key === 'CANCELLED') return null;
     const until = Date.parse(res.data.game.start_time_utc) - Date.now();
-    return until < 20 * 60 * 1000 ? 20000 : 60000;
+    return 15000;
   }, {
     onError(error) {
       state.error = error;
