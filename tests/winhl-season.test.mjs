@@ -125,3 +125,20 @@ test('player page asks for the default (current-season) WinHL row and labels it'
 test('matchup lineup WinHL names its season', () => {
   assert.match(src('components/game-intel.js'), /winhl_lineup\.season_label/);
 });
+
+// Early-season UX: no provisional surface can pass for a mature ranking.
+test('every provisional WinHL surface carries caption, GP, last updated and the explanation', async () => {
+  const { winhlSeasonLine, PROVISIONAL_TIP } = await import('../src/components/player-intel.js');
+  const now = Date.parse(player.captured_at) + 7 * 60 * 1000;
+  const line = winhlSeasonLine(player, player.player.season.gp, now);
+  assert.match(text(line), /^2026–27 regular season · provisional · \d+ GP · updated 7m ago$/);
+  assert.ok(line.includes(`title="${PROVISIONAL_TIP}"`));
+  assert.match(PROVISIONAL_TIP, /not a mature-season ranking/);
+  assert.ok(seasonHeadline(board).badges.includes(`title="${PROVISIONAL_TIP}"`));
+  // A final season shows no provisional tooltip.
+  assert.doesNotMatch(winhlSeasonLine(prior, 70, now), /title=/);
+  assert.match(text(winhlSeasonLine(prior, 70, now)), /^2025–26 regular season · final · 70 GP/);
+  // Board rows show GP and a provisional marker.
+  assert.match(src('pages/winhl.js'), /\$\{esc\(p\.gp\)\} GP\$\{\(p\.flags \|\| \[\]\)\.includes\('provisional_sample'\) \? ' · provisional' : ''\}/);
+  assert.match(src('components/game-intel.js'), /provisional: early-season sample/);
+});

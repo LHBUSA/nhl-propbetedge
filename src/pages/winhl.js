@@ -18,6 +18,7 @@ import { freshStamp } from '../lib/freshness.js';
 import { TEAMS } from '../lib/teams.js';
 import { playerIdentity } from '../components/player.js';
 import { DASH, fmtScore, lockPanel, mmss, versionTag, weightedComponents } from '../components/intel-ui.js';
+import { PROVISIONAL_TIP, winhlSeasonLine } from '../components/player-intel.js';
 
 const POSITIONS = [['', 'All skaters'], ['F', 'Forwards'], ['D', 'Defense'], ['C', 'Centers'], ['L', 'Left wing'], ['R', 'Right wing']];
 const WINDOWS = [['season', 'Season'], ['last10', 'Last 10'], ['last5', 'Last 5']];
@@ -42,7 +43,7 @@ export function seasonChips(board, selected = '') {
 export function seasonHeadline(board) {
   if (!board) return { label: 'WinHL', badges: '' };
   const status = board.status || 'current';
-  const badges = `<span class="pbe-badge pbe-badge--sched">Regular season</span>${board.provisional ? '<span class="pbe-badge pbe-badge--preseason">Provisional</span>' : ''}${status === 'final' || status === 'prior_final' ? '<span class="pbe-badge pbe-badge--final">Final</span>' : ''}`;
+  const badges = `<span class="pbe-badge pbe-badge--sched">Regular season</span>${board.provisional ? `<span class="pbe-badge pbe-badge--preseason" title="${esc(PROVISIONAL_TIP)}">Provisional</span>` : ''}${status === 'final' || status === 'prior_final' ? '<span class="pbe-badge pbe-badge--final">Final</span>' : ''}`;
   const suffix = board.provisional ? ' · provisional' : status === 'final' || status === 'prior_final' ? ' · final' : '';
   return { label: `WinHL ${board.season_label} regular season${suffix}`, badges };
 }
@@ -87,6 +88,7 @@ function detailMarkup(entry, tier) {
   if (tier !== 'pro' || d.locked) {
     return `<section class="pbe-panel wl-detail"><div class="panel-head"><h3>${esc(d.name)} · WinHL breakdown</h3></div>
       ${d.season ? `<p>Season WinHL <b class="mono">${fmtScore(d.season.score)}</b> · league rank ${esc(d.season.rank_league)}</p>` : ''}
+      <p>${winhlSeasonLine(entry.data, d.season?.gp ?? null)}</p>
       ${lockPanel('Component breakdown, last-10 / last-5 windows and 14-day rank history', 'See exactly which inputs drive the score: goal creation, shot generation, special teams, ice time, penalty-kill role, defensive events, discipline, NHL shot-attempt share and faceoffs.')}
     </section>`;
   }
@@ -94,6 +96,7 @@ function detailMarkup(entry, tier) {
   const hist = Array.isArray(entry.data.history) ? entry.data.history.slice().reverse() : [];
   return `<section class="pbe-panel wl-detail" aria-label="${esc(d.name)} WinHL breakdown">
     <div class="panel-head"><h3>${esc(d.name)} · WinHL breakdown</h3>${versionTag(entry.data.version)}</div>
+    <p style="margin:0 0 8px">${winhlSeasonLine(entry.data, d.season?.gp ?? null)}</p>
     <div class="gi-cmp">${win(d.season)}${win(d.last10)}${win(d.last5)}</div>
     <p class="micro dim" style="margin:10px 0">Ranks — league ${esc(d.season?.rank_league ?? DASH)} · ${esc(d.group === 'D' ? 'defense' : 'forwards')} ${esc(d.season?.rank_position ?? DASH)} (position) · ${esc(d.team)} ${esc(d.season?.rank_team ?? DASH)} · trend ${d.trend === null ? DASH : `${d.trend > 0 ? '+' : ''}${d.trend}`}</p>
     <h4 class="micro">Season components (percentile within position group)</h4>

@@ -3,18 +3,22 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 
+// Source text as committed (LF). A Windows checkout with core.autocrlf=true has
+// CRLF working copies; assertions that span lines must not depend on that.
+const readText = file => fs.readFileSync(file, 'utf8').replace(/\r\n/g, '\n');
+
 // 1. Data path: browser -> Cloudflare nhl-gateway. Vercel serves static files
 // only; the retired /api/nhl, /api/env and /api/odds relays must not return.
 // (The route/query allowlist now lives in the gateway: LHBUSA/propsports-api-worker
 // nhl-gateway/ + test/nhl-gateway-regression.mjs.)
 assert.ok(!fs.existsSync('api'), 'no Vercel API functions: NHL data runs on Cloudflare');
-const apiSource = fs.readFileSync('src/lib/api.js', 'utf8');
+const apiSource = readText('src/lib/api.js');
 assert.match(apiSource, /'https:\/\/nhl-api\.propbetedge\.ai'/, 'production gateway is the default data origin');
 assert.match(apiSource, /credentials: 'omit'/, 'public data requests never carry cookies');
 assert.doesNotMatch(apiSource, /credentials: 'include'/, 'api.js (public data) never sends credentials');
 // Credentials go to the gateway only from account.js, and only to /auth or /pro.
 {
-  const account = fs.readFileSync('src/lib/account.js', 'utf8');
+  const account = readText('src/lib/account.js');
   assert.match(account, /if \(!\/\^\\\/\(auth\|pro\)\\\/\/\.test\(path\)\) throw/, 'account.js refuses non-auth paths');
   assert.doesNotMatch(account, /localStorage|sessionStorage|document\.cookie/, 'account state is never stored or read in the browser');
 }
@@ -22,18 +26,18 @@ assert.doesNotMatch(apiSource, /credentials: 'include'/, 'api.js (public data) n
 // 1b. PBE Picks is a first-class surface: desktop primary nav AND the mobile
 // bottom nav, with a registered route and a page that invents nothing.
 {
-  const shell = fs.readFileSync('src/components/shell.js', 'utf8');
+  const shell = readText('src/components/shell.js');
   assert.match(shell, /id: 'picks', href: '#\/pbe-picks', label: 'PBE Picks'/, 'PBE Picks is in the desktop NAV');
   const navBlock = shell.match(/export const NAV = \[([\s\S]*?)\];/)[1];
   assert.ok(navBlock.includes("id: 'picks'"), 'PBE Picks sits in NAV, not in More');
   const bottom = shell.match(/const BOTTOM = \[([^\]]*)\]/)[1];
   assert.ok(/'picks'/.test(bottom), 'PBE Picks is in the mobile bottom nav');
   assert.ok(!/'news'/.test(bottom), 'News moved out of the mobile bottom nav into More');
-  assert.match(fs.readFileSync('src/lib/router.js', 'utf8'), /id: 'picks'/, '#/pbe-picks is routed');
+  assert.match(readText('src/lib/router.js'), /id: 'picks'/, '#/pbe-picks is routed');
 
   // No pick, probability or price may be hardcoded into the prediction pages.
   for (const page of ['src/pages/pbe-picks.js', 'src/pages/track.js']) {
-    const text = fs.readFileSync(page, 'utf8');
+    const text = readText(page);
     assert.ok(!/\d{1,3}(?:\.\d+)?\s*%/.test(text), `hardcoded percentage in ${page}`);
     assert.ok(!/(?<![\w.])0\.\d+/.test(text), `hardcoded probability literal in ${page}`);
     assert.ok(!/pick_team\s*[:=]\s*['"]/.test(text), `hardcoded pick in ${page}`);
@@ -43,9 +47,9 @@ assert.doesNotMatch(apiSource, /credentials: 'include'/, 'api.js (public data) n
 
 // 1c. PBE Cast live/replay polish must preserve the live edge and visual team identity.
 {
-  const cast = fs.readFileSync('src/pages/cast.js', 'utf8');
-  const replay = fs.readFileSync('src/components/replay.js', 'utf8');
-  const css = fs.readFileSync('src/styles/cast.css', 'utf8');
+  const cast = readText('src/pages/cast.js');
+  const replay = readText('src/components/replay.js');
+  const css = readText('src/styles/cast.css');
 
   assert.match(cast, /replayBar\(state, full, \{ live: \['LIVE', 'INTERMISSION'\]\.includes\(st\.key\) \}\)/, 'live Cast tells replay controls when the source game is live');
   assert.match(cast, /act === 'end' \|\| act === 'live'/, 'Jump to live returns to the canonical live/full cursor');
@@ -80,7 +84,7 @@ assert.doesNotMatch(apiSource, /credentials: 'include'/, 'api.js (public data) n
   assert.match(replay, /kind: 'fight'/, 'replay emits a dedicated fight timeline marker');
   assert.match(css, /\.fightdesk \{/, 'Fight Desk has its own broadcast surface styling');
   assert.match(css, /\.rp-mark--fight/, 'fight timeline markers have a distinct treatment');
-  const center = fs.readFileSync('src/pages/cast-center.js', 'utf8');
+  const center = readText('src/pages/cast-center.js');
   assert.match(center, /ctile__fight/, 'Command Center game tiles surface games containing paired fights');
   assert.match(center, /scout__item scout__item--fight/, 'Slate Scout surfaces live games containing fights');
   assert.match(css, /\.ctile__fight \{/, 'Command Center fight chip has a dedicated treatment');
@@ -88,9 +92,9 @@ assert.doesNotMatch(apiSource, /credentials: 'include'/, 'api.js (public data) n
 
 // 1d. Shot Lab is a first-class live spatial surface, not a PBE Cast alias.
 {
-  const lab = fs.readFileSync('src/pages/shotlab.js', 'utf8');
-  const rink = fs.readFileSync('src/components/rink.js', 'utf8');
-  const css = fs.readFileSync('src/styles/pages-lab.css', 'utf8');
+  const lab = readText('src/pages/shotlab.js');
+  const rink = readText('src/components/rink.js');
+  const css = readText('src/styles/pages-lab.css');
 
   assert.match(lab, /Shot Lab · live spatial telemetry/, 'Shot Lab declares its own live spatial-telemetry identity');
   assert.match(lab, /LIVE SHOT LAB/, 'live games display an explicit Shot Lab live state');
@@ -116,9 +120,9 @@ assert.doesNotMatch(apiSource, /credentials: 'include'/, 'api.js (public data) n
 
 // 1e. Rink: premium spatial surface, with the sports truth untouched.
 {
-  const rink = fs.readFileSync('src/components/rink.js', 'utf8');
-  const castCss = fs.readFileSync('src/styles/cast.css', 'utf8');
-  const cast = fs.readFileSync('src/pages/cast.js', 'utf8');
+  const rink = readText('src/components/rink.js');
+  const castCss = readText('src/styles/cast.css');
+  const cast = readText('src/pages/cast.js');
 
   // -- geometry and precision are frozen
   assert.match(rink, /viewBox="-101 -43\.5 202 87"/, 'rink keeps the regulation 200x85 viewBox');
@@ -177,7 +181,7 @@ assert.doesNotMatch(apiSource, /credentials: 'include'/, 'api.js (public data) n
   assert.match(castCss, /\.mk-g:has\(\.mk--goal\) \{ filter: url\(#pbe-mk-glow\)/, 'goals carry the strongest emphasis via the shared glow');
   assert.match(cast, /function markArrivingShots/, 'the live page decides what is actually new');
   assert.match(cast, /if \(seenShots\.has\(id\)\) continue;/, 'already-drawn attempts never replay the arrival animation');
-  assert.ok(!/setInterval|requestAnimationFrame/.test(fs.readFileSync('src/components/rink.js', 'utf8')), 'the rink runs no JS animation loop');
+  assert.ok(!/setInterval|requestAnimationFrame/.test(readText('src/components/rink.js')), 'the rink runs no JS animation loop');
 
   // -- reduced motion is honoured
   const rm = castCss.slice(castCss.indexOf('@media (prefers-reduced-motion: reduce)'));
@@ -208,8 +212,8 @@ assert.doesNotMatch(apiSource, /credentials: 'include'/, 'api.js (public data) n
 
 // 1e-bis. PBEcast Live Rink: the rink is the hero of every game page.
 {
-  const cast = fs.readFileSync('src/pages/cast.js', 'utf8');
-  const castCss = fs.readFileSync('src/styles/cast.css', 'utf8');
+  const cast = readText('src/pages/cast.js');
+  const castCss = readText('src/styles/cast.css');
   const bodyStart = cast.indexOf('body.innerHTML = `\n      ${header(cast, state.meta, state.failed)}');
   assert.ok(bodyStart > 0, 'the game body opens with the score header');
   const order = ['${header(cast', '${liveRink(cast', '${castSub(cast)', 'replayBar(state', '${fightDesk(cast)', '<div class="cast-grid"'].map(s => cast.indexOf(s, bodyStart));
@@ -248,10 +252,10 @@ assert.doesNotMatch(apiSource, /credentials: 'include'/, 'api.js (public data) n
 
 // 1f. Shot inspector: every plotted shot is inspectable, from real fields only.
 {
-  const rinkSrc = fs.readFileSync('src/components/rink.js', 'utf8');
-  const castSrc = fs.readFileSync('src/pages/cast.js', 'utf8');
-  const labSrc = fs.readFileSync('src/pages/shotlab.js', 'utf8');
-  const castCss2 = fs.readFileSync('src/styles/cast.css', 'utf8');
+  const rinkSrc = readText('src/components/rink.js');
+  const castSrc = readText('src/pages/cast.js');
+  const labSrc = readText('src/pages/shotlab.js');
+  const castCss2 = readText('src/styles/cast.css');
   const { renderRink: rr, inspectorHtml, rinkInspector } = await import('../src/components/rink.js');
 
   const play = {
@@ -353,7 +357,7 @@ for (const dir of ['src']) {
       const p = path.join(d, entry.name);
       if (entry.isDirectory()) walkInclude(p);
       else if (/\.js$/.test(entry.name) && !p.endsWith(path.join('lib', 'account.js'))) {
-        assert.ok(!/credentials:\s*'include'/.test(fs.readFileSync(p, 'utf8')), `credentialed fetch outside account.js: ${p}`);
+        assert.ok(!/credentials:\s*'include'/.test(readText(p)), `credentialed fetch outside account.js: ${p}`);
       }
     }
   };
@@ -369,7 +373,7 @@ const banned = [
   [/X-Dashboard-Secret|X-NHL-Gateway-Secret|PROPSPORTS_DASHBOARD_SECRET|NHL_GATEWAY_SECRET|X-API-Key/i, 'backend credential referenced in browser code']
 ];
 for (const file of files) {
-  const text = fs.readFileSync(file, 'utf8');
+  const text = readText(file);
   for (const [re, why] of banned) assert.ok(!re.test(text), `${why}: ${file}`);
   // Every line that mentions xG/GSAx must say it is not (yet) available.
   text.split('\n').forEach((line, i) => {
@@ -383,16 +387,16 @@ for (const file of files) {
 // background painted from an SVG is not. The one allowed exception is the
 // 72px empty-state glyph (an icon, not artwork).
 for (const file of files.filter(f => f.endsWith('.css'))) {
-  const text = fs.readFileSync(file, 'utf8');
+  const text = readText(file);
   text.split('\n').forEach((line, i) => {
     if (!/url\(\s*["']?(data:image\/svg|[^)"']*\.svg)/i.test(line)) return;
     const allowed = /^\.pbe-empty::before|^\.pid__pbe|^\.pbeo-media__fallback i/.test(line.trim());
     assert.ok(allowed, `decorative SVG background at ${file}:${i + 1}`);
   });
 }
-const backdropsLib = fs.readFileSync('src/lib/backdrops.js', 'utf8');
+const backdropsLib = readText('src/lib/backdrops.js');
 assert.match(backdropsLib, /const GENERATED = \{\};/, 'no generated (SVG) route art');
-assert.match(fs.readFileSync('src/styles/atmosphere.css', 'utf8'), /\/assets\/nhl\/grain-128\.webp/, 'grain is the raster tile');
+assert.match(readText('src/styles/atmosphere.css'), /\/assets\/nhl\/grain-128\.webp/, 'grain is the raster tile');
 assert.ok(fs.statSync('public/assets/nhl/grain-128.webp').size < 8000, 'grain tile stays tiny');
 
 console.log(`frontend checks: PASS (${files.length} files)`);
