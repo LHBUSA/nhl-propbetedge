@@ -672,7 +672,7 @@ export function tools(env = {}) {
     ['shots', 'Shot Lab', 'Every attempt, placed on the rink', '#/shots'],
     ['lines', 'Lines', 'Official rosters and last-game deployment', '#/lines'],
     ['players', 'Players', 'Leaders, game logs, rosters', '#/players'],
-    ['standings', 'Standings', 'Final 2025-26 table, labelled', '#/standings'],
+    ['standings', 'Standings', 'Current season table; prior seasons labelled', '#/standings'],
     ['news', 'News', 'Injuries, transactions, trades', '#/news'],
     ...(env.odds ? [['markets', 'Markets', 'Best line across books, snapshot', '#/props']] : []),
     ['methodology', 'Methodology', 'Every source and its freshness rule', '#/methodology']

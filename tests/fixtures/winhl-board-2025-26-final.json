@@ -1,0 +1,234 @@
+{
+ "ok": true,
+ "schema": "nhl-metrics-winhl-board-v1",
+ "version": "winhl-v1.0",
+ "tier": "free",
+ "window": "season",
+ "window_locked": false,
+ "season": "20252026",
+ "season_label": "2025–26",
+ "season_note": "2025–26 regular season (final).",
+ "windows": {
+  "season": {
+   "games": "full regular season",
+   "pool": {
+    "F": 514,
+    "D": 263
+   },
+   "percentiles": "within position group, qualified season players"
+  },
+  "last10": {
+   "games": "each player's last 10 regular-season games",
+   "pool": {
+    "F": 385,
+    "D": 190
+   },
+   "from": "2026-03-12",
+   "to": "2026-04-16",
+   "percentiles": "per-game rates scored against the season distribution"
+  },
+  "last5": {
+   "games": "each player's last 5 regular-season games",
+   "pool": {
+    "F": 442,
+    "D": 225
+   },
+   "from": "2026-03-12",
+   "to": "2026-04-16",
+   "percentiles": "per-game rates scored against the season distribution"
+  }
+ },
+ "filters": {
+  "position": null,
+  "team": null
+ },
+ "total_scored": 60,
+ "shown": 10,
+ "truncated_for_tier": true,
+ "players": [
+  {
+   "id": 8481557,
+   "name": "Matt Boldy",
+   "team": "MIN",
+   "position": "L",
+   "group": "F",
+   "rank": 1,
+   "score": 93.6,
+   "gp": 76,
+   "rank_league": 1,
+   "rank_position": 1,
+   "rank_team": 1,
+   "toi_per_game_s": 1234,
+   "flags": []
+  },
+  {
+   "id": 8482105,
+   "name": "Jake Sanderson",
+   "team": "OTT",
+   "position": "D",
+   "group": "D",
+   "rank": 2,
+   "score": 90.8,
+   "gp": 67,
+   "rank_league": 2,
+   "rank_position": 1,
+   "rank_team": 1,
+   "toi_per_game_s": 1490,
+   "flags": []
+  },
+  {
+   "id": 8479542,
+   "name": "Brandon Hagel",
+   "team": "TBL",
+   "position": "L",
+   "group": "F",
+   "rank": 3,
+   "score": 90.6,
+   "gp": 71,
+   "rank_league": 3,
+   "rank_position": 2,
+   "rank_team": 1,
+   "toi_per_game_s": 1186,
+   "flags": []
+  },
+  {
+   "id": 8475913,
+   "name": "Mark Stone",
+   "team": "VGK",
+   "position": "R",
+   "group": "F",
+   "rank": 4,
+   "score": 90,
+   "gp": 60,
+   "rank_league": 5,
+   "rank_position": 1,
+   "rank_team": 1,
+   "toi_per_game_s": 1153,
+   "flags": []
+  },
+  {
+   "id": 8481542,
+   "name": "Moritz Seider",
+   "team": "DET",
+   "position": "D",
+   "group": "D",
+   "rank": 5,
+   "score": 90,
+   "gp": 82,
+   "rank_league": 4,
+   "rank_position": 2,
+   "rank_team": 1,
+   "toi_per_game_s": 1540,
+   "flags": []
+  },
+  {
+   "id": 8478402,
+   "name": "Connor McDavid",
+   "team": "EDM",
+   "position": "C",
+   "group": "F",
+   "rank": 6,
+   "score": 89.8,
+   "gp": 82,
+   "rank_league": 6,
+   "rank_position": 1,
+   "rank_team": 1,
+   "toi_per_game_s": 1379,
+   "flags": []
+  },
+  {
+   "id": 8482116,
+   "name": "Tim Stützle",
+   "team": "OTT",
+   "position": "C",
+   "group": "F",
+   "rank": 7,
+   "score": 88.8,
+   "gp": 80,
+   "rank_league": 7,
+   "rank_position": 2,
+   "rank_team": 2,
+   "toi_per_game_s": 1216,
+   "flags": []
+  },
+  {
+   "id": 8484801,
+   "name": "Macklin Celebrini",
+   "team": "SJS",
+   "position": "C",
+   "group": "F",
+   "rank": 8,
+   "score": 88.5,
+   "gp": 82,
+   "rank_league": 8,
+   "rank_position": 3,
+   "rank_team": 1,
+   "toi_per_game_s": 1279,
+   "flags": []
+  },
+  {
+   "id": 8481559,
+   "name": "Jack Hughes",
+   "team": "NJD",
+   "position": "C",
+   "group": "F",
+   "rank": 9,
+   "score": 87.3,
+   "gp": 61,
+   "rank_league": 9,
+   "rank_position": 4,
+   "rank_team": 1,
+   "toi_per_game_s": 1279,
+   "flags": []
+  },
+  {
+   "id": 8479318,
+   "name": "Auston Matthews",
+   "team": "TOR",
+   "position": "C",
+   "group": "F",
+   "rank": 10,
+   "score": 86.8,
+   "gp": 60,
+   "rank_league": 11,
+   "rank_position": 6,
+   "rank_team": 1,
+   "toi_per_game_s": 1248,
+   "flags": []
+  }
+ ],
+ "captured_at": "2026-09-25T16:05:48.720Z",
+ "source_urls": [],
+ "season_key": "2025-26",
+ "season_type": "REGULAR_SEASON",
+ "game_type": 2,
+ "status": "final",
+ "provisional": false,
+ "qualify": null,
+ "current_season": "20262027",
+ "default_season": "20262027",
+ "is_default": false,
+ "selected_by": "request",
+ "seasons": [
+  {
+   "season": "20262027",
+   "key": "2026-27",
+   "label": "2026–27",
+   "status": "provisional",
+   "season_type": "REGULAR_SEASON",
+   "default": true
+  },
+  {
+   "season": "20252026",
+   "key": "2025-26",
+   "label": "2025–26",
+   "status": "final",
+   "season_type": "REGULAR_SEASON",
+   "default": false
+  }
+ ],
+ "age_s": 551487,
+ "ttl_s": 3600,
+ "stale_after_s": 34560000,
+ "semantics": "CURRENT"
+}

@@ -31,7 +31,7 @@ const SECTIONS = [
       <li><b>A model claim needs a model version</b> and a reproducible method.</li>
       <li><b>A heuristic is called a heuristic.</b></li>
       <li><b>The NHL has 32 teams.</b> The 2026-27 preseason opens Sep 19, 2026 and the 84-game regular season opens Sep 29, 2026.</li>
-      <li><b>Every number carries its season.</b> Until 2026-27 games are played, the NHL's "current" endpoints return 2025-26 data, and we label it that way.</li>
+      <li><b>Every number carries its season.</b> The current season (2026–27) is the default everywhere once its regular season has a game; earlier seasons stay selectable and are labelled final. Preseason is never mixed into regular-season numbers.</li>
     </ol>`
   },
   {
@@ -266,10 +266,10 @@ const SECTIONS = [
     ])}
     ${defs([
       ['Percentiles', 'Each component is a mid-rank percentile among qualified players in the same group (forwards or defensemen; faceoffs among centers). WinHL = Σ percentile × weight ÷ Σ available weight. 50 is the median qualified player at the position.'],
-      ['Qualification', '10+ games and 5:00+ per game in the window. Fewer than 20 games in the season window is flagged provisional.'],
+      ['Qualification', '10+ games and 5:00+ per game in the window. Fewer than 20 games in the season window is flagged provisional. Early season (until 200 skaters have 10+ games) the season window uses a 1-game floor and the whole board is labelled PROVISIONAL.'],
       ['Windows', 'Season; each player\'s last 10 and last 5 regular-season games. Short windows score their per-game rates against the season distribution so a small sample cannot drift toward the middle by construction. SAT relative is season-only; short windows renormalize without it.'],
       ['Trend', 'Last-10 minus season over only the components both windows have (like for like). Up ≥ +5, down ≤ −5.'],
-      ['Season choice', 'The current regular season once 200 skaters have 10+ games; before that the most recent completed season, labelled on every surface.'],
+      ['Season choice', 'The current NHL regular season is the default from its first regular-season game: provisional until 200 skaters have 10+ games, then full. Only before opening night is the previous season\'s final board shown, labelled. Preseason games are never scored. Completed seasons stay selectable on the WinHL page.'],
       ['Not included', 'Plus/minus (context-poor), goalies (see PBE Goalie Form), and any team-result weighting — not in v1.']
     ])}`
   },

@@ -1,0 +1,169 @@
+{
+ "ok": true,
+ "schema": "nhl-metrics-winhl-player-v1",
+ "version": "winhl-v1.0",
+ "tier": "pro",
+ "season": "20262027",
+ "season_label": "2026–27",
+ "season_note": "2026–27 regular season · PROVISIONAL — early-season sample: skaters qualify from 1 game until 200 have 10+ games (0 so far). Scores will move.",
+ "captured_at": "2026-10-02T01:17:15.544Z",
+ "source_urls": [],
+ "player": {
+  "id": 8470159,
+  "name": "Skater 159",
+  "team": "VGK",
+  "position": "D",
+  "group": "D",
+  "toi_per_game_s": 1440,
+  "season": {
+   "score": 79,
+   "gp": 2,
+   "coverage": 1,
+   "rank_league": 1,
+   "rank_group": 1,
+   "rank_position": 1,
+   "rank_team": 1,
+   "components": [
+    {
+     "key": "scoring",
+     "label": "Goal creation (G + 0.7·primary A + 0.3·secondary A per game)",
+     "weight": 0.18,
+     "value": 1.6,
+     "percentile": 89.5,
+     "contribution": 16.11,
+     "status": "available"
+    },
+    {
+     "key": "shots",
+     "label": "Shots on goal per game",
+     "weight": 0.07,
+     "value": 6,
+     "percentile": 90,
+     "contribution": 6.3,
+     "status": "available"
+    },
+    {
+     "key": "attempts",
+     "label": "Individual shot attempts per game",
+     "weight": 0.05,
+     "value": 7,
+     "percentile": 75,
+     "contribution": 3.75,
+     "status": "available"
+    },
+    {
+     "key": "special_teams",
+     "label": "Power-play + short-handed points per game",
+     "weight": 0.08,
+     "value": 0.375,
+     "percentile": 87.5,
+     "contribution": 7,
+     "status": "available"
+    },
+    {
+     "key": "usage",
+     "label": "Ice time per game (coach trust)",
+     "weight": 0.16,
+     "value": 1440,
+     "percentile": 95,
+     "contribution": 15.2,
+     "status": "available"
+    },
+    {
+     "key": "pk_role",
+     "label": "Penalty-kill ice time per game (deployment, not results)",
+     "weight": 0.08,
+     "value": 0,
+     "percentile": 50,
+     "contribution": 4,
+     "status": "available"
+    },
+    {
+     "key": "defense_events",
+     "label": "Blocked shots + takeaways per game",
+     "weight": 0.14,
+     "value": 5.5,
+     "percentile": 97.5,
+     "contribution": 13.65,
+     "status": "available"
+    },
+    {
+     "key": "physical",
+     "label": "Hits per game",
+     "weight": 0.05,
+     "value": 7,
+     "percentile": 94,
+     "contribution": 4.7,
+     "status": "available"
+    },
+    {
+     "key": "discipline",
+     "label": "Penalties drawn minus penalties taken per game",
+     "weight": 0.05,
+     "value": -0.5,
+     "percentile": 25,
+     "contribution": 1.25,
+     "status": "available"
+    },
+    {
+     "key": "shot_share",
+     "label": "NHL 5v5 on-ice shot-attempt share, relative to team (SAT rel, as published)",
+     "weight": 0.14,
+     "value": 0,
+     "percentile": 50.5,
+     "contribution": 7.07,
+     "status": "available"
+    }
+   ],
+   "flags": [
+    "provisional_sample"
+   ],
+   "unavailable_reason": null,
+   "first_date": null,
+   "last_date": null
+  },
+  "last10": null,
+  "last5": null,
+  "trend": null,
+  "trend_label": null
+ },
+ "history": [],
+ "season_key": "2026-27",
+ "season_type": "REGULAR_SEASON",
+ "game_type": 2,
+ "status": "provisional",
+ "provisional": true,
+ "qualify": {
+  "min_gp": 1,
+  "min_toi_per_game_s": 300,
+  "full_sample_min_gp": 10,
+  "full_sample_qualified": 0,
+  "full_sample_needed": 200
+ },
+ "current_season": "20262027",
+ "default_season": "20262027",
+ "is_default": true,
+ "selected_by": "default",
+ "seasons": [
+  {
+   "season": "20262027",
+   "key": "2026-27",
+   "label": "2026–27",
+   "status": "provisional",
+   "season_type": "REGULAR_SEASON",
+   "default": true
+  },
+  {
+   "season": "20252026",
+   "key": "2025-26",
+   "label": "2025–26",
+   "status": "final",
+   "season_type": "REGULAR_SEASON",
+   "default": false
+  }
+ ],
+ "age_s": 0,
+ "ttl_s": 3600,
+ "stale_after_s": 43200,
+ "semantics": "CURRENT"
+}

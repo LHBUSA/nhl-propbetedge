@@ -7,18 +7,25 @@ import { DASH, fmtScore, lockPanel, mmss, pointComponents, scoreRing, versionTag
 
 const err = e => `<p class="micro faint">${esc(describeError(e).title)}.</p>`;
 
+// "2026–27 regular season · provisional": the season the WinHL row belongs to.
+export function winhlSeasonCaption(d) {
+  if (!d?.season_label) return '';
+  const final = d.status === 'final' || d.status === 'prior_final';
+  return `${d.season_label} regular season${d.provisional ? ' · provisional' : final ? ' · final' : ''}`;
+}
+
 function winhlBlock(s) {
   if (!s) return '<div class="pbe-skeleton" style="height:120px"></div>';
   if (s.error) return s.error.status === 404 ? '<p class="micro faint">No WinHL row: this player has no qualifying skater season line in the WinHL window.</p>' : err(s.error);
   const d = s.data;
   const p = d.player;
   if (p.locked) {
-    return `${p.season ? `<div class="gi-card__head">${scoreRing(p.season.score, { label: 'WinHL', size: 64, caption: `League #${p.season.rank_league}` })}<span class="micro">${esc(d.season_label)} season</span></div>` : ''}
+    return `${p.season ? `<div class="gi-card__head">${scoreRing(p.season.score, { label: 'WinHL', size: 64, caption: `League #${p.season.rank_league}` })}<span class="micro">${esc(winhlSeasonCaption(d))}</span></div>` : ''}
       ${lockPanel('WinHL for every skater', 'Score, league/position/team rank, last-10 and last-5 form, trend and the component breakdown.', { compact: true })}`;
   }
   const w = x => (x && Number.isFinite(x.score) ? fmtScore(x.score, 1) : DASH);
   return `<div class="gi-card__head">${scoreRing(p.season?.score ?? null, { label: 'WinHL', size: 70, caption: p.season?.rank_league ? `League #${p.season.rank_league}` : 'Not ranked' })}
-      <div class="micro">${esc(d.season_label)} · L10 <b class="mono">${w(p.last10)}</b> · L5 <b class="mono">${w(p.last5)}</b> · trend ${p.trend === null ? DASH : `${p.trend > 0 ? '+' : ''}${p.trend}`}<br>${esc(p.group === 'D' ? 'Defense' : 'Forward')} rank ${esc(p.season?.rank_position ?? DASH)} · ${esc(p.team)} rank ${esc(p.season?.rank_team ?? DASH)}</div></div>
+      <div class="micro">${esc(winhlSeasonCaption(d))} · L10 <b class="mono">${w(p.last10)}</b> · L5 <b class="mono">${w(p.last5)}</b> · trend ${p.trend === null ? DASH : `${p.trend > 0 ? '+' : ''}${p.trend}`}<br>${esc(p.group === 'D' ? 'Defense' : 'Forward')} rank ${esc(p.season?.rank_position ?? DASH)} · ${esc(p.team)} rank ${esc(p.season?.rank_team ?? DASH)}</div></div>
     ${p.season?.unavailable_reason ? `<p class="micro faint">${esc(p.season.unavailable_reason)}</p>` : ''}
     <details><summary class="micro gold">Components ${versionTag(d.version)}</summary>${weightedComponents(p.season?.components || [])}</details>`;
 }

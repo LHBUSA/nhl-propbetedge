@@ -6,6 +6,11 @@
 // depth and the per-player component breakdown. Missing values render as
 // unavailable, never as zero. WinHL is a PropBetEdge composite, not an official
 // NHL statistic, and it is not xG, possession value, GAR or WAR.
+//
+// Season: the page never names a season itself. With no ?season= the gateway
+// serves the default board, which is the current NHL regular season (marked
+// PROVISIONAL early on); completed seasons are picked from the board's own
+// `seasons` list. Preseason is never scored.
 import { $, esc, on } from '../lib/dom.js';
 import { describeError } from '../lib/api.js';
 import { intel, onTierChange } from '../lib/intel.js';
@@ -17,6 +22,30 @@ import { DASH, fmtScore, lockPanel, mmss, versionTag, weightedComponents } from 
 const POSITIONS = [['', 'All skaters'], ['F', 'Forwards'], ['D', 'Defense'], ['C', 'Centers'], ['L', 'Left wing'], ['R', 'Right wing']];
 const WINDOWS = [['season', 'Season'], ['last10', 'Last 10'], ['last5', 'Last 5']];
 const POS_LABEL = { C: 'C', L: 'LW', R: 'RW', D: 'D' };
+const SEASON_ID = /^\d{8}$/;
+
+// Request params for a board/detail read. No season = the server default
+// (current season); only an explicit non-default selection is sent.
+export function winhlParams({ pos = '', season = '' } = {}) {
+  return { pos: pos || undefined, season: SEASON_ID.test(season) ? season : undefined };
+}
+
+// Season picker built from the API's own season list (newest first).
+export function seasonChips(board, selected = '') {
+  const seasons = Array.isArray(board?.seasons) ? board.seasons : [];
+  if (seasons.length < 2) return '';
+  const active = s => (selected ? s.season === selected : s.default);
+  return `<div class="iq-tabs" role="group" aria-label="Season">${seasons.map(s => `<button type="button" class="chip${active(s) ? ' is-active' : ''}" aria-pressed="${active(s)}" data-season="${esc(s.default ? '' : s.season)}">${esc(s.label)}${s.status === 'provisional' ? ' · Provisional' : s.status === 'final' || s.status === 'prior_final' ? ' · Final' : ''}</button>`).join('')}</div>`;
+}
+
+// Headline badges + label for the board on screen.
+export function seasonHeadline(board) {
+  if (!board) return { label: 'WinHL', badges: '' };
+  const status = board.status || 'current';
+  const badges = `<span class="pbe-badge pbe-badge--sched">Regular season</span>${board.provisional ? '<span class="pbe-badge pbe-badge--preseason">Provisional</span>' : ''}${status === 'final' || status === 'prior_final' ? '<span class="pbe-badge pbe-badge--final">Final</span>' : ''}`;
+  const suffix = board.provisional ? ' · provisional' : status === 'final' || status === 'prior_final' ? ' · final' : '';
+  return { label: `WinHL ${board.season_label} regular season${suffix}`, badges };
+}
 
 function trendMarkup(p) {
   if (p.trend === undefined) return '';
@@ -75,7 +104,7 @@ function detailMarkup(entry, tier) {
 }
 
 export function mount(root, params) {
-  const state = { tier: null, pos: POSITIONS.some(([k]) => k === params.pos) ? params.pos || '' : '', window: 'season', team: '', board: null, meta: null, error: null, detail: null, detailId: null, depth: null };
+  const state = { tier: null, pos: POSITIONS.some(([k]) => k === params.pos) ? params.pos || '' : '', season: SEASON_ID.test(params.season || '') ? params.season : '', seasons: [], window: 'season', team: '', board: null, meta: null, error: null, detail: null, detailId: null, depth: null };
   const ctl = new AbortController();
   root.innerHTML = `<section class="wrap section">
     <div class="section-head section-head--editorial">
@@ -96,16 +125,17 @@ export function mount(root, params) {
       <div class="iq-tabs" role="group" aria-label="Position">${POSITIONS.map(([k, l]) => `<button type="button" class="chip${state.pos === k ? ' is-active' : ''}" aria-pressed="${state.pos === k}" data-pos="${esc(k)}">${esc(l)}</button>`).join('')}</div>
       <div class="iq-tabs" role="group" aria-label="Window">${WINDOWS.map(([k, l]) => `<button type="button" class="chip${state.window === k ? ' is-active' : ''}" aria-pressed="${state.window === k}" data-window="${esc(k)}"${!pro && k !== 'season' ? ' data-locked="1" title="NHL Pro"' : ''}>${esc(l)}${!pro && k !== 'season' ? ' · Pro' : ''}</button>`).join('')}</div>
       ${pro ? `<label class="chip"><span class="sr-only">Team</span><select class="chip-select" data-team><option value="">All teams</option>${TEAMS.map(t => `<option value="${esc(t.abbrev)}"${state.team === t.abbrev ? ' selected' : ''}>${esc(t.abbrev)}</option>`).join('')}</select></label>` : ''}
-      ${state.board ? freshStamp(state.meta, { label: `WinHL ${state.board.season_label}` }) : ''}
+      ${seasonChips({ seasons: state.seasons }, state.season)}
+      ${state.board ? freshStamp(state.meta, { label: seasonHeadline(state.board).label }) : ''}
     </div>
-    ${state.board ? `<p class="iq-note">${esc(state.board.season_note)} ${state.board.window !== 'season' ? `Window: ${esc(state.board.windows?.[state.board.window]?.games || '')}, rates scored against the season distribution.` : ''} ${versionTag(state.board.version)}</p>` : ''}`;
+    ${state.board ? `<p class="iq-note"><span class="wl-season">${seasonHeadline(state.board).badges}</span> ${esc(state.board.season_note)} ${state.board.window !== 'season' ? `Window: ${esc(state.board.windows?.[state.board.window]?.games || '')}, rates scored against the season distribution.` : ''} ${versionTag(state.board.version)}</p>` : ''}`;
   };
 
   const renderBody = () => {
     if (state.error && !state.board) { const e = describeError(state.error); body.innerHTML = `<div class="pbe-error"><strong>${esc(e.title)}</strong>${esc(e.body)}</div>`; return; }
     if (!state.board) { body.innerHTML = '<div class="pbe-skeleton" style="height:420px"></div>'; return; }
     const players = state.board.players || [];
-    if (!players.length) { body.innerHTML = '<div class="iq-na"><b>No scored players for this filter.</b><span>Players need 10+ games and 5:00+ per game in the window.</span></div>'; return; }
+    if (!players.length) { const q = state.board.qualify || {}; body.innerHTML = `<div class="iq-na"><b>No scored players for this filter.</b><span>Players need ${esc(q.min_gp ?? 10)}+ game${(q.min_gp ?? 10) === 1 ? '' : 's'} and 5:00+ per game in the window.</span></div>`; return; }
     body.innerHTML = `${podium(players)}${rows(players)}
       ${state.board.truncated_for_tier ? lockPanel(`The full WinHL table — all ${state.board.total_scored} scored skaters`, 'NHL Pro unlocks every rank, last-10 and last-5 form, trend arrows, team filters, team depth and each player\'s component breakdown.') : ''}`;
   };
@@ -121,10 +151,11 @@ export function mount(root, params) {
   async function load() {
     try {
       state.tier = state.tier || null;
-      const res = await intel('/winhl', { params: { pos: state.pos || undefined }, proParams: { window: state.window, team: state.team || undefined, limit: 100 }, signal: ctl.signal });
+      const res = await intel('/winhl', { params: winhlParams(state), proParams: { window: state.window, team: state.team || undefined, limit: 100 }, signal: ctl.signal });
       state.tier = res.tier;
       if (res.tier !== 'pro') { state.window = 'season'; state.team = ''; }
       state.board = res.data; state.meta = res.meta; state.error = null;
+      if (Array.isArray(res.data?.seasons)) state.seasons = res.data.seasons;
     } catch (error) {
       if (error.kind === 'aborted') return;
       state.error = error;
@@ -137,7 +168,7 @@ export function mount(root, params) {
     state.detail = { loading: true };
     detail.innerHTML = detailMarkup(state.detail, state.tier);
     try {
-      const res = await intel(`/winhl/player/${id}`, { signal: ctl.signal });
+      const res = await intel(`/winhl/player/${id}`, { params: { season: winhlParams(state).season }, signal: ctl.signal });
       if (state.detailId !== id) return;
       state.detail = { data: res.data };
       state.tier = res.tier;
@@ -150,6 +181,7 @@ export function mount(root, params) {
   }
 
   const disposers = [
+    on(root, 'click', '[data-season]', (_, b) => { state.season = b.dataset.season; state.board = null; state.detail = null; detail.innerHTML = ''; renderTools(); renderBody(); load(); }),
     on(root, 'click', '[data-pos]', (_, b) => { state.pos = b.dataset.pos; state.board = null; renderTools(); renderBody(); load(); }),
     on(root, 'click', '[data-window]', (_, b) => {
       if (b.dataset.locked) { document.querySelector('[data-open-nhl-pro].pbepro__open')?.click(); return; }

@@ -1,0 +1,261 @@
+{
+ "ok": true,
+ "schema": "nhl-metrics-winhl-board-v1",
+ "version": "winhl-v1.0",
+ "tier": "free",
+ "window": "season",
+ "window_locked": false,
+ "season": "20262027",
+ "season_label": "2026–27",
+ "season_note": "2026–27 regular season · PROVISIONAL — early-season sample: skaters qualify from 1 game until 200 have 10+ games (0 so far). Scores will move.",
+ "windows": {
+  "season": {
+   "games": "regular season to date (early-season floor)",
+   "pool": {
+    "F": 200,
+    "D": 100
+   },
+   "min_gp": 1,
+   "percentiles": "within position group, qualified season players"
+  },
+  "last10": {
+   "games": "each player's last 10 regular-season games",
+   "pool": {
+    "F": 0,
+    "D": 0
+   },
+   "from": null,
+   "to": null,
+   "percentiles": "per-game rates scored against the season distribution"
+  },
+  "last5": {
+   "games": "each player's last 5 regular-season games",
+   "pool": {
+    "F": 0,
+    "D": 0
+   },
+   "from": null,
+   "to": null,
+   "percentiles": "per-game rates scored against the season distribution"
+  }
+ },
+ "filters": {
+  "position": null,
+  "team": null
+ },
+ "total_scored": 300,
+ "shown": 10,
+ "truncated_for_tier": true,
+ "players": [
+  {
+   "id": 8470159,
+   "name": "Skater 159",
+   "team": "VGK",
+   "position": "D",
+   "group": "D",
+   "rank": 1,
+   "score": 79,
+   "gp": 2,
+   "rank_league": 1,
+   "rank_position": 1,
+   "rank_team": 1,
+   "toi_per_game_s": 1440,
+   "flags": [
+    "provisional_sample"
+   ]
+  },
+  {
+   "id": 8470279,
+   "name": "Skater 279",
+   "team": "VGK",
+   "position": "D",
+   "group": "D",
+   "rank": 2,
+   "score": 79,
+   "gp": 2,
+   "rank_league": 2,
+   "rank_position": 2,
+   "rank_team": 2,
+   "toi_per_game_s": 1440,
+   "flags": [
+    "provisional_sample"
+   ]
+  },
+  {
+   "id": 8470299,
+   "name": "Skater 299",
+   "team": "NYR",
+   "position": "R",
+   "group": "F",
+   "rank": 3,
+   "score": 79,
+   "gp": 2,
+   "rank_league": 3,
+   "rank_position": 1,
+   "rank_team": 1,
+   "toi_per_game_s": 1440,
+   "flags": [
+    "provisional_sample"
+   ]
+  },
+  {
+   "id": 8470039,
+   "name": "Skater 39",
+   "team": "VGK",
+   "position": "D",
+   "group": "D",
+   "rank": 4,
+   "score": 77.8,
+   "gp": 2,
+   "rank_league": 4,
+   "rank_position": 3,
+   "rank_team": 3,
+   "toi_per_game_s": 1440,
+   "flags": [
+    "provisional_sample"
+   ]
+  },
+  {
+   "id": 8470118,
+   "name": "Skater 118",
+   "team": "DAL",
+   "position": "L",
+   "group": "F",
+   "rank": 5,
+   "score": 77,
+   "gp": 1,
+   "rank_league": 5,
+   "rank_position": 1,
+   "rank_team": 1,
+   "toi_per_game_s": 1380,
+   "flags": [
+    "provisional_sample"
+   ]
+  },
+  {
+   "id": 8470179,
+   "name": "Skater 179",
+   "team": "NYR",
+   "position": "R",
+   "group": "F",
+   "rank": 6,
+   "score": 76.6,
+   "gp": 2,
+   "rank_league": 6,
+   "rank_position": 2,
+   "rank_team": 2,
+   "toi_per_game_s": 1440,
+   "flags": [
+    "provisional_sample"
+   ]
+  },
+  {
+   "id": 8470083,
+   "name": "Skater 83",
+   "team": "NYR",
+   "position": "R",
+   "group": "F",
+   "rank": 7,
+   "score": 75.7,
+   "gp": 2,
+   "rank_league": 7,
+   "rank_position": 3,
+   "rank_team": 3,
+   "toi_per_game_s": 1080,
+   "flags": [
+    "provisional_sample"
+   ]
+  },
+  {
+   "id": 8470263,
+   "name": "Skater 263",
+   "team": "VGK",
+   "position": "R",
+   "group": "F",
+   "rank": 8,
+   "score": 75.4,
+   "gp": 2,
+   "rank_league": 8,
+   "rank_position": 4,
+   "rank_team": 4,
+   "toi_per_game_s": 1080,
+   "flags": [
+    "provisional_sample"
+   ]
+  },
+  {
+   "id": 8470219,
+   "name": "Skater 219",
+   "team": "NYR",
+   "position": "D",
+   "group": "D",
+   "rank": 9,
+   "score": 75.1,
+   "gp": 2,
+   "rank_league": 9,
+   "rank_position": 4,
+   "rank_team": 4,
+   "toi_per_game_s": 1440,
+   "flags": [
+    "provisional_sample"
+   ]
+  },
+  {
+   "id": 8470167,
+   "name": "Skater 167",
+   "team": "VGK",
+   "position": "R",
+   "group": "F",
+   "rank": 10,
+   "score": 74.1,
+   "gp": 2,
+   "rank_league": 10,
+   "rank_position": 5,
+   "rank_team": 5,
+   "toi_per_game_s": 1320,
+   "flags": [
+    "provisional_sample"
+   ]
+  }
+ ],
+ "captured_at": "2026-10-02T01:17:15.544Z",
+ "source_urls": [],
+ "season_key": "2026-27",
+ "season_type": "REGULAR_SEASON",
+ "game_type": 2,
+ "status": "provisional",
+ "provisional": true,
+ "qualify": {
+  "min_gp": 1,
+  "min_toi_per_game_s": 300,
+  "full_sample_min_gp": 10,
+  "full_sample_qualified": 0,
+  "full_sample_needed": 200
+ },
+ "current_season": "20262027",
+ "default_season": "20262027",
+ "is_default": true,
+ "selected_by": "default",
+ "seasons": [
+  {
+   "season": "20262027",
+   "key": "2026-27",
+   "label": "2026–27",
+   "status": "provisional",
+   "season_type": "REGULAR_SEASON",
+   "default": true
+  },
+  {
+   "season": "20252026",
+   "key": "2025-26",
+   "label": "2025–26",
+   "status": "final",
+   "season_type": "REGULAR_SEASON",
+   "default": false
+  }
+ ],
+ "age_s": 0,
+ "ttl_s": 3600,
+ "stale_after_s": 43200,
+ "semantics": "CURRENT"
+}

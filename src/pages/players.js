@@ -40,7 +40,8 @@ const seasonLabel = s => {
 function windowLabel(data) {
   if (data?.season) return `${seasonLabel(data.season)} ${String(gameTypeLabel(data.game_type) || 'regular season').toLowerCase()}`;
   const before = todayET() < REGULAR_SEASON_START;
-  return before ? '2025–26 regular season (most recent completed)' : 'Current season to date';
+  const y = Number(REGULAR_SEASON_START.slice(0, 4));
+  return before ? `${y - 1}–${String(y).slice(2)} regular season (most recent completed)` : 'Current season to date';
 }
 
 function leadersTable(state) {

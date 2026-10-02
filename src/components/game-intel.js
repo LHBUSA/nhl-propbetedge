@@ -35,7 +35,7 @@ export function gameIntelPanel(intel, { pro = false, props = null, propsError = 
   cells.push(cell('WinHL lineup', winLocked
     ? `${lockPanel('Average WinHL of each side\'s last dressed lineup', null, { compact: true })}`
     : `${duo(intel, s => `<b>${fmtScore(s.winhl_lineup.average, 1)}</b><span class="micro faint">${s.winhl_lineup.scored}/${s.winhl_lineup.dressed} scored</span>${(s.winhl_lineup.top || []).slice(0, 3).map(p => `<a class="micro" href="#/player/${esc(p.id)}">${esc(p.name)} ${fmtScore(p.score)}</a>`).join('')}`)}
-      ${edgeLine(intel.edges.winhl_lineup, teams)}<p class="micro faint">${esc(intel.sides.away.winhl_lineup.basis || '')}</p>`));
+      ${edgeLine(intel.edges.winhl_lineup, teams)}<p class="micro faint">${esc(intel.sides.away.winhl_lineup.basis || '')}${intel.sides.away.winhl_lineup.season_label ? ` WinHL: ${esc(intel.sides.away.winhl_lineup.season_label)} regular season${intel.sides.away.winhl_lineup.provisional ? ' (provisional)' : ''}.` : ''}</p>`));
 
   const env = intel.sides.away.shot_environment;
   cells.push(cell('Shot environment', env

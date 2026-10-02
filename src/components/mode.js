@@ -59,7 +59,7 @@ export function capabilities(mode, env = {}) {
     cap(AVAILABLE, 'Shot intelligence', 'Real-coordinate rink maps, Corsi/Fenwick', '#/shots'),
     cap(AVAILABLE, 'Line deployment', 'Official rosters and last-game deployment', '#/lines'),
     cap(AVAILABLE, 'Team & player research', 'Leaders, game logs, rosters', '#/players'),
-    cap(AVAILABLE, 'Standings & history', '2025-26 final table, labelled', '#/standings'),
+    cap(AVAILABLE, 'Standings & history', 'Current season table; prior seasons labelled', '#/standings'),
     cap(AVAILABLE, 'Newsroom', 'Injuries, transactions, trades', '#/news'),
     cap(AVAILABLE, 'PBE Picks desk', 'Slate, model status and the lock pipeline', '#/pbe-picks'),
     ...(env.odds ? [cap(AVAILABLE, 'Market snapshots', 'Best line, 10 books, 3×/day', '#/props')] : []),
