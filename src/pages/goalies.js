@@ -43,7 +43,7 @@ const metricsState = g => (LIVEISH.has(semOf(g)) ? 'LIVE' : semOf(g) === 'FINAL'
 const METHOD_NOTE = `<aside class="gc-method" aria-label="How to read the Goalie Center">
   <dl>
     <div><dt><span class="pbe-badge gc-badge gc-badge--confirmed">Confirmed</span></dt><dd>Official NHL boxscore after puck drop — the NHL starter flag, or, while a game is live and the NHL omits that flag, the only goalie with ice time (derived by us, not an NHL flag). The basis is shown with every confirmed starter.</dd></div>
-    <div><dt><span class="pbe-badge gc-badge gc-badge--projected">Projected · Reported</span></dt><dd>NHL.com projected lineup when it names the starter, matched to the official roster by NHL id. Reported, not official.</dd></div>
+    <div><dt><span class="pbe-badge gc-badge gc-badge--projected">Projected · Reported</span></dt><dd>NHL.com projected lineup when it names the starter, matched to the official roster by NHL id. Reported, not official.</dd></div> <!-- source-brand:allow (named publisher: NHL.com projected-lineup reporting) -->
     <div><dt><span class="pbe-badge gc-badge gc-badge--unknown">Unknown</span></dt><dd>No approved starter evidence yet. Nobody is put in the starter slot.</dd></div>
     <div><dt>In net now</dt><dd>The goalie on the latest opponent shot in the NHL play-by-play — observed, never treated as the starter.</dd></div>
   </dl>
@@ -109,7 +109,7 @@ function teamFocus(view, g, entry, { pro }) {
     ${rec ? `<div class="gc-block">${seasonSection(rec)}</div>
       <div class="gc-block"><div class="gc-sub"><span class="eyebrow">Recent form</span></div>${recentForm(rec)}</div>
       <div class="gc-block"><div class="gc-sub"><span class="eyebrow">Workload &amp; rest</span>${stamp('NHL schedule + game logs')}</div>${goalieWarnings(rec)}${workloadTimeline(rec, entry.intel?.data?.game?.date)}</div>
-      <div class="gc-block"><div class="gc-sub"><span class="eyebrow">Shot location · NHL EDGE</span></div>${edgeSplits(rec)}</div>
+      <div class="gc-block"><div class="gc-sub"><span class="eyebrow">Shot location · PropSports</span></div>${edgeSplits(rec)}</div>
       <div class="gc-block gc-block--pbe"><div class="gc-sub"><span class="eyebrow">PBE analysis</span></div>${formBlock(rec, pro)}</div>` : h ? '<p class="micro gc-none">No season, form or tracking record for this goalie in the intelligence payload yet.</p>' : ''}
     ${others.length ? `<div class="gc-block"><div class="gc-sub"><span class="eyebrow">Other goalies</span></div><ul class="gc-others">${others.map(o => {
       const cur = o.season_lines?.current?.line; const prev = o.season_lines?.previous?.line;
@@ -148,7 +148,7 @@ export function mount(root, params, ctx) {
   root.innerHTML = `<section class="wrap section dk dk-goalies gc">
     <div class="section-head">
       <div><span class="eyebrow">Goalie Center${focusId ? ' · Focus' : ''}</span><h2 id="dk-g-title">${focusId ? 'Who is in net' : 'Who is in net tonight'}</h2></div>
-      <p>Starter truth, saves, goals allowed, record and save rate first — then recent form, workload, NHL EDGE shot location and PBE analysis.</p>
+      <p>Starter truth, saves, goals allowed, record and save rate first — then recent form, workload, shot location and PBE analysis.</p>
     </div>
     <div id="dk-g-tools"></div>
     <div id="dk-g-body"></div>

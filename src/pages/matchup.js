@@ -3,6 +3,7 @@ import { describeError, nhl, odds } from '../lib/api.js';
 import { intel } from '../lib/intel.js';
 import { gameIntelPanel } from '../components/game-intel.js';
 import { freshStamp } from '../lib/freshness.js';
+import { publisherUrl } from '../lib/brand.js';
 import { dateLabel, dayET, gameTypeLabel, n, num, share, svPct, timeET, todayET } from '../lib/format.js';
 import { createPoller } from '../lib/poll.js';
 import { TEAM_BY_ABBREV, teamAccent } from '../lib/teams.js';
@@ -133,7 +134,7 @@ function goaliePanel(g) {
     const t = teams[side];
     if (!t) return '';
     const s = t.starter || {};
-    const src = safeUrl(s.source_url);
+    const src = publisherUrl(safeUrl(s.source_url)); // publisher pages only; never an API endpoint
     const season = seasonLabel(t.stats_season);
     const goalies = (t.goalies || []).slice().sort((x, y) => (n(y.games_started) ?? 0) - (n(x.games_started) ?? 0));
     const l5 = gl => {
@@ -158,7 +159,7 @@ function goaliePanel(g) {
   const seasons = [...new Set(['away', 'home'].map(k => seasonLabel(teams[k]?.stats_season)).filter(Boolean))];
   return `${panelHead('Goalies', `<span class="micro">${esc(seasons.join(' / '))} regular season stats</span>`)}
     <div class="rs-gcols">${col('away')}${col('home')}</div>
-    <p class="micro rs-after">Confirmed = official NHL boxscore after puck drop. Projected · Reported = the NHL.com projected lineup, not official. Unknown = no approved starter evidence yet. Full goalie lines in the <a class="gold" href="#/goalies/${esc(g.game_id || g.game?.id || '')}">Goalie Center</a>. ${esc(g.gsax_status && /unavailable|not/i.test(g.gsax_status) ? 'GSAx: not available until a validated xG model is released.' : '')}</p>`;
+    <p class="micro rs-after">Confirmed = official NHL boxscore after puck drop. Projected · Reported = the NHL.com projected lineup, not official. Unknown = no approved starter evidence yet. Full goalie lines in the <a class="gold" href="#/goalies/${esc(g.game_id || g.game?.id || '')}">Goalie Center</a>. ${esc(g.gsax_status && /unavailable|not/i.test(g.gsax_status) ? 'GSAx: not available until a validated xG model is released.' : '')}</p>`; // source-brand:allow (named publisher: NHL.com projected-lineup reporting)
 }
 
 function restPanel(g) {

@@ -1,5 +1,6 @@
 import { esc } from './dom.js';
 import { ageText, clockET } from './format.js';
+import { customerSource } from './brand.js';
 
 // Provenance states rendered by every volatile surface:
 // CURRENT  fetched within its TTL
@@ -25,11 +26,11 @@ export function freshnessState({ meta, failed = false, hasData = true, unavailab
 // never stay CURRENT after refreshes stop.
 export function freshStamp(meta, { failed = false, hasData = true, unavailable = false, source = null, label = null } = {}) {
   const state = freshnessState({ meta, failed, hasData, unavailable });
-  const src = source || 'PropSports';
-  const provenance = meta?.source || '';
+  // Customer label only: upstream lane names and endpoint URLs stay in the API envelope (meta), never in the DOM.
+  const src = customerSource(source) || 'PropSports';
   const fetchedAt = meta?.fetched_at || '';
   const age = fetchedAt ? (Date.now() - Date.parse(fetchedAt)) / 1000 : NaN;
-  return `<span class="fresh" data-state="${state}" data-fetched="${esc(fetchedAt)}" data-ttl="${meta?.ttl_s ?? ''}" data-stale="${meta?.stale_after_s ?? ''}" data-failed="${failed ? '1' : ''}" data-has="${hasData ? '1' : ''}" data-provenance="${esc(provenance)}"${fetchedAt ? ` title="Source: ${esc(src)} · fetched ${esc(clockET(fetchedAt))}${meta?.source_urls?.length ? ` · ${esc(meta.source_urls.join(' , '))}` : ''}"` : ''}>
+  return `<span class="fresh" data-state="${state}" data-fetched="${esc(fetchedAt)}" data-ttl="${meta?.ttl_s ?? ''}" data-stale="${meta?.stale_after_s ?? ''}" data-failed="${failed ? '1' : ''}" data-has="${hasData ? '1' : ''}"${fetchedAt ? ` title="DATA · PropSports · last observed ${esc(clockET(fetchedAt))}"` : ''}>
     <i class="fresh__dot" aria-hidden="true"></i><b class="fresh__state">${state}</b>${label ? ` · ${esc(label)}` : ''} · ${esc(src)}${fetchedAt ? ` · <span class="fresh__age">${esc(ageText(age))}</span>` : ''}
   </span>`;
 }

@@ -5,6 +5,7 @@
 import { esc } from '../lib/dom.js';
 import { clockET, dayET, num, svPct } from '../lib/format.js';
 import { playerIdentity } from './player.js';
+import { customerSource, publisherUrl } from '../lib/brand.js';
 import { level, primaryLine, recordText, seasonBlock, seasonText, STATUS_TEXT } from '../lib/goalie-center.js';
 
 const DASH = '—';
@@ -28,7 +29,11 @@ export function truthBlock(view, { live = false } = {}) {
   if (!view) return '';
   const s = view.starter || {};
   const lv = view.level;
-  const src = s.source ? `${s.source}${s.captured_at ? ` · ${dayET(s.captured_at)} ${clockET(s.captured_at)} ET` : ''}` : '';
+  // Customer label: PropSports for observed data; a named publisher (linked reporting) keeps its credit + link.
+  const pubUrl = publisherUrl(s.source_url);
+  const srcName = customerSource(s.source);
+  const when = s.captured_at ? ` · ${dayET(s.captured_at)} ${clockET(s.captured_at)} ET` : '';
+  const src = srcName ? `${srcName}${when}` : '';
   const started = lv === 'UNKNOWN'
     ? `<div class="gc-truth__row"><span class="gc-truth__k">${live ? 'Started' : 'Starter'}</span><span><b>${live ? 'Starter flag unavailable' : 'Starter not reported'}</b></span>${badge('UNKNOWN')}</div>`
     : `<div class="gc-truth__row"><span class="gc-truth__k">${lv === 'CONFIRMED' ? 'Started' : 'Projected'}</span><span>${nameLink(view.headline?.id, view.headline?.name || s.name)}</span>${badge(lv)}</div>`;
@@ -37,7 +42,7 @@ export function truthBlock(view, { live = false } = {}) {
     : '';
   const unmatched = view.projectedUnmatched ? '<p class="micro gc-note">The reported goalie is not matched to an NHL id on the official roster, so no goalie stats are attached.</p>' : '';
   return `<div class="gc-truth gc-truth--${lv.toLowerCase()}">${started}${net}${unmatched}
-    <p class="micro gc-truth__basis">${esc(s.basis || '')}${src ? ` · ${esc(src)}` : ''}</p></div>`;
+    <p class="micro gc-truth__basis">${esc(s.basis || '')}${src ? ` · ${pubUrl && srcName !== 'PropSports' ? `<a class="gold" href="${esc(pubUrl)}" target="_blank" rel="noopener nofollow">${esc(srcName)} ↗</a>${esc(when)}` : esc(src)}` : ''}</p></div>`;
 }
 
 // ---------------------------------------------------------------- live line
