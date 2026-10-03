@@ -15,6 +15,8 @@ import { describeError, picksLedger, picksPreseasonHistory, picksPreseasonLedger
 import { freshStamp } from '../lib/freshness.js';
 import { dayET, pct, timeET } from '../lib/format.js';
 import { bookFullName } from '../components/market.js';
+import { avmWithEventLabels, loadAlgoVsMarket, splitMatchup } from '../data/kalshi.js';
+import { algoVsMarketCard } from '../vendor/kalshi/kalshi-market-ui.js';
 
 const DASH = '—';
 const LEDGER_LIMIT = 25;
@@ -445,6 +447,23 @@ function ledgerBlock(state) {
   </div>`;
 }
 
+// ALGO vs MARKET (shared module, vendored unchanged): one card per algorithm the API returns.
+// The API's `algos` is empty until the first qualifying frozen comparison, so this renders
+// nothing (no box, no heading) until then. Roles resolve to teams from the picks ledger's
+// own matchup when the frozen market label is absent.
+function avmBlock(state) {
+  if (state.segment !== 'regular') return '';
+  const algos = Array.isArray(state.avm?.algos) ? state.avm.algos : [];
+  if (!algos.length) return '';
+  const matchupOf = id => {
+    const row = ledgerRows(state.ledger).find(r => String(readKey(r, ['game_id'])) === String(id));
+    return row ? readKey(row, ['matchup']) || (readKey(row, ['away']) && readKey(row, ['home']) ? readKey(row, ['away']) + ' @ ' + readKey(row, ['home']) : null) : null;
+  };
+  const nameOf = (r, role) => (role === 'away' || role === 'home' ? splitMatchup(matchupOf(r.canonical_event_id) || r.event_label)?.[role] || null : null);
+  const cards = algos.map(algo => algoVsMarketCard(avmWithEventLabels(algo, matchupOf), { nameOf, recent: 10 })).filter(Boolean);
+  return cards.length ? `<div class="trk-block trk-avm" data-track-avm>${cards.join('')}</div>` : '';
+}
+
 export function trackView(state) {
   const activeError = segmentRecordError(state);
   return `<section class="wrap section trk">
@@ -459,6 +478,7 @@ export function trackView(state) {
     ${activeError ? `<div class="trk-block"><div class="pbe-note page-note"><b>Record feed unavailable.</b> ${esc(unavailableText(activeError))}</div></div>` : ''}
 
     ${summaryBlock(state)}
+    ${avmBlock(state)}
     ${ledgerBlock(state)}
 
     <div class="trk-block">
@@ -519,7 +539,8 @@ export function mount(root) {
     modelVersion: '',
     preseasonRecord: null, preseasonRecordMeta: null, preseasonRecordError: null,
     regularRecord: null, regularRecordMeta: null, regularRecordError: null,
-    ledger: null, ledgerMeta: null, ledgerError: null
+    ledger: null, ledgerMeta: null, ledgerError: null,
+    avm: null
   };
 
   const render = () => { root.innerHTML = trackView(state); };
@@ -585,6 +606,12 @@ export function mount(root) {
   loadPreseasonRecord();
   loadRegularRecord();
   loadLedger();
+  // Algo vs Market: one read per visit (it changes only at a lock or a grade); failure -> nothing.
+  loadAlgoVsMarket().then(body => {
+    if (signal.aborted) return;
+    state.avm = body;
+    if (body?.algos?.length) render();
+  });
 
   const disposers = [
     on(root, 'click', '[data-segment]', (_, btn) => {

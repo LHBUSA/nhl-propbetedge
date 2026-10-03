@@ -41,3 +41,10 @@ section.kx { border-width: 1px; border-style: solid; border-radius: var(--r-md);
 }
 /* Game card: the restrained line sits on its own row at the top of the footer. */
 .scard__actions .kx-line { flex: 1 1 100%; order: -1; padding: 2px 0 4px; }
+
+/* ALGO vs MARKET (shared module): Cast layer under Market Pulse; track-record card. Collapses to
+   nothing until the API has a qualifying frozen comparison. */
+.cast-avm-slot:empty { display: none; }
+.cast-avm-slot { margin-top: var(--s-3); min-width: 0; }
+.trk-avm section.kx { margin: 0; }
+.trk-avm section.kx + section.kx { margin-top: var(--s-3); }

@@ -11,8 +11,8 @@ import { fightEvents, isFightingMajor, latestFight } from '../lib/fights.js';
 import { createPoller } from '../lib/poll.js';
 import { resolveRecentCompleted } from '../lib/recent-games.js';
 import { TEAM_BY_ABBREV, teamAccent } from '../lib/teams.js';
-import { kalshi, kalshiPollState } from '../data/kalshi.js';
-import { kalshiCard, marketHistoryCard, wireKalshi } from '../vendor/kalshi/kalshi-market-ui.js';
+import { kalshi, kalshiPollState, loadAlgoVsMarketEvent } from '../data/kalshi.js';
+import { algoVsMarketEvent, kalshiCard, marketHistoryCard, wireKalshi } from '../vendor/kalshi/kalshi-market-ui.js';
 import { STATE, clockText, specialTeams } from '../lib/special-teams.js';
 import { compactLines, loadDna, momentContext, peekDna, renderCompactDna, roleLabel } from '../lib/cast-dna.js';
 import { stateBadge, stateOf, teamMark } from '../components/game.js';
@@ -710,6 +710,20 @@ export function castMarketHtml(entry, game) {
   return `<div class="cast-mkt" data-phase="${phase[0]}"><div class="cast-mkt-phase"><span class="cast-mkt-dot" aria-hidden="true"></span>${phase[1]}</div>${body}</div>`;
 }
 
+// PBE pick vs market at PBE lock (shared ALGO vs MARKET layer, vendored unchanged), directly
+// under Market Pulse. Only this game's comparison; nothing until a qualifying comparison has
+// frozen at the official pick lock (the API decides; a LOCKED row reveals no selection).
+export const AVM_POLL_MS = 300000;
+export function castAvmHtml(payload, game) {
+  if (!payload || !game) return '';
+  const own = (payload.comparisons || []).filter(r => String(r?.canonical_event_id) === String(game.id));
+  if (!own.length) return '';
+  const nameOf = (r, role) => (role === 'away' || role === 'home' ? game.teams?.[role]?.abbrev || null : null);
+  return algoVsMarketEvent({ ...payload, comparisons: own }, { nameOf });
+}
+// A comparison with a result is final: stop re-reading it.
+const avmFinal = payload => (payload?.comparisons || []).some(r => r?.result);
+
 const isMarketClosed = entry => ['CLOSED', 'SETTLED'].includes(entry?.market?.lifecycle);
 
 // Market poll cadence for this game: live 20 s, pregame 45 s; once the market
@@ -762,7 +776,9 @@ export function mount(root, params, ctx) {
     // Replay: cursor is an index into cast.plays (null = full/live view).
     cursor: null, playing: false, speed: 'normal', startSort: /^\d+$/.test(params.t || '') ? Number(params.t) : null,
     // Kalshi prediction-market entry for this game (null = render nothing).
-    kalshi: null
+    kalshi: null,
+    // ALGO vs MARKET comparison for this game (null = render nothing).
+    avm: null
   };
   let playTimer = null;
   // Shot sort_orders already drawn for this game. null until the first paint so
@@ -901,6 +917,7 @@ export function mount(root, params, ctx) {
       ${header(cast, state.meta, state.failed)}
       ${liveRink(cast, state, rink, { periods, latest, live })}
       <div id="cast-kx" class="cast-kx-slot">${kx}</div>
+      <div id="cast-avm" class="cast-avm-slot">${castAvmHtml(state.avm, full.game)}</div>
       ${castSub(cast)}
       ${!pre && full.plays.length ? replayBar(state, full, { live: ['LIVE', 'INTERMISSION'].includes(st.key) }) : ''}
       ${fightDesk(cast)}
@@ -935,6 +952,8 @@ export function mount(root, params, ctx) {
     if (scroller) scroller.scrollTop = feedScroll;
     const kxSlot = $('#cast-kx', body);
     if (kxSlot) kxSlot.dataset.kxHtml = kx;
+    const avmSlot = $('#cast-avm', body);
+    if (avmSlot) avmSlot.dataset.avmHtml = castAvmHtml(state.avm, full.game);
     markArrivingShots(body);
     mountInspector();
     wireKalshiOnce(kx);
@@ -961,6 +980,17 @@ export function mount(root, params, ctx) {
     slot.innerHTML = kx;
     slot.dataset.kxHtml = kx;
     wireKalshiOnce(kx);
+  }
+
+  // AVM poll result: patch only its slot in place.
+  function updateAvm() {
+    if (!state.cast) return;
+    const slot = $('#cast-avm', body);
+    if (!slot) return;
+    const html = castAvmHtml(state.avm, state.cast.game);
+    if (slot.dataset.avmHtml === html) return;
+    slot.innerHTML = html;
+    slot.dataset.avmHtml = html;
   }
 
   // Load stored DNA for the moment's players once per session (cached by id +
@@ -1085,15 +1115,24 @@ export function mount(root, params, ctx) {
     kalshi.loadEvent(state.gameId),
     new Promise(resolve => setTimeout(() => resolve(undefined), KALSHI_FIRST_PAINT_MS))
   ]);
+  // The AVM comparison loads with the first paint too (same cap), then re-reads every 5 min
+  // until it has a result (it changes only at the PBE lock and at grading).
+  const avmFirst = () => Promise.race([
+    loadAlgoVsMarketEvent(state.gameId),
+    new Promise(resolve => setTimeout(() => resolve(undefined), KALSHI_FIRST_PAINT_MS))
+  ]);
   let kxStarted = false;
+  let avmFresh = false;
 
   const poller = state.gameId ? createPoller(async signal => {
     const first = !state.cast;
-    const [res, kxEntry] = await Promise.all([
+    const [res, kxEntry, avmBody] = await Promise.all([
       nhl(`/nhl/game/${state.gameId}/cast`, {}, { signal, timeout: 12000 }),
-      first ? kalshiFirst() : undefined
+      first ? kalshiFirst() : undefined,
+      first ? avmFirst() : undefined
     ]);
     if (kxEntry !== undefined) state.kalshi = kxEntry;
+    if (avmBody !== undefined) { state.avm = avmBody; avmFresh = Boolean(avmBody); }
     state.cast = res.data; state.meta = res.meta; state.failed = false; state.error = null;
 
     // Keep the active game card in the top rail locked to the same live game
@@ -1112,7 +1151,7 @@ export function mount(root, params, ctx) {
       state.startSort = null;
     }
     renderBody();
-    if (!kxStarted) { kxStarted = true; kalshiPoller.start(); }
+    if (!kxStarted) { kxStarted = true; kalshiPoller.start(); avmPoller.start(); }
     const key = stateOf(res.data.game).key;
     if (key === 'LIVE' || key === 'INTERMISSION') return 5000;
     if (key === 'FINAL' || key === 'POSTPONED' || key === 'CANCELLED') return null;
@@ -1142,6 +1181,16 @@ export function mount(root, params, ctx) {
     updateKalshi();
     return kalshiPollMs(state.kalshi, key);
   }, { onError: () => 60000, maxBackoff: 300000 });
+
+  const avmPoller = createPoller(async () => {
+    if (avmFresh) avmFresh = false;
+    else {
+      const next = await loadAlgoVsMarketEvent(state.gameId);
+      if (next) state.avm = next; // a failed read keeps what is shown and retries on the next tick
+      updateAvm();
+    }
+    return avmFinal(state.avm) ? null : AVM_POLL_MS;
+  }, { onError: () => AVM_POLL_MS, maxBackoff: 900000 });
 
   const pickerPoller = createPoller(async signal => loadPicker(signal), {
     onError: () => 60000,
@@ -1247,6 +1296,7 @@ export function mount(root, params, ctx) {
     intelCtl.abort();
     pickerPoller.stop();
     kalshiPoller.stop();
+    avmPoller.stop();
     poller?.stop();
     document.removeEventListener('keydown', onKey);
     inspector?.dispose();

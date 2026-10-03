@@ -15,3 +15,52 @@ export function kalshiPollState(key) {
   if (key === 'SCHEDULED' || key === 'PREGAME') return 'pregame';
   return null;
 }
+
+// ALGO vs MARKET (contract algo-vs-market/1, same propsports-markets API): the official
+// PBE NHL Model's pick and the market's pick, both frozen at the PBE lock. The browser
+// renders exactly what the API returns: `algos` is empty until the first qualifying frozen
+// comparison, and a failed read is null (nothing renders, nothing is invented).
+const AVM_BASE = String(base || 'https://propsports-markets.sales-fd3.workers.dev').replace(/\/+$/, '');
+async function avmRead(path, fetchImpl) {
+  try {
+    const res = await fetchImpl(`${AVM_BASE}${path}`, { headers: { accept: 'application/json' } });
+    if (!res.ok) return null;
+    return await res.json();
+  } catch {
+    return null;
+  }
+}
+const defaultFetch = (...a) => globalThis.fetch(...a);
+
+/** Track record: { algos: [...] } or null on failure. */
+export async function loadAlgoVsMarket({ fetchImpl = defaultFetch } = {}) {
+  const body = await avmRead('/v1/algo-vs-market/nhl', fetchImpl);
+  return body && Array.isArray(body.algos) ? body : null;
+}
+
+/** One game (canonical id = NHL gamePk): { comparisons: [...] } or null on failure. */
+export async function loadAlgoVsMarketEvent(gameId, { fetchImpl = defaultFetch } = {}) {
+  if (!gameId) return null;
+  const body = await avmRead(`/v1/algo-vs-market/event/nhl/${encodeURIComponent(String(gameId))}`, fetchImpl);
+  return body && Array.isArray(body.comparisons) ? body : null;
+}
+
+// "AWAY @ HOME" -> { away, home } (the picks ledger's own matchup label).
+export function splitMatchup(matchup) {
+  const m = /^\s*(.+?)\s+@\s+(.+?)\s*$/.exec(String(matchup || ''));
+  return m ? { away: m[1], home: m[2] } : null;
+}
+
+// Event label for an AVM ledger row from data the page already has: the picks ledger's matchup
+// for that game, else the frozen market's own away/home labels; otherwise the row is unchanged.
+export function avmWithEventLabels(algo, matchupOf = () => null) {
+  if (!algo || !Array.isArray(algo.ledger)) return algo;
+  const ledger = algo.ledger.map(r => {
+    if (r.event_label) return r;
+    const fromPage = matchupOf(r.canonical_event_id);
+    const p = r.market?.prices;
+    const label = fromPage || (p?.away?.label && p?.home?.label ? `${p.away.label} @ ${p.home.label}` : null);
+    return label ? { ...r, event_label: label } : r;
+  });
+  return { ...algo, ledger };
+}
