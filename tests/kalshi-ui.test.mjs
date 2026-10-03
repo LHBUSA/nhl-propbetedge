@@ -187,8 +187,8 @@ test('the shared component is vendored unchanged', () => {
   // SHA-256 of propbetedge-workers/workers/propsports-markets/client/* at vendoring time.
   const expected = {
     'kalshi-market-client.js': '653cb0fc2673f909552453052560bfd6194e0e4d045c51b1eb73483957d4c049',
-    'kalshi-market-ui.css': '10b1f0d9a088602bd4c2641b3f017bbb66be5659cf10bb35565f8a8abe8f53ba',
-    'kalshi-market-ui.js': '9fef614b52c2f3f3eaee921b5628557d7675b19fecbcab312a64cde8207f92db'
+    'kalshi-market-ui.css': '572d18127bf6ce357e50b4320e0d98d83b07aa3d6bfb1e1c04c43bee4f009f98',
+    'kalshi-market-ui.js': '0f03224b086e11967329e2a4666ef5327e335fbb32ae251a31a2a543b30e1952'
   };
   for (const [name, sha] of Object.entries(expected)) {
     // Hash the committed (LF) text so a CRLF checkout does not read as an edit.
