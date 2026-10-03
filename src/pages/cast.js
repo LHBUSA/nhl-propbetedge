@@ -12,7 +12,7 @@ import { createPoller } from '../lib/poll.js';
 import { resolveRecentCompleted } from '../lib/recent-games.js';
 import { TEAM_BY_ABBREV, teamAccent } from '../lib/teams.js';
 import { kalshi, kalshiPollState } from '../data/kalshi.js';
-import { kalshiStrip, marketModule, wireKalshi } from '../vendor/kalshi/kalshi-market-ui.js';
+import { kalshiCard, marketHistoryCard, wireKalshi } from '../vendor/kalshi/kalshi-market-ui.js';
 import { STATE, clockText, specialTeams } from '../lib/special-teams.js';
 import { compactLines, loadDna, momentContext, peekDna, renderCompactDna, roleLabel } from '../lib/cast-dna.js';
 import { stateBadge, stateOf, teamMark } from '../components/game.js';
@@ -676,24 +676,38 @@ export function kalshiColors(game) {
   return out;
 }
 
-// Kalshi prediction market on the Cast (separate from the sportsbook Market
-// panel). Pregame: the full card in the moment column. Live: the one-line strip
-// under the broadcast header (it expands to the compact card); when the book is
-// too wide for a strip, the full card stays in the column instead. Final (the
-// replay): marketModule — the live card while the market still trades, "How the
-// market closed" once it has CLOSED or SETTLED. Postponed / cancelled with no
-// market: nothing. No entry: nothing.
-export function castKalshiSlots(entry, game, { open = false } = {}) {
-  if (!entry || String(entry.event?.canonical_event_id) !== String(game?.id)) return { strip: '', card: '' };
+// Market Pulse on the Cast (MLB PBEcast standard, propbetedge-v2 6f34d67): one
+// module in one slot directly under the PBEcast Live Rink (whose header carries the
+// score bug; the rink stays the hero right under the score header), for the whole
+// game lifecycle, with a lifecycle label: MARKET OPEN · PRE-MATCH / LIVE MARKET /
+// GAME FINAL · MARKET STILL TRADING (the full compact card: Mid-market per side,
+// Updated Ns ago, stored movement + sparkline, bid/ask, View market on Kalshi), then
+// "How the market closed" in the same place: MARKET CLOSED · AWAITING SETTLEMENT /
+// MARKET SETTLED. A stale in-game quote is labelled MARKET OPEN · QUOTE STALE, never
+// LIVE. Postponed / cancelled: nothing. No entry (or another game's): nothing.
+export function castMarketPhase(entry, game) {
+  if (!entry || String(entry.event?.canonical_event_id) !== String(game?.id)) return null;
+  const lc = entry.market?.lifecycle;
+  if (lc === 'SETTLED') return ['settled', 'MARKET SETTLED'];
+  if (lc === 'CLOSED') return ['closed', 'MARKET CLOSED · AWAITING SETTLEMENT'];
   const key = stateOf(game).key;
+  if (key === 'FINAL') return ['final-open', 'GAME FINAL · MARKET STILL TRADING'];
   const mode = kalshiPollState(key);
-  if (!mode && key !== 'FINAL') return { strip: '', card: '' };
+  if (mode === 'live') return entry.kalshi?.freshness === 'stale' ? ['stale', 'MARKET OPEN · QUOTE STALE'] : ['live', 'LIVE MARKET'];
+  if (mode === 'pregame') return ['pre', 'MARKET OPEN · PRE-MATCH'];
+  return null;
+}
+
+export function castMarketHtml(entry, game) {
+  const phase = castMarketPhase(entry, game);
+  if (!phase) return '';
   const colors = kalshiColors(game);
-  const closed = isMarketClosed(entry);
-  let strip = mode === 'live' && !closed ? kalshiStrip(entry, { placement: 'cast-live', colors }) : '';
-  if (strip && open) strip = strip.replace('<details class="kx-strip"', '<details open class="kx-strip"');
-  const card = strip ? '' : marketModule(entry, { placement: closed ? 'market-history' : 'game-page', colors });
-  return { strip, card };
+  // Closed / settled: the history card; without a stored history yet, the settled card (never nothing after the final).
+  const body = isMarketClosed(entry)
+    ? (entry.market_history ? marketHistoryCard(entry, { placement: 'cast-history' }) : '') || kalshiCard(entry, { placement: 'cast', colors, compact: true })
+    : kalshiCard(entry, { placement: 'cast', colors, compact: true });
+  if (!body) return '';
+  return `<div class="cast-mkt" data-phase="${phase[0]}"><div class="cast-mkt-phase"><span class="cast-mkt-dot" aria-hidden="true"></span>${phase[1]}</div>${body}</div>`;
 }
 
 const isMarketClosed = entry => ['CLOSED', 'SETTLED'].includes(entry?.market?.lifecycle);
@@ -748,7 +762,7 @@ export function mount(root, params, ctx) {
     // Replay: cursor is an index into cast.plays (null = full/live view).
     cursor: null, playing: false, speed: 'normal', startSort: /^\d+$/.test(params.t || '') ? Number(params.t) : null,
     // Kalshi prediction-market entry for this game (null = render nothing).
-    kalshi: null, kalshiOpen: false
+    kalshi: null
   };
   let playTimer = null;
   // Shot sort_orders already drawn for this game. null until the first paint so
@@ -882,12 +896,12 @@ export function mount(root, params, ctx) {
       recent: tracking ? new Set(attempts.slice(-RECENT_ATTEMPTS).map(p => p.sort_order)) : null
     });
     const feedScroll = $('.feed-scroll', body)?.scrollTop || 0;
-    const kx = castKalshiSlots(state.kalshi, full.game, { open: state.kalshiOpen });
+    const kx = castMarketHtml(state.kalshi, full.game);
     body.innerHTML = `
       ${header(cast, state.meta, state.failed)}
       ${liveRink(cast, state, rink, { periods, latest, live })}
+      <div id="cast-kx" class="cast-kx-slot">${kx}</div>
       ${castSub(cast)}
-      <div id="cast-kalshi-strip" class="cast-kalshi-strip">${kx.strip}</div>
       ${!pre && full.plays.length ? replayBar(state, full, { live: ['LIVE', 'INTERMISSION'].includes(st.key) }) : ''}
       ${fightDesk(cast)}
       ${penaltyBox(cast, specialTeamsOf(cast))}
@@ -905,7 +919,6 @@ export function mount(root, params, ctx) {
             ${pressureChart(cast.plays, g)}
           </section>
           ${state.market && !['FINAL'].includes(st.key) ? `<section class="pbe-panel cast-card"><div class="panel-head"><h3>Market</h3><span class="pbe-badge pbe-badge--sched">Snapshot · not live</span></div>${marketPanel(state.market.event, state.market.meta)}</section>` : ''}
-          <div id="cast-kalshi-card" style="display:contents">${kx.card}</div>
         </div>
         <div class="cast-col cast-col--feed">
           <section class="pbe-panel cast-card cast-feed">
@@ -920,6 +933,8 @@ export function mount(root, params, ctx) {
       </div>`;
     const scroller = $('.feed-scroll', body);
     if (scroller) scroller.scrollTop = feedScroll;
+    const kxSlot = $('#cast-kx', body);
+    if (kxSlot) kxSlot.dataset.kxHtml = kx;
     markArrivingShots(body);
     mountInspector();
     wireKalshiOnce(kx);
@@ -931,21 +946,20 @@ export function mount(root, params, ctx) {
   // live re-render never stacks observers on identical cards.
   let kxWired = '';
   function wireKalshiOnce(kx) {
-    const sig = kx.strip + kx.card;
-    if (!sig || sig === kxWired) return;
-    kxWired = sig;
+    if (!kx || kx === kxWired) return;
+    kxWired = kx;
     wireKalshi(body);
   }
 
-  // Kalshi poll result: patch only the two Kalshi slots (no full Cast re-render).
+  // Kalshi poll result: patch only the market slot in place (no full Cast re-render).
   function updateKalshi() {
     if (!state.cast) return;
-    const kx = castKalshiSlots(state.kalshi, state.cast.game, { open: state.kalshiOpen });
-    const stripEl = $('#cast-kalshi-strip', body);
-    const cardEl = $('#cast-kalshi-card', body);
-    if (!stripEl || !cardEl) return;
-    stripEl.innerHTML = kx.strip;
-    cardEl.innerHTML = kx.card;
+    const slot = $('#cast-kx', body);
+    if (!slot) return;
+    const kx = castMarketHtml(state.kalshi, state.cast.game);
+    if (slot.dataset.kxHtml === kx) return;
+    slot.innerHTML = kx;
+    slot.dataset.kxHtml = kx;
     wireKalshiOnce(kx);
   }
 
@@ -1197,7 +1211,6 @@ export function mount(root, params, ctx) {
       return n;
     }),
     // The live strip's open/closed state survives the 5 s Cast re-render.
-    on(root, 'toggle', '.kx-strip', (_, d) => { state.kalshiOpen = d.open; }, true),
     on(root, 'click', '[data-rp-speed]', (_, b) => { state.speed = b.dataset.rpSpeed; renderBody(); }),
     on(root, 'click', '[data-rp-goto]', (_, b) => { stopPlay(); goTo(Number(b.dataset.rpGoto)); writeDeepLink(); }),
     on(root, 'click', '[data-rp-seek]', (_, b) => {

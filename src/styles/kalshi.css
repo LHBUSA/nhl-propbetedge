@@ -6,7 +6,38 @@
 .kx, .kx-strip, .kx-line { --f-mono: var(--pbe-font-data); --r: var(--r-md); }
 section.kx { border-width: 1px; border-style: solid; border-radius: var(--r-md); padding: var(--s-4); min-width: 0; }
 .kx-strip > .kx { padding: var(--s-3) var(--s-4) var(--s-4); }
-.cast-kalshi-strip { margin-top: var(--s-3); }
-.cast-kalshi-strip:empty { display: none; }
+
+/* PBEcast Market Pulse (MLB PBEcast standard): one module directly under the Live Rink for the whole
+   game lifecycle (pregame / live card, then "How the market closed"); collapses to nothing until a
+   market exists. Compact per-team rows (Mid-market + stored movement side by side), so it stays
+   secondary to the rink. Fixed structure: price updates never shift layout. */
+.cast-kx-slot:empty { display: none; }
+.cast-kx-slot { margin-top: var(--s-3); min-width: 0; }
+.cast-mkt { min-width: 0; container-type: inline-size; }
+.cast-mkt section.kx { padding: 10px 12px; }
+.cast-mkt-phase { display: flex; align-items: center; gap: 6px; margin: 0 0 5px 2px; font: 800 var(--fs-micro)/1 var(--pbe-font-data); letter-spacing: .14em; color: #7fb8ff; }
+.cast-mkt-dot { width: 6px; height: 6px; border-radius: 50%; background: currentColor; flex: none; }
+.cast-mkt[data-phase="live"] .cast-mkt-phase { color: var(--pbe-crimson-text, #ff6b6b); }
+.cast-mkt[data-phase="live"] .cast-mkt-dot { animation: cast-mkt-blink 1.6s ease-in-out infinite; }
+.cast-mkt[data-phase="closed"] .cast-mkt-phase, .cast-mkt[data-phase="settled"] .cast-mkt-phase,
+.cast-mkt[data-phase="final-open"] .cast-mkt-phase, .cast-mkt[data-phase="stale"] .cast-mkt-phase { color: var(--pbe-dim); }
+@keyframes cast-mkt-blink { 50% { opacity: .25 } }
+@media (prefers-reduced-motion: reduce) { .cast-mkt-dot { animation: none !important; } }
+.cast-mkt .kx__hd { margin-bottom: 8px; }
+.cast-mkt .kx__panel { display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-areas: "who move" "price move" "book book"; column-gap: 12px; align-items: end; padding: 8px 10px 8px 13px; }
+.cast-mkt .kx__who { grid-area: who; }
+.cast-mkt .kx__price { grid-area: price; margin-top: 2px; }
+.cast-mkt .kx__move { grid-area: move; min-height: 0; margin: 0; align-self: stretch; }
+.cast-mkt .kx__book { grid-area: book; margin-top: 6px; }
+.cast-mkt .kx__act { display: none; }
+.cast-mkt .kx__ft { margin-top: 8px; }
+.cast-mkt .kx__panel--settled { display: block; }
+/* Narrow (phone, tablet): each team panel stacks; the two panels stay side by side. */
+@container (max-width: 560px) {
+  .cast-mkt .kx__panel { grid-template-columns: minmax(0, 1fr); grid-template-areas: "who" "price" "move" "book"; padding: 8px 8px 8px 11px; }
+  .cast-mkt .kx__move { margin-top: 4px; }
+  .cast-mkt .kx__spark { height: 28px; }
+  .cast-mkt .kx__book { gap: 2px 8px; }
+}
 /* Game card: the restrained line sits on its own row at the top of the footer. */
 .scard__actions .kx-line { flex: 1 1 100%; order: -1; padding: 2px 0 4px; }

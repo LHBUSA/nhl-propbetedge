@@ -23,7 +23,9 @@ registerHooks({
 const { kalshiCard, kalshiStrip, kalshiLine, marketCloseLine, marketHistoryCard, __resetKalshiFlashes } = await import('../src/vendor/kalshi/kalshi-market-ui.js');
 const { createKalshiClient } = await import('../src/vendor/kalshi/kalshi-market-client.js');
 const { kalshi, kalshiPollState } = await import('../src/data/kalshi.js');
-const { castKalshiSlots, kalshiColors, kalshiPollMs, KALSHI_CLOSED_POLL_MS } = await import('../src/pages/cast.js');
+const { castMarketHtml, castMarketPhase, kalshiColors, kalshiPollMs, KALSHI_CLOSED_POLL_MS } = await import('../src/pages/cast.js');
+// The Cast has ONE market slot under the Live Rink (MLB PBEcast standard); the strip is retired.
+const castKalshiSlots = (entry, g) => ({ strip: '', card: castMarketHtml(entry, g) });
 const { slateCard } = await import('../src/pages/board.js');
 
 const FIXTURE = JSON.parse(fs.readFileSync(new URL('./fixtures/kalshi/nhl-event-2026020022.json', import.meta.url), 'utf8'));
@@ -73,7 +75,7 @@ test('every Kalshi price links to kalshi.com in a new tab with rel sponsored', (
     assert.match(a, /rel="noopener noreferrer sponsored"/);
   }
   assert.match(text(card), /View market on Kalshi/);
-  assert.match(text(card), /not sportsbook odds and not a PropBetEdge model/);
+  assert.match(text(kalshiCard(ENTRY, { placement: 'game-page' })), /not sportsbook odds and not a PropBetEdge model/);
 });
 
 test('an NHL entry renders both teams in the card, strip and game-card line', () => {
@@ -89,27 +91,40 @@ test('an NHL entry renders both teams in the card, strip and game-card line', ()
   assert.match(line, /KALSHI CHI 32\.5¢ · BUF 67\.5¢/);
 });
 
-test('Cast placement: pregame full card, live strip, postponed nothing', () => {
+test('Cast placement: one full compact card under a lifecycle label for every state; postponed nothing', () => {
   const live = { ...ENTRY, kalshi: { ...ENTRY.kalshi, freshness: 'live' } };
   for (const sem of ['SCHEDULED', 'PREGAME']) {
-    const s = castKalshiSlots(ENTRY, game(sem));
-    assert.equal(s.strip, '');
-    assert.match(s.card, /class="ic kx"[^>]*data-kx-placement="game-page"/);
+    const h = castMarketHtml(ENTRY, game(sem));
+    assert.match(h, /^<div class="cast-mkt" data-phase="pre"><div class="cast-mkt-phase">[^]*MARKET OPEN · PRE-MATCH/);
+    assert.match(h, /class="ic kx kx--compact"[^>]*data-kx-placement="cast"/);
   }
-  const l = castKalshiSlots(live, game('LIVE'));
-  assert.equal(l.card, '');
-  assert.match(l.strip, /<details class="kx-strip"[^>]*data-kx-placement="cast-live"/);
-  assert.match(castKalshiSlots(live, game('LIVE'), { open: true }).strip, /<details open class="kx-strip"/, 'expanded strip survives re-render');
-  // Live but the book is too wide for a strip (no Mid-market): the full card stays.
+  const l = castMarketHtml(live, game('LIVE'));
+  assert.match(l, /data-phase="live"/);
+  assert.match(text(l), /LIVE MARKET Market Pulse/);
+  assert.match(text(l), /Mid-market/);
+  assert.match(text(l), /Updated \d+/);
+  assert.match(text(l), /View market on Kalshi/);
+  assert.doesNotMatch(l, /<details/, 'never a collapsed strip');
+  assert.deepEqual(castMarketPhase(live, game('LIVE', { status: { semantics: 'LIVE', in_intermission: true, period: 2 } })), ['live', 'LIVE MARKET']);
+  // A stale in-game quote is never labelled live.
+  const stale = { ...ENTRY, kalshi: { ...ENTRY.kalshi, freshness: 'stale' } };
+  assert.deepEqual(castMarketPhase(stale, game('LIVE')), ['stale', 'MARKET OPEN · QUOTE STALE']);
+  // Live but the book is too wide for a Mid-market: the full card shows bid / ask.
   const wide = { ...live, kalshi: { ...live.kalshi, outcomes: live.kalshi.outcomes.map(o => ({ ...o, mid_bp: null })) } };
-  const w = castKalshiSlots(wide, game('LIVE'));
-  assert.equal(w.strip, '');
-  assert.match(text(w.card), /YES bid \/ ask/);
-  for (const sem of ['POSTPONED', 'CANCELLED']) assert.deepEqual(castKalshiSlots(live, game(sem)), { strip: '', card: '' }, sem);
-  // FINAL game whose market still trades: the live card stays on the replay until the market closes.
-  const f = castKalshiSlots(ENTRY, game('FINAL'));
-  assert.equal(f.strip, '');
-  assert.match(f.card, /class="ic kx"[^>]*data-kx-placement="game-page"/);
+  assert.match(text(castMarketHtml(wide, game('LIVE'))), /YES bid \/ ask/);
+  for (const sem of ['POSTPONED', 'CANCELLED']) assert.equal(castMarketHtml(live, game(sem)), '', sem);
+  // FINAL game whose market still trades: the live card stays until the market closes.
+  const f = castMarketHtml(ENTRY, game('FINAL'));
+  assert.match(f, /data-phase="final-open"/);
+  assert.match(text(f), /GAME FINAL · MARKET STILL TRADING/);
+  assert.match(f, /class="ic kx kx--compact"[^>]*data-kx-placement="cast"/);
+});
+
+test('Cast wiring: one market slot directly under the Live Rink, patched in place', () => {
+  const src = fs.readFileSync('src/pages/cast.js', 'utf8').split('\r\n').join('\n');
+  assert.match(src, /\$\{liveRink\(cast, state, rink, \{ periods, latest, live \}\)\}\n\s*<div id="cast-kx" class="cast-kx-slot">\$\{kx\}<\/div>/);
+  assert.doesNotMatch(src, /kalshiStrip|cast-kalshi-strip|cast-kalshi-card/);
+  assert.match(src, /if \(slot\.dataset\.kxHtml === kx\) return;/);
 });
 
 test('poll state: live 20 s, pregame 45 s, final stops', () => {
@@ -230,7 +245,8 @@ test('FINAL game Cast mounts "How the market closed" for a SETTLED market', () =
   const { strip, card } = castKalshiSlots(SETTLED, game('FINAL'));
   assert.equal(strip, '');
   assert.match(card, /data-kx-history/);
-  assert.match(card, /data-kx-placement="market-history"/);
+  assert.match(card, /data-kx-placement="cast-history"/);
+  assert.match(text(card), /^MARKET SETTLED How the market closed/);
   const t = text(card);
   assert.match(t, /How the market closed/);
   assert.match(t, /Market history · Kalshi/);
@@ -259,6 +275,7 @@ test('CLOSED (game final, market not settled) says awaiting settlement, never a 
   const closed = closedOf(SETTLED);
   const { card } = castKalshiSlots(closed, game('FINAL'));
   const t = text(card);
+  assert.match(t, /^MARKET CLOSED · AWAITING SETTLEMENT How the market closed/);
   assert.match(t, /Market closed · awaiting settlement/);
   assert.match(t, /Awaiting settlement/);
   assert.doesNotMatch(t, /Settled YES|Settled NO|settlement: /);
@@ -297,7 +314,7 @@ test('market poll cadence: live 20 s, pregame 45 s, CLOSED 5 min, SETTLED stops'
 
 test('Cast mounts the market module for FINAL games, with a bounded first-paint wait', () => {
   const src = fs.readFileSync('src/pages/cast.js', 'utf8');
-  assert.match(src, /marketModule\(entry/);
+  assert.match(src, /marketHistoryCard\(entry, \{ placement: 'cast-history' \}\)/);
   const ms = Number(src.match(/KALSHI_FIRST_PAINT_MS = (\d+)/)[1]);
   assert.ok(ms > 0 && ms <= 800, `first-paint wait ${ms} ms`);
   assert.match(fs.readFileSync('src/pages/board.js', 'utf8'), /final \? marketCloseLine\(kalshiEntry\)/);
@@ -324,11 +341,40 @@ test('completed market with kalshi null survives the NHL loaders and renders his
   assert.equal(strip, '');
   assert.match(text(card), /How the market closed/);
   assert.match(text(card), /Kalshi settlement: BUF — YES/);
-  assert.doesNotMatch(card, /class="ic kx"[^>]*data-kx-placement="game-page"/, 'never a live card');
+  assert.doesNotMatch(card, /class="ic kx[^"]*"[^>]*data-kx-placement="cast"/, 'never a live card');
   const closedCard = text(castKalshiSlots(closedNoQuote, game('FINAL')).card);
   assert.match(closedCard, /Market closed · awaiting settlement/);
   assert.doesNotMatch(closedCard, /Settled YES|Settled NO/);
   assert.match(text(slateCard(game('FINAL'), { kalshi: client.forEvent(GAME_ID) })), /MARKET BUF .*settled YES/);
   // A stale quote is never labelled live on a compact card.
   assert.equal(kalshiLine({ ...ENTRY, kalshi: { ...ENTRY.kalshi, freshness: 'stale' } }), '');
+});
+
+// Score rail market segment (MLB score-ticker standard): exact, displayable, fresh two-sided markets only.
+test('score rail: compact market text only for an exact, displayable, fresh market; patched in place', async () => {
+  const { tickerMarketText, patchChipMarket } = await import('../src/components/score-ticker.js');
+  const live = { ...ENTRY, kalshi: { ...ENTRY.kalshi, freshness: 'live' } };
+  const g = (sem, ids = [16, 7]) => game(sem, { teams: { away: team('CHI', { id: ids[0] }), home: team('BUF', { id: ids[1] }) } });
+  assert.equal(tickerMarketText(live, g('SCHEDULED')), 'CHI 32.5¢ · BUF 67.5¢');
+  assert.equal(tickerMarketText(live, g('LIVE')), 'CHI 32.5¢ · BUF 67.5¢');
+  assert.equal(tickerMarketText(live, g('FINAL')), '', 'final: no segment');
+  assert.equal(tickerMarketText(live, g('POSTPONED')), '');
+  assert.equal(tickerMarketText(live, g('SCHEDULED', [7, 16])), '', 'team ids must match away / home');
+  assert.equal(tickerMarketText({ ...live, kalshi: { ...live.kalshi, freshness: 'stale' } }, g('LIVE')), '', 'stale');
+  assert.equal(tickerMarketText({ ...live, event: { ...live.event, canonical_event_id: '2026020099' } }, g('LIVE')), '', 'other game');
+  assert.equal(tickerMarketText({ ...live, kalshi: { ...live.kalshi, outcomes: live.kalshi.outcomes.map(o => ({ ...o, displayable: false })) } }, g('LIVE')), '');
+  assert.equal(tickerMarketText(null, g('LIVE')), '');
+  let inserted = '';
+  patchChipMarket({ querySelector: () => null, insertAdjacentHTML: (_, h) => { inserted = h; } }, 'CHI 32.5¢ · BUF 67.5¢');
+  assert.match(inserted, /class="stk-g__mkt"[^>]*><b>MKT<\/b><span class="stk-g__mkt-px">CHI 32\.5¢ · BUF 67\.5¢<\/span>/);
+  const px = { textContent: 'CHI 32.5¢ · BUF 67.5¢' };
+  let removed = false;
+  const el = { querySelector: () => px, remove: () => { removed = true; } };
+  patchChipMarket({ querySelector: () => el }, 'CHI 33.0¢ · BUF 67.0¢');
+  assert.equal(px.textContent, 'CHI 33.0¢ · BUF 67.0¢');
+  patchChipMarket({ querySelector: () => el }, '');
+  assert.equal(removed, true);
+  const src = fs.readFileSync('src/components/score-ticker.js', 'utf8');
+  assert.equal((src.match(/kalshi\.loadBoard\(/g) || []).length, 1, 'one board read per refresh');
+  assert.match(src, /track\.querySelectorAll\(`\.stk-g\[data-game="\$\{id\}"\]`\)\.forEach\(chip => patchChipMarket\(chip, after\)\)/, 'run + marquee clone patched in place');
 });

@@ -107,6 +107,17 @@
 .stk[data-fresh="STALE"] .stk-g__chip { border-color: var(--pbe-gold-soft); background: rgba(212,175,55,.1); color: var(--pbe-gold-bright); }
 .stk[data-fresh="STALE"] .stk-g__chip::before { background: var(--pbe-gold); animation: none; }
 
+/* Market segment (Kalshi Mid-market): inline at the end of the chip so the 44px rail never grows;
+   fixed-decimal tabular prices keep the chip width constant while prices move. */
+.stk-g__mkt {
+  display: inline-flex; align-items: center; gap: 5px;
+  margin-left: 4px; padding-left: 9px;
+  border-left: 1px dashed rgba(127,184,255,.28);
+  font: 600 var(--fs-micro)/1 var(--pbe-font-data); letter-spacing: .03em;
+  color: var(--pbe-paper-2); font-variant-numeric: tabular-nums; white-space: nowrap;
+}
+.stk-g__mkt b { font-weight: 800; letter-spacing: .12em; color: #7fb8ff; }
+
 .stk-empty {
   display: inline-flex; align-items: center; gap: 10px;
   min-height: 100%; padding: 0 2px;
