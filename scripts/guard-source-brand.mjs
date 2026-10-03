@@ -1,4 +1,4 @@
-// Source-brand guard v2 (PropBetEdge network standard; reference implementation LHBUSA/golf 43c4677, 2026-10-03).
+// Source-brand guard v2.2 (template literals + JSX text + UPSTREAM_BROWSER_DEPENDENCY hosts; PropBetEdge network standard; reference implementation LHBUSA/golf 43c4677, 2026-10-03).
 // Customer-facing data attribution is "DATA · PropSports" (https://propsports.proptechusa.ai). Upstream providers
 // stay in ingest provenance, captures, logs, admin/debug, source registries and tests.
 // v2 scans every customer-rendered directory INCLUDING lib/ and data/ and the public API serializers, and flags an
@@ -9,7 +9,8 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const ROOT = process.cwd();
+// Repo root = the parent of scripts/, so the guard gives the same answer from any working directory.
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 // ---- per-repo configuration -------------------------------------------------------------------------------------
 const SCOPE = ['src'];                // customer-rendered code + public API serializers (files or dirs)
 const ALLOW = new Set([             // whole files that are provenance / licence / publisher surfaces (repo-relative)
@@ -19,6 +20,8 @@ const ALLOW = new Set([             // whole files that are provenance / licence
   'src/services/editorial-depth.js', // article publisher credit
   'src/components/game-intel.js',    // points to NHL.com injury headlines (publisher content)
 ]);
+// Browser-shipped code only (NOT server routes / Workers): checked for UPSTREAM_BROWSER_DEPENDENCY.
+const BROWSER_SCOPE = ['src', 'index.html'];
 // ------------------------------------------------------------------------------------------------------------------
 const SKIP = new Set(['node_modules', 'dist', 'build', '.next', '.vercel', 'coverage', 'tests', 'test', '__tests__', 'fixtures', 'research', 'docs']);
 const EXTENSIONS = new Set(['.js', '.mjs', '.cjs', '.ts', '.tsx', '.jsx', '.html', '.vue', '.svelte']);
@@ -30,6 +33,8 @@ const FORBIDDEN = [
   // upstream provider name in DISPLAY case inside a string literal on a customer surface; lowercase code tokens
   // (source_family === "espn", espn_athlete_id, "ufcstats_round_stats") are implementation values, not copy
   new RegExp(String.raw`(['"\`])[^'"\`\n]*?(?<![\w.$/-])${DISPLAY}(?![\w$])[^'"\`\n]*?\1`, 'g'),
+  // provider in parentheses, e.g. "a secondary source (ESPN)"
+  new RegExp(String.raw`\(${PROVIDERS}[^)]{0,40}\)`, 'g'),
   // operational setup must never reach customers
   /wrangler secret put|npx wrangler|C:\\\\Workers/gi,
 ];
@@ -41,7 +46,7 @@ function stripComments(text) {
     .replace(/\/\*[\s\S]*?\*\//g, (m) => m.replace(/[^\n]/g, ''))
     .replace(/<!--[\s\S]*?-->/g, (m) => m.replace(/[^\n]/g, ''))
     .replace(/^[ \t]*\/\/.*$/gm, '')
-    .replace(/([;,{}()\]])\s*\/\/(?![^'"`\n]*['"`]).*$/gm, '$1');
+    .replace(/([;,{}()\]])[ \t]*\/\/(?![^'"`\n]*['"`]).*$/gm, '$1');
 }
 function files(rel, out = []) {
   const full = path.join(ROOT, rel);
@@ -85,6 +90,11 @@ function templateText(text) {
 const BARE = new RegExp(String.raw`\b${PROVIDERS}`, 'i');
 const URLS = /(?:https?:)?\/\/[^\s'"`)<]+/g;
 
+// JSX text children (.tsx/.jsx): customer copy between tags, e.g. <p>Data from X</p>, which no quote-based
+// pattern can see. {expressions} are excluded.
+const JSX_TEXT = />([^<>{}]*)(?=<|\{|$)/g;
+function jsxText(line) { let s = ''; for (const m of line.matchAll(JSX_TEXT)) s += ' ' + m[1]; return s; }
+
 export function scan(root = ROOT) {
   const violations = [];
   for (const rel of SCOPE.flatMap((s) => files(s))) {
@@ -93,27 +103,52 @@ export function scan(root = ROOT) {
     const stripped = stripComments(raw.join('\n'));
     const lines = stripped.split('\n');
     const tpl = templateText(stripped);
+    const jsx = /\.(tsx|jsx)$/.test(rel);
     for (let i = 0; i < lines.length; i++) {
       if (raw[i].includes('source-brand:allow')) continue;
-      if (BARE.test((tpl[i] || '').replace(URLS, '').replace(BENIGN, ''))) { violations.push(`${rel}:${i + 1}: ${lines[i].trim().slice(0, 180)}`); continue; }
-      const line = lines[i].replace(URLS, '').replace(BENIGN, '');
+      const clean = (s) => (s || '').replace(URLS, '').replace(BENIGN, '');
+      if (BARE.test(clean(tpl[i])) || (jsx && BARE.test(clean(jsxText(lines[i]))))) { violations.push(`${rel}:${i + 1}: ${lines[i].trim().slice(0, 180)}`); continue; }
+      const line = clean(lines[i]);
       for (const pattern of FORBIDDEN) {
         pattern.lastIndex = 0;
         if (pattern.test(line)) { violations.push(`${rel}:${i + 1}: ${lines[i].trim().slice(0, 180)}`); break; }
       }
     }
   }
-  return [...new Set(violations)];
+  return [...new Set([...violations, ...scanBrowser(root)])];
+}
+
+// ---- UPSTREAM_BROWSER_DEPENDENCY (v2.2) ---------------------------------------------------------------------------
+// Customers consume PropSports: browser-shipped code must not fetch raw data-provider APIs directly
+// (Browser -> PropSports / same-origin gateway -> upstream, never Browser -> upstream). This catches the HOSTS, not
+// the display names. Image/asset CDNs (headshots, logos, Commons photos) and ordinary links to publisher pages are
+// not data dependencies and are not listed. A deliberate exception carries `upstream-host:allow (<why>)` on the line.
+const DATA_HOSTS = /(?<![\w-])(?:site\.api\.espn\.com|site\.web\.api\.espn\.com|sports\.core\.api\.espn\.com|core\.api\.espn\.com|now\.core\.api\.espn\.com|cdn\.espn\.com\/core|statsapi\.mlb\.com|baseballsavant\.mlb\.com\/(?:statcast|gf|leaderboard|api)|api-web\.nhle\.com|api\.nhle\.com|statsapi\.web\.nhl\.com|stats\.nba\.com|cdn\.nba\.com\/static\/json|data\.nba\.net|stats\.wnba\.com|api\.the-odds-api\.com|the-odds-api\.com\/v4|api\.openligadb\.de|api\.jolpi\.ca|ergast\.com\/api|api\.openf1\.org|ufcstats\.com|query\.wikidata\.org|www\.wikidata\.org\/w\/api|[a-z]{2,3}\.wikipedia\.org\/(?:api|w\/api)|commons\.wikimedia\.org\/w\/api|api\.met\.no|api\.weather\.gov|api\.open-meteo\.com|archive-api\.open-meteo\.com|kalshi\.com\/trade-api|api\.elections\.kalshi\.com)/i;
+export function scanBrowser(root = ROOT) {
+  const out = [];
+  for (const rel of BROWSER_SCOPE.flatMap((s) => files(s))) {
+    if (ALLOW.has(rel)) continue; // provenance / disclosure surfaces name hosts as text, they do not fetch them
+    const raw = fs.readFileSync(path.join(root, rel), 'utf8').split('\n');
+    const lines = stripComments(raw.join('\n')).split('\n');
+    for (let i = 0; i < lines.length; i++) {
+      if (raw[i].includes('upstream-host:allow')) continue;
+      const m = lines[i].match(DATA_HOSTS);
+      if (m) out.push(`UPSTREAM_BROWSER_DEPENDENCY ${rel}:${i + 1}: ${m[0]} :: ${lines[i].trim().slice(0, 140)}`);
+    }
+  }
+  return out;
 }
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const violations = scan();
   if (violations.length) {
-    console.error('\nUpstream provider branding detected in customer-facing source or public API serializers.');
-    console.error('Customer-facing attribution is "DATA · PropSports" (https://propsports.proptechusa.ai).');
-    console.error('Licence credits, image credits and named publishers stay: mark those lines `source-brand:allow (<why>)`.\n');
+    console.error('\nUpstream provider branding or a direct browser->upstream data dependency was detected.');
+    console.error('Customer-facing attribution is "DATA · PropSports" (https://propsports.proptechusa.ai); browser data goes');
+    console.error('through PropSports or a same-origin gateway, never straight to a provider API.');
+    console.error('Licence credits, image credits and named publishers stay: mark those lines `source-brand:allow (<why>)`;');
+    console.error('a deliberate browser host exception carries `upstream-host:allow (<why>)`.\n');
     for (const v of violations) console.error(` - ${v}`);
     console.error(`\n${violations.length} violation(s).`);
     process.exit(1);
   }
-  console.log(`PASS source-brand guard v2: ${SCOPE.join(', ')} clean (${ALLOW.size} provenance file(s) allowed).`);
+  console.log(`PASS source-brand guard v2.2: ${SCOPE.join(', ')} clean (${ALLOW.size} provenance file(s) allowed); browser bundle sources ${BROWSER_SCOPE.join(', ')} have no direct upstream data hosts.`);
 }
