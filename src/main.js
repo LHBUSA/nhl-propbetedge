@@ -22,6 +22,8 @@ import './styles/goalie-center.css';
 import './styles/player-bio.css';
 import './styles/chrome-upgrade.css';
 import './styles/preferred-source.css';
+// Kalshi prediction-market card (shared vendored component + NHL host shell).
+import './styles/kalshi.css';
 // Shared PropBetEdge membership vocabulary (badge, panel, All Access card).
 // Identity chrome only: it never styles body, so the atmosphere field stays visible.
 import './styles/pbe-membership.css';

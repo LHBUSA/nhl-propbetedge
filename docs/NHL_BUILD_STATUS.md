@@ -1,3 +1,11 @@
+## 2026-10-03 — Kalshi Market Intelligence (prediction market) — LOCAL COMMIT, NOT PUSHED
+
+- Shared component vendored unchanged at `src/vendor/kalshi/` (canonical: propbetedge-workers `workers/propsports-markets/client/`; SHA-256 locked in `tests/kalshi-ui.test.mjs`). NHL client `src/data/kalshi.js` reads `propsports-markets` only (`VITE_MARKETS_URL` overrides); the browser never calls Kalshi.
+- PBE Cast: pregame full card in the moment column after the sportsbook Market panel; live one-line strip under the broadcast header (full card if the book is too wide for a strip); FINAL/postponed render nothing. Loaded with the first Cast payload (3 s cap), then polled 20 s live / 45 s pregame while mounted.
+- Ice Board cards: restrained `KALSHI` line in the footer for not-final games; board loads in the same task as the slate.
+- Methodology: new `Kalshi prediction markets` section. No CSP exists in this repo (no vercel.json, no meta CSP), so nothing to allow-list.
+- Proven: `tests/kalshi-ui.test.mjs` 11/11, full `npm test` green, guard + build pass. **UNVERIFIED:** browser QA (desktop/mobile, layout shift, live strip) not yet run.
+
 ## 2026-10-02 — Player biography layer (About · Career at a glance · Career journey) — PRODUCTION (frontend)
 
 - Every profile renders `About [Player]` from a structured fact packet (`src/lib/player-bio.js`, schema `nhl-player-bio/1.0.0`). Design and payload audit: `docs/NHL_PLAYER_BIO.md`.

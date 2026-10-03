@@ -304,6 +304,20 @@ const SECTIONS = [
     ])}`
   },
   {
+    id: 'kalshi',
+    title: 'Kalshi prediction markets',
+    lede: 'Game pages and the Ice Board can show the Kalshi market for an NHL game. These are prediction-market contract prices: not sportsbook odds and not a PropBetEdge model.',
+    body: `${defs([
+      ['What it is', 'Kalshi is a regulated prediction market. A YES contract pays $1 if that team wins the game, so a price is what traders are paying for that contract right now.'],
+      ['Links', 'Every Kalshi price on this site links to that market on Kalshi. No link, no price: a game without a verified market shows nothing.'],
+      ['Mid-market', 'The midpoint of the best YES bid and the best YES ask, shown only when the spread is 10¢ or less. A wider book shows its bid and ask instead. It is never a PropBetEdge probability.'],
+      ['Movement', 'Movement and sparklines use only snapshots we actually observed and stored. Nothing is interpolated, and a change is shown only between two observed Mid-markets.'],
+      ['Freshness', 'Each card shows the age of its snapshot. Delayed and stale prices are labelled, and a market we can no longer read is withdrawn.'],
+      ['Settlement', 'NHL game contracts resolve on the official final result of the game.'],
+      ['Path', 'Your browser reads our own market service only; it never calls Kalshi directly.']
+    ])}`
+  },
+  {
     id: 'track',
     title: 'Track record rules',
     lede: 'How every published pick will be kept and graded.',

@@ -10,7 +10,9 @@ import { countdownParts, dateLabel, dayET, gameTypeLabel, num, pct, periodLabel,
 import { fightEvents, isFightingMajor, latestFight } from '../lib/fights.js';
 import { createPoller } from '../lib/poll.js';
 import { resolveRecentCompleted } from '../lib/recent-games.js';
-import { teamAccent } from '../lib/teams.js';
+import { TEAM_BY_ABBREV, teamAccent } from '../lib/teams.js';
+import { kalshi, kalshiPollState } from '../data/kalshi.js';
+import { kalshiCard, kalshiStrip, wireKalshi } from '../vendor/kalshi/kalshi-market-ui.js';
 import { STATE, clockText, specialTeams } from '../lib/special-teams.js';
 import { compactLines, loadDna, momentContext, peekDna, renderCompactDna, roleLabel } from '../lib/cast-dna.js';
 import { stateBadge, stateOf, teamMark } from '../components/game.js';
@@ -18,6 +20,7 @@ import { LAYERS, attachRinkInspector, renderRink, rinkInspector, rinkLegend, sho
 import { SPEEDS, replayBar, seek, sliceCast } from '../components/replay.js';
 import { watchButton } from '../components/alerts-ui.js';
 
+const KALSHI_FIRST_PAINT_MS = 3000;
 const FEED_FILTERS = [
   ['all', 'All'], ['goal', 'Goals'], ['shots', 'Shots'], ['fight', '🥊 Fights'], ['penalty', 'Penalties'],
   ['faceoff', 'Faceoffs'], ['hit', 'Hits'], ['other', 'Other']
@@ -662,6 +665,32 @@ function pregamePanel(cast, market = null) {
 
 const PICKER_ORDER = { LIVE: 0, INTERMISSION: 0, PREGAME: 1, SCHEDULED: 2, FINAL: 3 };
 
+// Team colours for the Kalshi panels come only from the league directory the
+// product already ships; an unknown team gets no colour (the component default).
+export function kalshiColors(game) {
+  const out = {};
+  for (const role of ['away', 'home']) {
+    const accent = TEAM_BY_ABBREV.get(String(game?.teams?.[role]?.abbrev || '').toUpperCase())?.accent;
+    if (accent) out[role] = accent;
+  }
+  return out;
+}
+
+// Kalshi prediction market on the Cast (separate from the sportsbook Market
+// panel). Pregame: the full card in the moment column. Live: the one-line strip
+// under the broadcast header (it expands to the compact card); when the book is
+// too wide for a strip, the full card stays in the column instead. Final or any
+// non-playing state: nothing. No entry: nothing.
+export function castKalshiSlots(entry, game, { open = false } = {}) {
+  const mode = kalshiPollState(stateOf(game).key);
+  if (!entry || !mode || String(entry.event?.canonical_event_id) !== String(game?.id)) return { strip: '', card: '' };
+  const colors = kalshiColors(game);
+  let strip = mode === 'live' ? kalshiStrip(entry, { placement: 'cast-live', colors }) : '';
+  if (strip && open) strip = strip.replace('<details class="kx-strip"', '<details open class="kx-strip"');
+  const card = strip ? '' : kalshiCard(entry, { placement: 'game-page', colors });
+  return { strip, card };
+}
+
 function sortPickerGames(games) {
   return [...games].sort((a, b) => {
     const ak = stateOf(a).key; const bk = stateOf(b).key;
@@ -697,7 +726,9 @@ export function mount(root, params, ctx) {
     replayDate: params.date || null,
     pickGames: [], pickLabel: '', recentCompleted: null,
     // Replay: cursor is an index into cast.plays (null = full/live view).
-    cursor: null, playing: false, speed: 'normal', startSort: /^\d+$/.test(params.t || '') ? Number(params.t) : null
+    cursor: null, playing: false, speed: 'normal', startSort: /^\d+$/.test(params.t || '') ? Number(params.t) : null,
+    // Kalshi prediction-market entry for this game (null = render nothing).
+    kalshi: null, kalshiOpen: false
   };
   let playTimer = null;
   // Shot sort_orders already drawn for this game. null until the first paint so
@@ -831,10 +862,12 @@ export function mount(root, params, ctx) {
       recent: tracking ? new Set(attempts.slice(-RECENT_ATTEMPTS).map(p => p.sort_order)) : null
     });
     const feedScroll = $('.feed-scroll', body)?.scrollTop || 0;
+    const kx = castKalshiSlots(state.kalshi, full.game, { open: state.kalshiOpen });
     body.innerHTML = `
       ${header(cast, state.meta, state.failed)}
       ${liveRink(cast, state, rink, { periods, latest, live })}
       ${castSub(cast)}
+      <div id="cast-kalshi-strip" class="cast-kalshi-strip">${kx.strip}</div>
       ${!pre && full.plays.length ? replayBar(state, full, { live: ['LIVE', 'INTERMISSION'].includes(st.key) }) : ''}
       ${fightDesk(cast)}
       ${penaltyBox(cast, specialTeamsOf(cast))}
@@ -852,6 +885,7 @@ export function mount(root, params, ctx) {
             ${pressureChart(cast.plays, g)}
           </section>
           ${state.market && !['FINAL'].includes(st.key) ? `<section class="pbe-panel cast-card"><div class="panel-head"><h3>Market</h3><span class="pbe-badge pbe-badge--sched">Snapshot · not live</span></div>${marketPanel(state.market.event, state.market.meta)}</section>` : ''}
+          <div id="cast-kalshi-card" style="display:contents">${kx.card}</div>
         </div>
         <div class="cast-col cast-col--feed">
           <section class="pbe-panel cast-card cast-feed">
@@ -868,8 +902,31 @@ export function mount(root, params, ctx) {
     if (scroller) scroller.scrollTop = feedScroll;
     markArrivingShots(body);
     mountInspector();
+    wireKalshiOnce(kx);
     state.view = cast;
     ensureMomentDna();
+  }
+
+  // Analytics wiring only when the Kalshi markup actually changed, so the 5 s
+  // live re-render never stacks observers on identical cards.
+  let kxWired = '';
+  function wireKalshiOnce(kx) {
+    const sig = kx.strip + kx.card;
+    if (!sig || sig === kxWired) return;
+    kxWired = sig;
+    wireKalshi(body);
+  }
+
+  // Kalshi poll result: patch only the two Kalshi slots (no full Cast re-render).
+  function updateKalshi() {
+    if (!state.cast) return;
+    const kx = castKalshiSlots(state.kalshi, state.cast.game, { open: state.kalshiOpen });
+    const stripEl = $('#cast-kalshi-strip', body);
+    const cardEl = $('#cast-kalshi-card', body);
+    if (!stripEl || !cardEl) return;
+    stripEl.innerHTML = kx.strip;
+    cardEl.innerHTML = kx.card;
+    wireKalshiOnce(kx);
   }
 
   // Load stored DNA for the moment's players once per session (cached by id +
@@ -986,8 +1043,23 @@ export function mount(root, params, ctx) {
     writeDeepLink();
   };
 
+  // The Kalshi entry loads WITH the first Cast payload so the card is part of
+  // the first paint (no layout shift). It never fails the Cast: the client
+  // resolves errors to null, and a slow market API is capped so the broadcast
+  // is never held hostage (the card then arrives on the market poll).
+  const kalshiFirst = () => Promise.race([
+    kalshi.loadEvent(state.gameId),
+    new Promise(resolve => setTimeout(() => resolve(undefined), KALSHI_FIRST_PAINT_MS))
+  ]);
+  let kxStarted = false;
+
   const poller = state.gameId ? createPoller(async signal => {
-    const res = await nhl(`/nhl/game/${state.gameId}/cast`, {}, { signal, timeout: 12000 });
+    const first = !state.cast;
+    const [res, kxEntry] = await Promise.all([
+      nhl(`/nhl/game/${state.gameId}/cast`, {}, { signal, timeout: 12000 }),
+      first ? kalshiFirst() : undefined
+    ]);
+    if (kxEntry !== undefined) state.kalshi = kxEntry;
     state.cast = res.data; state.meta = res.meta; state.failed = false; state.error = null;
 
     // Keep the active game card in the top rail locked to the same live game
@@ -1006,6 +1078,7 @@ export function mount(root, params, ctx) {
       state.startSort = null;
     }
     renderBody();
+    if (!kxStarted) { kxStarted = true; kalshiPoller.start(); }
     const key = stateOf(res.data.game).key;
     if (key === 'LIVE' || key === 'INTERMISSION') return 5000;
     if (key === 'FINAL' || key === 'POSTPONED' || key === 'CANCELLED') return null;
@@ -1019,6 +1092,20 @@ export function mount(root, params, ctx) {
       return error.kind === 'not_deployed' || error.kind === 'legacy' ? null : 5000;
     }
   }) : null;
+
+  // Kalshi market poll (our propsports-markets API, never Kalshi) while this
+  // game is on screen: live 20 s, pregame 45 s; final/postponed stops it and
+  // clears the card. Visibility-aware and stopped on unmount via createPoller.
+  const kalshiPoller = createPoller(async () => {
+    const mode = state.cast ? kalshiPollState(stateOf(state.cast.game).key) : null;
+    if (!mode) {
+      if (state.kalshi) { state.kalshi = null; updateKalshi(); }
+      return null;
+    }
+    state.kalshi = await kalshi.loadEvent(state.gameId);
+    updateKalshi();
+    return kalshi.pollMsFor(mode);
+  }, { onError: () => 60000, maxBackoff: 300000 });
 
   const pickerPoller = createPoller(async signal => loadPicker(signal), {
     onError: () => 60000,
@@ -1087,6 +1174,8 @@ export function mount(root, params, ctx) {
       writeDeepLink();
       return n;
     }),
+    // The live strip's open/closed state survives the 5 s Cast re-render.
+    on(root, 'toggle', '.kx-strip', (_, d) => { state.kalshiOpen = d.open; }, true),
     on(root, 'click', '[data-rp-speed]', (_, b) => { state.speed = b.dataset.rpSpeed; renderBody(); }),
     on(root, 'click', '[data-rp-goto]', (_, b) => { stopPlay(); goTo(Number(b.dataset.rpGoto)); writeDeepLink(); }),
     on(root, 'click', '[data-rp-seek]', (_, b) => {
@@ -1122,6 +1211,7 @@ export function mount(root, params, ctx) {
     oddsCtl.abort();
     intelCtl.abort();
     pickerPoller.stop();
+    kalshiPoller.stop();
     poller?.stop();
     document.removeEventListener('keydown', onKey);
     inspector?.dispose();

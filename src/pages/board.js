@@ -27,6 +27,8 @@ import { stateOf, teamMark } from '../components/game.js';
 import { modePanel, seasonMode } from '../components/mode.js';
 import { playerIdentity } from '../components/player.js';
 import { cardMarket } from '../components/market.js';
+import { kalshi } from '../data/kalshi.js';
+import { kalshiLine, wireKalshi } from '../vendor/kalshi/kalshi-market-ui.js';
 import { watchButton } from '../components/alerts-ui.js';
 import { TEAM_BY_ABBREV, teamAccent } from '../lib/teams.js';
 import { dataLayer, oddsConfigured } from '../lib/api.js';
@@ -381,7 +383,7 @@ function teamRow(team = {}, game, winner) {
   </div>`;
 }
 
-export function slateCard(game, { market = null, marketMeta = null, lock = null, odds: oddsOn = false, showDate = false } = {}) {
+export function slateCard(game, { market = null, marketMeta = null, lock = null, odds: oddsOn = false, showDate = false, kalshi: kalshiEntry = null } = {}) {
   const a = game.teams?.away || {};
   const h = game.teams?.home || {};
   const st = stateOf(game);
@@ -428,6 +430,7 @@ export function slateCard(game, { market = null, marketMeta = null, lock = null,
       <a href="#/pbe-picks${game.date ? `?date=${esc(game.date)}` : ''}">PBE Picks</a>
       ${market ? `<a href="#/props?game=${esc(game.id)}&focus=market">Betting Odds</a>` : oddsOn ? '<span class="scard__action-off" aria-disabled="true">Odds pending</span>' : ''}
       ${Array.isArray(market?.props) && market.props.length ? `<a href="#/props?game=${esc(game.id)}&focus=props">View Props</a>` : ''}
+      ${final ? '' : kalshiLine(kalshiEntry)}
     </footer>
   </article>`;
 }
@@ -457,7 +460,9 @@ function cardOpts(state, game) {
     market: state.market?.byGame.get(String(game.id)) || null,
     marketMeta: state.market?.meta,
     lock: state.picks?.locks?.get(String(game.id)) || null,
-    odds: Boolean(state.env?.odds)
+    odds: Boolean(state.env?.odds),
+    // Kalshi prediction-market line (our markets API; null = nothing rendered).
+    kalshi: kalshi.forEvent(game.id)
   };
 }
 
@@ -753,7 +758,7 @@ export function mount(root, params, ctx) {
   const intelEl = $('#intel-status', root);
 
   const renderHero = () => { heroEl.innerHTML = heroInner(state); };
-  const renderBoard = () => { boardEl.innerHTML = slateView(state); };
+  const renderBoard = () => { boardEl.innerHTML = slateView(state); wireKalshi(boardEl); };
   const renderPicks = () => { picksEl.innerHTML = picksBlock(state); };
   const renderChanges = () => { $('#changes', root).innerHTML = changesMarkup(state.today, state.news); };
   const renderTail = () => { qlEl.innerHTML = quickLaunch(state); intelEl.innerHTML = intelStatus(state); };
@@ -773,8 +778,11 @@ export function mount(root, params, ctx) {
   // when they are the same date one request serves both. When today has no
   // games the NEXT slate is fetched through the same accessor so the section
   // below shows real cards instead of the three matchups in next_puck_drop.
+  // The Kalshi board loads in the same task as the slate (it never throws and
+  // resolves to the last good board on failure), so the card line is in the
+  // same paint as the cards. The client caches it for 15 s.
   const poller = createPoller(async signal => {
-    const todayRes = await ctx.board(todayET(), { signal, maxAgeMs: 8000 });
+    const [todayRes] = await Promise.all([ctx.board(todayET(), { signal, maxAgeMs: 8000 }), kalshi.loadBoard()]);
     state.today = todayRes.data; state.todayMeta = todayRes.meta; state.todayFailed = false;
     if (state.date === todayET()) {
       state.board = todayRes.data; state.meta = todayRes.meta; state.failed = false; state.error = null;

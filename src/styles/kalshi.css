@@ -1,0 +1,11 @@
+/* NHL host for the shared Kalshi component (src/vendor/kalshi/, vendored unchanged).
+   The vendor CSS paints colour and inner layout; NHL supplies the card shell it
+   expects from the host (NBA's .ic) and maps its token names onto ours. */
+@import "../vendor/kalshi/kalshi-market-ui.css";
+
+.kx, .kx-strip, .kx-line { --f-mono: var(--pbe-font-data); --r: var(--r-md); }
+section.kx { border-width: 1px; border-style: solid; border-radius: var(--r-md); padding: var(--s-4); min-width: 0; }
+.kx-strip > .kx { padding: var(--s-3) var(--s-4) var(--s-4); }
+.cast-kalshi-strip { margin-top: var(--s-3); }
+/* Game card: the restrained line sits on its own row at the top of the footer. */
+.scard__actions .kx-line { flex: 1 1 100%; order: -1; padding: 2px 0 4px; }
