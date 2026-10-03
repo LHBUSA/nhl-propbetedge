@@ -19,6 +19,7 @@ import './styles/score-ticker.css';
 import './styles/intel.css';
 import './styles/player-dna.css';
 import './styles/goalie-center.css';
+import './styles/player-bio.css';
 import './styles/chrome-upgrade.css';
 import './styles/preferred-source.css';
 // Shared PropBetEdge membership vocabulary (badge, panel, All Access card).

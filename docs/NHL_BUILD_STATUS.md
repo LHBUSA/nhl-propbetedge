@@ -1,3 +1,12 @@
+## 2026-10-02 — Player biography layer (About · Career at a glance · Career journey) — PRODUCTION (frontend)
+
+- Every profile renders `About [Player]` from a structured fact packet (`src/lib/player-bio.js`, schema `nhl-player-bio/1.0.0`). Design and payload audit: `docs/NHL_PLAYER_BIO.md`.
+- Proven: `tests/player-bio.test.mjs` 13/13. It checks that every number in the prose is recoverable from the evidence, team chronology, traded seasons, goalie language, missing draft ≠ undrafted, missing awards ≠ "no awards", and no identity bleed. Full `npm test` is green and the build passes.
+- Browser QA (`tests/e2e/player-bio-qa.mjs`): 40/40 enriched preview and 20/20 production shape, at 1920/1366/768/390/360.
+- Page hierarchy changed: the PBE editorial context now sits below the career history, labelled `Current editorial context`.
+- **HELD (backend):** draft, honors, badges and HHOF flags are normalized in propsports-api-worker main e1bac1e but are NOT deployed. Live propsports-api (8e032626, 206 routes) was deployed from the unmerged `feature/soccer-wnba-206-routes-20261001` branch, and main (172 routes) would drop 34 routes. Until it is reconciled and deployed, production bios carry identity, career span, clubs, totals and DNA but no draft or honors sentences (the rail shows Draft `—`).
+- Pre-existing, unrelated: `/nhl/intel/winhl/player/:id` answers 404 (logged as a console error) for players with no current-season WinHL row. `tests/e2e/product-depth-browser.mjs` times out waiting for the mocked newsroom feed on `#/` (harness drift).
+
 ## 2026-09-29 — PBEcast Live Rink (rink is the hero) — PRODUCTION
 
 main `d2046cd` + `98bfb81`, frontend only (no data pipeline change). Rollback: `git revert 98bfb81 d2046cd`.

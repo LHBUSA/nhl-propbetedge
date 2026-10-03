@@ -1,0 +1,93 @@
+{
+ "id": 8485388,
+ "is_active": true,
+ "first_name": "Victor",
+ "last_name": "Eklund",
+ "full_name": "Victor Eklund",
+ "sweater_number": 38,
+ "position": "R",
+ "current_team_abbrev": "NYI",
+ "current_team_name": "New York Islanders",
+ "birth_date": "2006-10-03",
+ "birth_city": "Stockholm",
+ "birth_state_province": null,
+ "birth_country": "SWE",
+ "draft": {
+  "year": 2025,
+  "team_abbrev": "NYI",
+  "round": 1,
+  "pick_in_round": 16,
+  "overall_pick": 16
+ },
+ "honors": [],
+ "badges": [],
+ "in_hhof": null,
+ "in_top_100_all_time": null,
+ "career_totals": {
+  "regularSeason": {
+   "assists": 1,
+   "avgToi": "13:44",
+   "faceoffWinningPctg": 0.0,
+   "gameWinningGoals": 0,
+   "gamesPlayed": 2,
+   "goals": 0,
+   "otGoals": 0,
+   "pim": 2,
+   "plusMinus": -1,
+   "points": 1,
+   "powerPlayGoals": 0,
+   "powerPlayPoints": 0,
+   "shootingPctg": 0.0,
+   "shorthandedGoals": 0,
+   "shorthandedPoints": 0,
+   "shots": 4
+  }
+ },
+ "last_5_games": [
+  {
+   "gameDate": "2026-09-30",
+   "gameTypeId": 2
+  }
+ ],
+ "season_totals": [
+  {
+   "assists": 4,
+   "gameTypeId": 2,
+   "gamesPlayed": 3,
+   "goals": 5,
+   "leagueAbbrev": "U16 Div.1",
+   "points": 9,
+   "season": 20202021,
+   "sequence": 11,
+   "teamName": {
+    "default": "Djurgårdens IF U16"
+   }
+  },
+  {
+   "assists": 1,
+   "gameTypeId": 2,
+   "gamesPlayed": 1,
+   "goals": 0,
+   "leagueAbbrev": "NHL",
+   "points": 1,
+   "season": 20252026,
+   "sequence": 1,
+   "teamName": {
+    "default": "New York Islanders"
+   }
+  },
+  {
+   "assists": 0,
+   "gameTypeId": 2,
+   "gamesPlayed": 1,
+   "goals": 0,
+   "leagueAbbrev": "NHL",
+   "points": 0,
+   "season": 20262027,
+   "sequence": 1,
+   "teamName": {
+    "default": "New York Islanders"
+   }
+  }
+ ]
+}

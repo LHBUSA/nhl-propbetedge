@@ -1,0 +1,224 @@
+{
+ "ok": true,
+ "player_id": 8471214,
+ "history": {
+  "active_season": 20252026
+ },
+ "snapshots": [
+  {
+   "kind": "skater",
+   "season": 20222023,
+   "version": "nhl-skater-dna/1.0.0",
+   "peer_group": "forward",
+   "population": {
+    "n": 402
+   },
+   "traits": {
+    "basis": "SCORE_BANDS_LIVE_MEDIUM_CONFIDENCE",
+    "rules": "nhl-dna-traits/1.0.0",
+    "watch": [
+     "shot_blocking",
+     "penalty_differential"
+    ],
+    "strongest": [
+     "shot_generation",
+     "goal_scoring",
+     "finishing"
+    ]
+   },
+   "dimensions": {
+    "faceoffs": {
+     "score": null
+    },
+    "finishing": {
+     "score": 70
+    },
+    "playmaking": {
+     "score": 65
+    },
+    "power_play": {
+     "score": 60
+    },
+    "physicality": {
+     "score": null
+    },
+    "goal_scoring": {
+     "score": 97
+    },
+    "shot_blocking": {
+     "score": 7
+    },
+    "shot_location": {
+     "score": 28
+    },
+    "shot_generation": {
+     "score": 98
+    },
+    "penalty_differential": {
+     "score": 26
+    }
+   }
+  },
+  {
+   "kind": "skater",
+   "season": 20232024,
+   "version": "nhl-skater-dna/1.0.0",
+   "peer_group": "forward",
+   "population": {
+    "n": 391
+   },
+   "traits": {
+    "basis": "SCORE_BANDS_LIVE_MEDIUM_CONFIDENCE",
+    "rules": "nhl-dna-traits/1.0.0",
+    "watch": [
+     "shot_blocking"
+    ],
+    "strongest": [
+     "shot_generation",
+     "goal_scoring",
+     "playmaking"
+    ]
+   },
+   "dimensions": {
+    "faceoffs": {
+     "score": null
+    },
+    "finishing": {
+     "score": 44
+    },
+    "playmaking": {
+     "score": 72
+    },
+    "power_play": {
+     "score": 62
+    },
+    "physicality": {
+     "score": null
+    },
+    "goal_scoring": {
+     "score": 83
+    },
+    "shot_blocking": {
+     "score": 8
+    },
+    "shot_location": {
+     "score": 13
+    },
+    "shot_generation": {
+     "score": 97
+    },
+    "penalty_differential": {
+     "score": 47
+    }
+   }
+  },
+  {
+   "kind": "skater",
+   "season": 20242025,
+   "version": "nhl-skater-dna/1.0.0",
+   "peer_group": "forward",
+   "population": {
+    "n": 388
+   },
+   "traits": {
+    "basis": "SCORE_BANDS_LIVE_MEDIUM_CONFIDENCE",
+    "rules": "nhl-dna-traits/1.0.0",
+    "watch": [
+     "shot_blocking"
+    ],
+    "strongest": [
+     "goal_scoring",
+     "shot_generation",
+     "finishing"
+    ]
+   },
+   "dimensions": {
+    "faceoffs": {
+     "score": null
+    },
+    "finishing": {
+     "score": 85
+    },
+    "playmaking": {
+     "score": 83
+    },
+    "power_play": {
+     "score": 64
+    },
+    "physicality": {
+     "score": 65
+    },
+    "goal_scoring": {
+     "score": 100
+    },
+    "shot_blocking": {
+     "score": 0
+    },
+    "shot_location": {
+     "score": 22
+    },
+    "shot_generation": {
+     "score": 100
+    },
+    "penalty_differential": {
+     "score": 40
+    }
+   }
+  },
+  {
+   "kind": "skater",
+   "season": 20252026,
+   "version": "nhl-skater-dna/1.0.0",
+   "peer_group": "forward",
+   "population": {
+    "n": 401
+   },
+   "traits": {
+    "basis": "SCORE_BANDS_LIVE_MEDIUM_CONFIDENCE",
+    "rules": "nhl-dna-traits/1.0.0",
+    "watch": [
+     "shot_blocking",
+     "power_play",
+     "finishing"
+    ],
+    "strongest": [
+     "shot_generation",
+     "goal_scoring",
+     "playmaking"
+    ]
+   },
+   "dimensions": {
+    "faceoffs": {
+     "score": null
+    },
+    "finishing": {
+     "score": 33
+    },
+    "playmaking": {
+     "score": 75
+    },
+    "power_play": {
+     "score": 26
+    },
+    "physicality": {
+     "score": 69
+    },
+    "goal_scoring": {
+     "score": 90
+    },
+    "shot_blocking": {
+     "score": 1
+    },
+    "shot_location": {
+     "score": 31
+    },
+    "shot_generation": {
+     "score": 98
+    },
+    "penalty_differential": {
+     "score": 33
+    }
+   }
+  }
+ ]
+}

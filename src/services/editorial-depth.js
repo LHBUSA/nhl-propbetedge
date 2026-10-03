@@ -522,11 +522,14 @@ function currentResearchContext() {
 
   const playerMatch = /^\/player\/(\d{6,10})$/.exec(path);
   if (!playerMatch) return null;
-  const anchor = document.querySelector('.rs-phead');
-  if (!anchor) return null;
-  const name = String(anchor.querySelector('h1')?.textContent || '').trim();
+  const head = document.querySelector('.rs-phead');
+  if (!head) return null;
+  // Current editorial context sits below the permanent profile (bio, DNA,
+  // stats, career) when the page provides an anchor; the hero otherwise.
+  const anchor = document.querySelector('[data-pbe-context-anchor]') || head;
+  const name = String(head.querySelector('h1')?.textContent || '').trim();
   if (!name) return null;
-  const teamHref = anchor.querySelector('.rs-phead__team a[href^="#/team/"]')?.getAttribute('href') || '';
+  const teamHref = head.querySelector('.rs-phead__team a[href^="#/team/"]')?.getAttribute('href') || '';
   const team = (/^#\/team\/([A-Z]{2,4})$/i.exec(teamHref)?.[1] || '').toUpperCase() || null;
   return { kind: 'player', id: playerMatch[1], name, team, label: name, anchor };
 }
@@ -563,7 +566,7 @@ function contextPanel(ctx, items, direct) {
     ? (direct ? `Analysis touching ${ctx.name}` : `Team context around ${ctx.name}`)
     : `What our desk is analyzing about ${ctx.label}`;
   const eyebrow = player
-    ? (direct ? 'PBE NHL · Player context' : `PBE NHL · ${ctx.team || 'Team'} context`)
+    ? (direct ? 'Current editorial context · PBE NHL' : `Current editorial context · PBE NHL · ${ctx.team || 'Team'}`)
     : `PBE NHL · ${ctx.team}`;
   const identity = player
     ? playerIdentity({ id: ctx.id, name: ctx.name, team: ctx.team, size: 'lg' })

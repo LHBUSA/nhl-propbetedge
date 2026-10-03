@@ -9,6 +9,8 @@ import { teamMark } from '../components/game.js';
 import { playerIdentity, playerPhoto, photoCredit } from '../components/player.js';
 import { defaultFightScope, fightRecordFor, fightSeasons, recordText } from '../lib/fight-record.js';
 import { fetchSkaterDna, renderDnaPanel } from '../lib/player-dna-mount.js';
+import { buildBioFacts } from '../lib/player-bio.js';
+import { renderCareerJourney, renderPlayerBio } from '../components/player-bio.js';
 
 // ---- private helpers (lane-local by contract)
 const seasonLabel = s => {
@@ -340,18 +342,19 @@ function fightSection(ledger, fights, scope) {
     ${rows ? `<ol class="rs-fight-list">${rows}</ol>` : `<p class="dim small">${esc(empty)}</p>`}`;
 }
 
-function careerSection(p) {
+function careerSection(p, bio = null) {
   const c = p.career_totals || {};
   const goalie = p.position === 'G';
   const rows = [['Regular season', c.regularSeason], ['Playoffs', c.playoffs]].filter(([, r]) => r && n(r.gamesPlayed));
-  if (!rows.length) return `${panelHead('NHL career')}<p class="dim small">No NHL career totals in the source record.</p>`;
+  const journey = renderCareerJourney(bio);
+  if (!rows.length) return `${panelHead('Career history')}<p class="dim small">No NHL career totals in the source record.</p>${journey}`;
   const head = goalie
     ? '<th></th><th class="num">GP</th><th class="num">W</th><th class="num">L</th><th class="num">OTL</th><th class="num">SV%</th><th class="num">GAA</th><th class="num">SO</th>'
     : '<th></th><th class="num">GP</th><th class="num">G</th><th class="num">A</th><th class="num">P</th><th class="num">PPG</th><th class="num">SOG</th><th class="num">TOI/GP</th>';
   const body = rows.map(([l, r]) => goalie
     ? `<tr><td>${l}</td><td class="num">${num(r.gamesPlayed)}</td><td class="num">${num(r.wins)}</td><td class="num">${num(r.losses)}</td><td class="num">${num(r.otLosses)}</td><td class="num">${svPct(r.savePctg)}</td><td class="num">${num(r.goalsAgainstAvg, 2)}</td><td class="num">${num(r.shutouts)}</td></tr>`
     : `<tr><td>${l}</td><td class="num">${num(r.gamesPlayed)}</td><td class="num">${num(r.goals)}</td><td class="num">${num(r.assists)}</td><td class="num"><b>${num(r.points)}</b></td><td class="num">${num(r.powerPlayGoals)}</td><td class="num">${num(r.shots)}</td><td class="num">${esc(r.avgToi || '—')}</td></tr>`).join('');
-  return `${panelHead('NHL career')}<div class="table-wrap"><table class="pbe-table rs-career"><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table></div>`;
+  return `${panelHead('Career history', '<span class="micro">NHL</span>')}<div class="rs-career-grid"><div class="table-wrap"><table class="pbe-table rs-career"><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table></div>${journey}</div>`;
 }
 
 function newsSection(p, s) {
@@ -373,16 +376,32 @@ function newsSection(p, s) {
 export function mount(root, params) {
   const id = params.playerId;
   const st = { player: {}, log: {}, fightScope: null, news: {}, next: null, gameType: 2, season: null, hasPlayoffs: false, totals: null, pi: { tier: null, winhl: null, fatigue: null, goalie: null, fightLedger: null } };
+  // Hierarchy: hero · About + career at a glance · DNA/intelligence · current
+  // season · recent form + game log · career history · current editorial
+  // context (editorial-depth inserts after the anchor) · headlines · fights.
   root.innerHTML = `<section class="wrap section rs-player"><div id="rs-p-head"><div class="pbe-skeleton" style="height:180px"></div></div>
+    <div id="rs-p-bio"></div>
     <div id="rs-p-dna"></div>
-    <div id="rs-p-body"></div></section>`;
+    <div id="rs-p-body"></div>
+    <div class="rs-p-context-anchor" data-pbe-context-anchor></div>
+    <div id="rs-p-tail"></div></section>`;
   const headEl = $('#rs-p-head', root);
+  const bioEl = $('#rs-p-bio', root);
   const bodyEl = $('#rs-p-body', root);
+  const tailEl = $('#rs-p-tail', root);
   const dnaEl = $('#rs-p-dna', root);
   // Skater DNA: stored snapshots only; renders nothing unless the DNA API
   // answers 200 (dark behind the rights gate). Goalies never get DNA.
   const dna = { payload: null, season: null, focus: null, player: null };
   const renderDna = () => { dnaEl.innerHTML = dna.payload ? renderDnaPanel(dna.payload, { season: dna.season, focus: dna.focus, player: dna.player }) : ''; };
+  // Biography: a frozen fact packet from the profile payload (+ stored DNA
+  // traits once they arrive); prose is derived, never generated.
+  let bio = null;
+  const renderBio = () => {
+    const p = st.player.data?.player;
+    bio = p ? buildBioFacts(p, { dna: dna.payload }) : null;
+    bioEl.innerHTML = renderPlayerBio(bio);
+  };
   const controller = new AbortController();
   const signal = controller.signal;
   let logCtl = null;
@@ -401,21 +420,18 @@ export function mount(root, params) {
   };
   const renderBody = () => {
     const p = st.player.data?.player;
-    if (!p) { bodyEl.innerHTML = ''; return; }
+    if (!p) { bodyEl.innerHTML = ''; tailEl.innerHTML = ''; return; }
     const fights = fightData();
     const scope = st.fightScope || defaultFightScope(fights || [], st.totals?.season);
     bodyEl.innerHTML = `
-      <section class="pbe-panel rs-p-season">${seasonLine(p, st.totals, st.gameType, fights)}</section>
       <section class="pbe-panel rs-p-intel" aria-label="PBE intelligence">${playerIntelSection(p, st.pi, fights)}</section>
-      <section class="pbe-panel rs-p-fights">${fightSection(st.pi.fightLedger, fights, scope)}</section>
-      <div class="rs-player-grid">
-        <section class="pbe-panel" id="rs-p-charts">${chartsSection(p, st.log, st.totals)}</section>
-        <div class="rs-col">
-          <section class="pbe-panel">${newsSection(p, st.news)}</section>
-          <section class="pbe-panel">${careerSection(p)}</section>
-        </div>
-      </div>
-      <section class="pbe-panel rs-p-log">${gameLogSection(p, st.log, st.gameType, st.hasPlayoffs)}</section>`;
+      <section class="pbe-panel rs-p-season">${seasonLine(p, st.totals, st.gameType, fights)}</section>
+      <section class="pbe-panel rs-p-form" id="rs-p-charts">${chartsSection(p, st.log, st.totals)}</section>
+      <section class="pbe-panel rs-p-log">${gameLogSection(p, st.log, st.gameType, st.hasPlayoffs)}</section>
+      <section class="pbe-panel rs-p-career">${careerSection(p, bio)}</section>`;
+    tailEl.innerHTML = `
+      <section class="pbe-panel rs-p-news">${newsSection(p, st.news)}</section>
+      <section class="pbe-panel rs-p-fights">${fightSection(st.pi.fightLedger, fights, scope)}</section>`;
   };
 
   // PBE intelligence (nhl-metrics via the gateway). Each block fails on its own.
@@ -457,6 +473,7 @@ export function mount(root, params) {
       st.totals = reg;
       st.hasPlayoffs = Boolean(reg && seasonTotals(p.season_totals, 3, reg.season));
       renderHead();
+      renderBio();
       loadLog();
       loadIntel(p);
       if (p.position !== 'G') {
@@ -468,6 +485,8 @@ export function mount(root, params) {
           const dnaName = p.full_name || `${p.first_name || ''} ${p.last_name || ''}`.trim();
           dna.player = { name: dnaName, team: p.current_team_abbrev || null, identityFor: team => playerIdentity({ id: p.id ?? Number(id), name: dnaName, team, size: 'lg', headshot: p.headshot }) };
           renderDna();
+          renderBio();
+          renderBody();
         });
       }
       // Next game for the player's club (context for tonight), from the club schedule.

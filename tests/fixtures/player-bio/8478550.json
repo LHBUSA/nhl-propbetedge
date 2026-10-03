@@ -1,0 +1,375 @@
+{
+ "id": 8478550,
+ "is_active": true,
+ "first_name": "Artemi",
+ "last_name": "Panarin",
+ "full_name": "Artemi Panarin",
+ "sweater_number": 10,
+ "position": "L",
+ "current_team_abbrev": "LAK",
+ "current_team_name": "Los Angeles Kings",
+ "birth_date": "1991-10-30",
+ "birth_city": "Korkino",
+ "birth_state_province": null,
+ "birth_country": "RUS",
+ "draft": null,
+ "honors": [
+  {
+   "trophy": "Calder Memorial Trophy",
+   "seasons": [
+    {
+     "season": 20152016,
+     "game_type": 2
+    }
+   ]
+  }
+ ],
+ "badges": [],
+ "in_hhof": null,
+ "in_top_100_all_time": null,
+ "career_totals": {
+  "regularSeason": {
+   "assists": 624,
+   "avgToi": "19:47",
+   "faceoffWinningPctg": 0.22030000000000002,
+   "gameWinningGoals": 51,
+   "gamesPlayed": 831,
+   "goals": 331,
+   "otGoals": 10,
+   "pim": 242,
+   "plusMinus": 138,
+   "points": 955,
+   "powerPlayGoals": 79,
+   "powerPlayPoints": 288,
+   "shootingPctg": 0.1452,
+   "shorthandedGoals": 0,
+   "shorthandedPoints": 1,
+   "shots": 2279
+  },
+  "playoffs": {
+   "assists": 41,
+   "avgToi": "21:04",
+   "faceoffWinningPctg": 0.1666,
+   "gameWinningGoals": 7,
+   "gamesPlayed": 77,
+   "goals": 23,
+   "otGoals": 3,
+   "pim": 34,
+   "plusMinus": -22,
+   "points": 64,
+   "powerPlayGoals": 8,
+   "powerPlayPoints": 30,
+   "shootingPctg": 0.1161,
+   "shorthandedGoals": 0,
+   "shorthandedPoints": 1,
+   "shots": 198
+  }
+ },
+ "last_5_games": [
+  {
+   "gameDate": "2026-09-30",
+   "gameTypeId": 2
+  }
+ ],
+ "season_totals": [
+  {
+   "assists": 1,
+   "gameTypeId": 2,
+   "gamesPlayed": 5,
+   "goals": 0,
+   "leagueAbbrev": "KHL",
+   "points": 1,
+   "season": 20082009,
+   "sequence": 2202,
+   "teamName": {
+    "default": "Vityaz Podolsk"
+   }
+  },
+  {
+   "assists": 47,
+   "gameTypeId": 2,
+   "gamesPlayed": 80,
+   "goals": 30,
+   "leagueAbbrev": "NHL",
+   "points": 77,
+   "season": 20152016,
+   "sequence": 1,
+   "teamName": {
+    "default": "Chicago Blackhawks"
+   }
+  },
+  {
+   "assists": 5,
+   "gameTypeId": 3,
+   "gamesPlayed": 7,
+   "goals": 2,
+   "leagueAbbrev": "NHL",
+   "points": 7,
+   "season": 20152016,
+   "sequence": 1,
+   "teamName": {
+    "default": "Chicago Blackhawks"
+   }
+  },
+  {
+   "assists": 43,
+   "gameTypeId": 2,
+   "gamesPlayed": 82,
+   "goals": 31,
+   "leagueAbbrev": "NHL",
+   "points": 74,
+   "season": 20162017,
+   "sequence": 1,
+   "teamName": {
+    "default": "Chicago Blackhawks"
+   }
+  },
+  {
+   "assists": 1,
+   "gameTypeId": 3,
+   "gamesPlayed": 4,
+   "goals": 0,
+   "leagueAbbrev": "NHL",
+   "points": 1,
+   "season": 20162017,
+   "sequence": 1,
+   "teamName": {
+    "default": "Chicago Blackhawks"
+   }
+  },
+  {
+   "assists": 55,
+   "gameTypeId": 2,
+   "gamesPlayed": 81,
+   "goals": 27,
+   "leagueAbbrev": "NHL",
+   "points": 82,
+   "season": 20172018,
+   "sequence": 1,
+   "teamName": {
+    "default": "Columbus Blue Jackets"
+   }
+  },
+  {
+   "assists": 5,
+   "gameTypeId": 3,
+   "gamesPlayed": 6,
+   "goals": 2,
+   "leagueAbbrev": "NHL",
+   "points": 7,
+   "season": 20172018,
+   "sequence": 1,
+   "teamName": {
+    "default": "Columbus Blue Jackets"
+   }
+  },
+  {
+   "assists": 59,
+   "gameTypeId": 2,
+   "gamesPlayed": 79,
+   "goals": 28,
+   "leagueAbbrev": "NHL",
+   "points": 87,
+   "season": 20182019,
+   "sequence": 1,
+   "teamName": {
+    "default": "Columbus Blue Jackets"
+   }
+  },
+  {
+   "assists": 6,
+   "gameTypeId": 3,
+   "gamesPlayed": 10,
+   "goals": 5,
+   "leagueAbbrev": "NHL",
+   "points": 11,
+   "season": 20182019,
+   "sequence": 1,
+   "teamName": {
+    "default": "Columbus Blue Jackets"
+   }
+  },
+  {
+   "assists": 63,
+   "gameTypeId": 2,
+   "gamesPlayed": 69,
+   "goals": 32,
+   "leagueAbbrev": "NHL",
+   "points": 95,
+   "season": 20192020,
+   "sequence": 1,
+   "teamName": {
+    "default": "New York Rangers"
+   }
+  },
+  {
+   "assists": 1,
+   "gameTypeId": 3,
+   "gamesPlayed": 3,
+   "goals": 1,
+   "leagueAbbrev": "NHL",
+   "points": 2,
+   "season": 20192020,
+   "sequence": 1,
+   "teamName": {
+    "default": "New York Rangers"
+   }
+  },
+  {
+   "assists": 41,
+   "gameTypeId": 2,
+   "gamesPlayed": 42,
+   "goals": 17,
+   "leagueAbbrev": "NHL",
+   "points": 58,
+   "season": 20202021,
+   "sequence": 1,
+   "teamName": {
+    "default": "New York Rangers"
+   }
+  },
+  {
+   "assists": 74,
+   "gameTypeId": 2,
+   "gamesPlayed": 75,
+   "goals": 22,
+   "leagueAbbrev": "NHL",
+   "points": 96,
+   "season": 20212022,
+   "sequence": 1,
+   "teamName": {
+    "default": "New York Rangers"
+   }
+  },
+  {
+   "assists": 10,
+   "gameTypeId": 3,
+   "gamesPlayed": 20,
+   "goals": 6,
+   "leagueAbbrev": "NHL",
+   "points": 16,
+   "season": 20212022,
+   "sequence": 1,
+   "teamName": {
+    "default": "New York Rangers"
+   }
+  },
+  {
+   "assists": 63,
+   "gameTypeId": 2,
+   "gamesPlayed": 82,
+   "goals": 29,
+   "leagueAbbrev": "NHL",
+   "points": 92,
+   "season": 20222023,
+   "sequence": 1,
+   "teamName": {
+    "default": "New York Rangers"
+   }
+  },
+  {
+   "assists": 2,
+   "gameTypeId": 3,
+   "gamesPlayed": 7,
+   "goals": 0,
+   "leagueAbbrev": "NHL",
+   "points": 2,
+   "season": 20222023,
+   "sequence": 1,
+   "teamName": {
+    "default": "New York Rangers"
+   }
+  },
+  {
+   "assists": 71,
+   "gameTypeId": 2,
+   "gamesPlayed": 82,
+   "goals": 49,
+   "leagueAbbrev": "NHL",
+   "points": 120,
+   "season": 20232024,
+   "sequence": 1,
+   "teamName": {
+    "default": "New York Rangers"
+   }
+  },
+  {
+   "assists": 10,
+   "gameTypeId": 3,
+   "gamesPlayed": 16,
+   "goals": 5,
+   "leagueAbbrev": "NHL",
+   "points": 15,
+   "season": 20232024,
+   "sequence": 1,
+   "teamName": {
+    "default": "New York Rangers"
+   }
+  },
+  {
+   "assists": 52,
+   "gameTypeId": 2,
+   "gamesPlayed": 80,
+   "goals": 37,
+   "leagueAbbrev": "NHL",
+   "points": 89,
+   "season": 20242025,
+   "sequence": 1,
+   "teamName": {
+    "default": "New York Rangers"
+   }
+  },
+  {
+   "assists": 38,
+   "gameTypeId": 2,
+   "gamesPlayed": 52,
+   "goals": 19,
+   "leagueAbbrev": "NHL",
+   "points": 57,
+   "season": 20252026,
+   "sequence": 1,
+   "teamName": {
+    "default": "New York Rangers"
+   }
+  },
+  {
+   "assists": 18,
+   "gameTypeId": 2,
+   "gamesPlayed": 26,
+   "goals": 9,
+   "leagueAbbrev": "NHL",
+   "points": 27,
+   "season": 20252026,
+   "sequence": 2,
+   "teamName": {
+    "default": "Los Angeles Kings"
+   }
+  },
+  {
+   "assists": 1,
+   "gameTypeId": 3,
+   "gamesPlayed": 4,
+   "goals": 2,
+   "leagueAbbrev": "NHL",
+   "points": 3,
+   "season": 20252026,
+   "sequence": 1,
+   "teamName": {
+    "default": "Los Angeles Kings"
+   }
+  },
+  {
+   "assists": 0,
+   "gameTypeId": 2,
+   "gamesPlayed": 1,
+   "goals": 1,
+   "leagueAbbrev": "NHL",
+   "points": 1,
+   "season": 20262027,
+   "sequence": 1,
+   "teamName": {
+    "default": "Los Angeles Kings"
+   }
+  }
+ ]
+}

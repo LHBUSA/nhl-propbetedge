@@ -1,0 +1,287 @@
+{
+ "id": 8478048,
+ "is_active": true,
+ "first_name": "Igor",
+ "last_name": "Shesterkin",
+ "full_name": "Igor Shesterkin",
+ "sweater_number": 31,
+ "position": "G",
+ "current_team_abbrev": "NYR",
+ "current_team_name": "New York Rangers",
+ "birth_date": "1995-12-30",
+ "birth_city": "Moscow",
+ "birth_state_province": null,
+ "birth_country": "RUS",
+ "draft": {
+  "year": 2014,
+  "team_abbrev": "NYR",
+  "round": 4,
+  "pick_in_round": 28,
+  "overall_pick": 118
+ },
+ "honors": [
+  {
+   "trophy": "Vezina Trophy",
+   "seasons": [
+    {
+     "season": 20212022,
+     "game_type": 2
+    }
+   ]
+  }
+ ],
+ "badges": [],
+ "in_hhof": null,
+ "in_top_100_all_time": null,
+ "career_totals": {
+  "regularSeason": {
+   "assists": 3,
+   "gamesPlayed": 327,
+   "gamesStarted": 322,
+   "goals": 1,
+   "goalsAgainst": 799,
+   "goalsAgainstAvg": 2.513138,
+   "losses": 108,
+   "otLosses": 28,
+   "pim": 27,
+   "savePctg": 0.916701,
+   "shotsAgainst": 9580,
+   "shutouts": 22,
+   "timeOnIce": "19075:44",
+   "wins": 188
+  },
+  "playoffs": {
+   "assists": 3,
+   "gamesPlayed": 44,
+   "gamesStarted": 44,
+   "goals": 0,
+   "goalsAgainst": 107,
+   "goalsAgainstAvg": 2.407032,
+   "losses": 20,
+   "otLosses": 0,
+   "pim": 4,
+   "savePctg": 0.928233,
+   "shotsAgainst": 1477,
+   "shutouts": 0,
+   "timeOnIce": "2667:11",
+   "wins": 23
+  }
+ },
+ "last_5_games": [
+  {
+   "gameDate": "2026-10-01",
+   "gameTypeId": 2
+  },
+  {
+   "gameDate": "2026-09-29",
+   "gameTypeId": 2
+  }
+ ],
+ "season_totals": [
+  {
+   "gameTypeId": 2,
+   "gamesPlayed": 15,
+   "leagueAbbrev": "Russia-Jr.",
+   "season": 20122013,
+   "sequence": 1,
+   "teamName": {
+    "default": "Spartak Jr."
+   },
+   "wins": 9,
+   "losses": 1,
+   "shutouts": 2
+  },
+  {
+   "assists": 0,
+   "gameTypeId": 2,
+   "gamesPlayed": 12,
+   "goals": 0,
+   "leagueAbbrev": "NHL",
+   "season": 20192020,
+   "sequence": 1,
+   "teamName": {
+    "default": "New York Rangers"
+   },
+   "wins": 10,
+   "losses": 2,
+   "shutouts": 0,
+   "gamesStarted": 12
+  },
+  {
+   "assists": 0,
+   "gameTypeId": 3,
+   "gamesPlayed": 1,
+   "goals": 0,
+   "leagueAbbrev": "NHL",
+   "season": 20192020,
+   "sequence": 1,
+   "teamName": {
+    "default": "New York Rangers"
+   },
+   "wins": 0,
+   "losses": 1,
+   "shutouts": 0,
+   "gamesStarted": 1
+  },
+  {
+   "assists": 0,
+   "gameTypeId": 2,
+   "gamesPlayed": 35,
+   "goals": 0,
+   "leagueAbbrev": "NHL",
+   "season": 20202021,
+   "sequence": 1,
+   "teamName": {
+    "default": "New York Rangers"
+   },
+   "wins": 16,
+   "losses": 14,
+   "shutouts": 2,
+   "gamesStarted": 31
+  },
+  {
+   "assists": 1,
+   "gameTypeId": 2,
+   "gamesPlayed": 53,
+   "goals": 0,
+   "leagueAbbrev": "NHL",
+   "season": 20212022,
+   "sequence": 1,
+   "teamName": {
+    "default": "New York Rangers"
+   },
+   "wins": 36,
+   "losses": 13,
+   "shutouts": 6,
+   "gamesStarted": 52
+  },
+  {
+   "assists": 3,
+   "gameTypeId": 3,
+   "gamesPlayed": 20,
+   "goals": 0,
+   "leagueAbbrev": "NHL",
+   "season": 20212022,
+   "sequence": 1,
+   "teamName": {
+    "default": "New York Rangers"
+   },
+   "wins": 10,
+   "losses": 9,
+   "shutouts": 0,
+   "gamesStarted": 20
+  },
+  {
+   "assists": 1,
+   "gameTypeId": 2,
+   "gamesPlayed": 58,
+   "goals": 0,
+   "leagueAbbrev": "NHL",
+   "season": 20222023,
+   "sequence": 1,
+   "teamName": {
+    "default": "New York Rangers"
+   },
+   "wins": 37,
+   "losses": 13,
+   "shutouts": 3,
+   "gamesStarted": 58
+  },
+  {
+   "assists": 0,
+   "gameTypeId": 3,
+   "gamesPlayed": 7,
+   "goals": 0,
+   "leagueAbbrev": "NHL",
+   "season": 20222023,
+   "sequence": 1,
+   "teamName": {
+    "default": "New York Rangers"
+   },
+   "wins": 3,
+   "losses": 4,
+   "shutouts": 0,
+   "gamesStarted": 7
+  },
+  {
+   "assists": 1,
+   "gameTypeId": 2,
+   "gamesPlayed": 55,
+   "goals": 0,
+   "leagueAbbrev": "NHL",
+   "season": 20232024,
+   "sequence": 1,
+   "teamName": {
+    "default": "New York Rangers"
+   },
+   "wins": 36,
+   "losses": 17,
+   "shutouts": 4,
+   "gamesStarted": 55
+  },
+  {
+   "assists": 0,
+   "gameTypeId": 3,
+   "gamesPlayed": 16,
+   "goals": 0,
+   "leagueAbbrev": "NHL",
+   "season": 20232024,
+   "sequence": 1,
+   "teamName": {
+    "default": "New York Rangers"
+   },
+   "wins": 10,
+   "losses": 6,
+   "shutouts": 0,
+   "gamesStarted": 16
+  },
+  {
+   "assists": 0,
+   "gameTypeId": 2,
+   "gamesPlayed": 61,
+   "goals": 0,
+   "leagueAbbrev": "NHL",
+   "season": 20242025,
+   "sequence": 1,
+   "teamName": {
+    "default": "New York Rangers"
+   },
+   "wins": 27,
+   "losses": 29,
+   "shutouts": 6,
+   "gamesStarted": 61
+  },
+  {
+   "assists": 0,
+   "gameTypeId": 2,
+   "gamesPlayed": 51,
+   "goals": 0,
+   "leagueAbbrev": "NHL",
+   "season": 20252026,
+   "sequence": 1,
+   "teamName": {
+    "default": "New York Rangers"
+   },
+   "wins": 25,
+   "losses": 19,
+   "shutouts": 1,
+   "gamesStarted": 51
+  },
+  {
+   "assists": 0,
+   "gameTypeId": 2,
+   "gamesPlayed": 2,
+   "goals": 1,
+   "leagueAbbrev": "NHL",
+   "season": 20262027,
+   "sequence": 1,
+   "teamName": {
+    "default": "New York Rangers"
+   },
+   "wins": 1,
+   "losses": 1,
+   "shutouts": 0,
+   "gamesStarted": 2
+  }
+ ]
+}

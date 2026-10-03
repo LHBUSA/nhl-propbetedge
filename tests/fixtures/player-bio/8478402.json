@@ -1,0 +1,439 @@
+{
+ "id": 8478402,
+ "is_active": true,
+ "first_name": "Connor",
+ "last_name": "McDavid",
+ "full_name": "Connor McDavid",
+ "sweater_number": 97,
+ "position": "C",
+ "current_team_abbrev": "EDM",
+ "current_team_name": "Edmonton Oilers",
+ "birth_date": "1997-01-13",
+ "birth_city": "Richmond Hill",
+ "birth_state_province": "Ontario",
+ "birth_country": "CAN",
+ "draft": {
+  "year": 2015,
+  "team_abbrev": "EDM",
+  "round": 1,
+  "pick_in_round": 1,
+  "overall_pick": 1
+ },
+ "honors": [
+  {
+   "trophy": "Art Ross Trophy",
+   "seasons": [
+    {
+     "season": 20252026,
+     "game_type": 2
+    },
+    {
+     "season": 20222023,
+     "game_type": 2
+    },
+    {
+     "season": 20212022,
+     "game_type": 2
+    },
+    {
+     "season": 20202021,
+     "game_type": 2
+    },
+    {
+     "season": 20172018,
+     "game_type": 2
+    },
+    {
+     "season": 20162017,
+     "game_type": 2
+    }
+   ]
+  },
+  {
+   "trophy": "Conn Smythe Trophy",
+   "seasons": [
+    {
+     "season": 20232024,
+     "game_type": 3
+    }
+   ]
+  },
+  {
+   "trophy": "Hart Memorial Trophy",
+   "seasons": [
+    {
+     "season": 20222023,
+     "game_type": 2
+    },
+    {
+     "season": 20202021,
+     "game_type": 2
+    },
+    {
+     "season": 20162017,
+     "game_type": 2
+    }
+   ]
+  },
+  {
+   "trophy": "Maurice “Rocket” Richard Trophy",
+   "seasons": [
+    {
+     "season": 20222023,
+     "game_type": 2
+    }
+   ]
+  },
+  {
+   "trophy": "Ted Lindsay Award",
+   "seasons": [
+    {
+     "season": 20252026,
+     "game_type": 2
+    },
+    {
+     "season": 20222023,
+     "game_type": 2
+    },
+    {
+     "season": 20202021,
+     "game_type": 2
+    },
+    {
+     "season": 20172018,
+     "game_type": 2
+    },
+    {
+     "season": 20162017,
+     "game_type": 2
+    }
+   ]
+  }
+ ],
+ "badges": [],
+ "in_hhof": null,
+ "in_top_100_all_time": null,
+ "career_totals": {
+  "regularSeason": {
+   "assists": 817,
+   "avgToi": "21:52",
+   "faceoffWinningPctg": 0.47950000000000004,
+   "gameWinningGoals": 76,
+   "gamesPlayed": 796,
+   "goals": 410,
+   "otGoals": 17,
+   "pim": 330,
+   "plusMinus": 191,
+   "points": 1227,
+   "powerPlayGoals": 100,
+   "powerPlayPoints": 420,
+   "shootingPctg": 0.1509,
+   "shorthandedGoals": 10,
+   "shorthandedPoints": 20,
+   "shots": 2716
+  },
+  "playoffs": {
+   "assists": 111,
+   "avgToi": "23:38",
+   "faceoffWinningPctg": 0.461,
+   "gameWinningGoals": 5,
+   "gamesPlayed": 102,
+   "goals": 45,
+   "otGoals": 2,
+   "pim": 30,
+   "plusMinus": 23,
+   "points": 156,
+   "powerPlayGoals": 14,
+   "powerPlayPoints": 58,
+   "shootingPctg": 0.1285,
+   "shorthandedGoals": 2,
+   "shorthandedPoints": 3,
+   "shots": 350
+  }
+ },
+ "last_5_games": [
+  {
+   "gameDate": "2026-10-01",
+   "gameTypeId": 2
+  },
+  {
+   "gameDate": "2026-09-29",
+   "gameTypeId": 2
+  }
+ ],
+ "season_totals": [
+  {
+   "assists": 7,
+   "gameTypeId": 2,
+   "gamesPlayed": 7,
+   "goals": 7,
+   "leagueAbbrev": "QC Int PW",
+   "points": 14,
+   "season": 20082009,
+   "sequence": 11,
+   "teamName": {
+    "default": "York Simcoe Express"
+   }
+  },
+  {
+   "assists": 32,
+   "gameTypeId": 2,
+   "gamesPlayed": 45,
+   "goals": 16,
+   "leagueAbbrev": "NHL",
+   "points": 48,
+   "season": 20152016,
+   "sequence": 1,
+   "teamName": {
+    "default": "Edmonton Oilers"
+   }
+  },
+  {
+   "assists": 70,
+   "gameTypeId": 2,
+   "gamesPlayed": 82,
+   "goals": 30,
+   "leagueAbbrev": "NHL",
+   "points": 100,
+   "season": 20162017,
+   "sequence": 1,
+   "teamName": {
+    "default": "Edmonton Oilers"
+   }
+  },
+  {
+   "assists": 4,
+   "gameTypeId": 3,
+   "gamesPlayed": 13,
+   "goals": 5,
+   "leagueAbbrev": "NHL",
+   "points": 9,
+   "season": 20162017,
+   "sequence": 1,
+   "teamName": {
+    "default": "Edmonton Oilers"
+   }
+  },
+  {
+   "assists": 67,
+   "gameTypeId": 2,
+   "gamesPlayed": 82,
+   "goals": 41,
+   "leagueAbbrev": "NHL",
+   "points": 108,
+   "season": 20172018,
+   "sequence": 1,
+   "teamName": {
+    "default": "Edmonton Oilers"
+   }
+  },
+  {
+   "assists": 75,
+   "gameTypeId": 2,
+   "gamesPlayed": 78,
+   "goals": 41,
+   "leagueAbbrev": "NHL",
+   "points": 116,
+   "season": 20182019,
+   "sequence": 1,
+   "teamName": {
+    "default": "Edmonton Oilers"
+   }
+  },
+  {
+   "assists": 63,
+   "gameTypeId": 2,
+   "gamesPlayed": 64,
+   "goals": 34,
+   "leagueAbbrev": "NHL",
+   "points": 97,
+   "season": 20192020,
+   "sequence": 1,
+   "teamName": {
+    "default": "Edmonton Oilers"
+   }
+  },
+  {
+   "assists": 4,
+   "gameTypeId": 3,
+   "gamesPlayed": 4,
+   "goals": 5,
+   "leagueAbbrev": "NHL",
+   "points": 9,
+   "season": 20192020,
+   "sequence": 1,
+   "teamName": {
+    "default": "Edmonton Oilers"
+   }
+  },
+  {
+   "assists": 72,
+   "gameTypeId": 2,
+   "gamesPlayed": 56,
+   "goals": 33,
+   "leagueAbbrev": "NHL",
+   "points": 105,
+   "season": 20202021,
+   "sequence": 1,
+   "teamName": {
+    "default": "Edmonton Oilers"
+   }
+  },
+  {
+   "assists": 3,
+   "gameTypeId": 3,
+   "gamesPlayed": 4,
+   "goals": 1,
+   "leagueAbbrev": "NHL",
+   "points": 4,
+   "season": 20202021,
+   "sequence": 1,
+   "teamName": {
+    "default": "Edmonton Oilers"
+   }
+  },
+  {
+   "assists": 79,
+   "gameTypeId": 2,
+   "gamesPlayed": 80,
+   "goals": 44,
+   "leagueAbbrev": "NHL",
+   "points": 123,
+   "season": 20212022,
+   "sequence": 1,
+   "teamName": {
+    "default": "Edmonton Oilers"
+   }
+  },
+  {
+   "assists": 23,
+   "gameTypeId": 3,
+   "gamesPlayed": 16,
+   "goals": 10,
+   "leagueAbbrev": "NHL",
+   "points": 33,
+   "season": 20212022,
+   "sequence": 1,
+   "teamName": {
+    "default": "Edmonton Oilers"
+   }
+  },
+  {
+   "assists": 89,
+   "gameTypeId": 2,
+   "gamesPlayed": 82,
+   "goals": 64,
+   "leagueAbbrev": "NHL",
+   "points": 153,
+   "season": 20222023,
+   "sequence": 1,
+   "teamName": {
+    "default": "Edmonton Oilers"
+   }
+  },
+  {
+   "assists": 12,
+   "gameTypeId": 3,
+   "gamesPlayed": 12,
+   "goals": 8,
+   "leagueAbbrev": "NHL",
+   "points": 20,
+   "season": 20222023,
+   "sequence": 1,
+   "teamName": {
+    "default": "Edmonton Oilers"
+   }
+  },
+  {
+   "assists": 100,
+   "gameTypeId": 2,
+   "gamesPlayed": 76,
+   "goals": 32,
+   "leagueAbbrev": "NHL",
+   "points": 132,
+   "season": 20232024,
+   "sequence": 1,
+   "teamName": {
+    "default": "Edmonton Oilers"
+   }
+  },
+  {
+   "assists": 34,
+   "gameTypeId": 3,
+   "gamesPlayed": 25,
+   "goals": 8,
+   "leagueAbbrev": "NHL",
+   "points": 42,
+   "season": 20232024,
+   "sequence": 1,
+   "teamName": {
+    "default": "Edmonton Oilers"
+   }
+  },
+  {
+   "assists": 74,
+   "gameTypeId": 2,
+   "gamesPlayed": 67,
+   "goals": 26,
+   "leagueAbbrev": "NHL",
+   "points": 100,
+   "season": 20242025,
+   "sequence": 1,
+   "teamName": {
+    "default": "Edmonton Oilers"
+   }
+  },
+  {
+   "assists": 26,
+   "gameTypeId": 3,
+   "gamesPlayed": 22,
+   "goals": 7,
+   "leagueAbbrev": "NHL",
+   "points": 33,
+   "season": 20242025,
+   "sequence": 1,
+   "teamName": {
+    "default": "Edmonton Oilers"
+   }
+  },
+  {
+   "assists": 90,
+   "gameTypeId": 2,
+   "gamesPlayed": 82,
+   "goals": 48,
+   "leagueAbbrev": "NHL",
+   "points": 138,
+   "season": 20252026,
+   "sequence": 1,
+   "teamName": {
+    "default": "Edmonton Oilers"
+   }
+  },
+  {
+   "assists": 5,
+   "gameTypeId": 3,
+   "gamesPlayed": 6,
+   "goals": 1,
+   "leagueAbbrev": "NHL",
+   "points": 6,
+   "season": 20252026,
+   "sequence": 1,
+   "teamName": {
+    "default": "Edmonton Oilers"
+   }
+  },
+  {
+   "assists": 6,
+   "gameTypeId": 2,
+   "gamesPlayed": 2,
+   "goals": 1,
+   "leagueAbbrev": "NHL",
+   "points": 7,
+   "season": 20262027,
+   "sequence": 1,
+   "teamName": {
+    "default": "Edmonton Oilers"
+   }
+  }
+ ]
+}

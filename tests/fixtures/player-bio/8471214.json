@@ -1,0 +1,705 @@
+{
+ "id": 8471214,
+ "is_active": true,
+ "first_name": "Alex",
+ "last_name": "Ovechkin",
+ "full_name": "Alex Ovechkin",
+ "sweater_number": 8,
+ "position": "L",
+ "current_team_abbrev": "WSH",
+ "current_team_name": "Washington Capitals",
+ "birth_date": "1985-09-17",
+ "birth_city": "Moscow",
+ "birth_state_province": null,
+ "birth_country": "RUS",
+ "draft": {
+  "year": 2004,
+  "team_abbrev": "WSH",
+  "round": 1,
+  "pick_in_round": 1,
+  "overall_pick": 1
+ },
+ "honors": [
+  {
+   "trophy": "Stanley Cup",
+   "seasons": [
+    {
+     "season": 20172018,
+     "game_type": 3
+    }
+   ]
+  },
+  {
+   "trophy": "Art Ross Trophy",
+   "seasons": [
+    {
+     "season": 20072008,
+     "game_type": 2
+    }
+   ]
+  },
+  {
+   "trophy": "Calder Memorial Trophy",
+   "seasons": [
+    {
+     "season": 20052006,
+     "game_type": 2
+    }
+   ]
+  },
+  {
+   "trophy": "Conn Smythe Trophy",
+   "seasons": [
+    {
+     "season": 20172018,
+     "game_type": 3
+    }
+   ]
+  },
+  {
+   "trophy": "Hart Memorial Trophy",
+   "seasons": [
+    {
+     "season": 20122013,
+     "game_type": 2
+    },
+    {
+     "season": 20082009,
+     "game_type": 2
+    },
+    {
+     "season": 20072008,
+     "game_type": 2
+    }
+   ]
+  },
+  {
+   "trophy": "Mark Messier NHL Leadership Award",
+   "seasons": [
+    {
+     "season": 20242025,
+     "game_type": 2
+    }
+   ]
+  },
+  {
+   "trophy": "Maurice “Rocket” Richard Trophy",
+   "seasons": [
+    {
+     "season": 20192020,
+     "game_type": 2
+    },
+    {
+     "season": 20182019,
+     "game_type": 2
+    },
+    {
+     "season": 20172018,
+     "game_type": 2
+    },
+    {
+     "season": 20152016,
+     "game_type": 2
+    },
+    {
+     "season": 20142015,
+     "game_type": 2
+    },
+    {
+     "season": 20132014,
+     "game_type": 2
+    },
+    {
+     "season": 20122013,
+     "game_type": 2
+    },
+    {
+     "season": 20082009,
+     "game_type": 2
+    },
+    {
+     "season": 20072008,
+     "game_type": 2
+    }
+   ]
+  },
+  {
+   "trophy": "Ted Lindsay Award",
+   "seasons": [
+    {
+     "season": 20092010,
+     "game_type": 2
+    },
+    {
+     "season": 20082009,
+     "game_type": 2
+    },
+    {
+     "season": 20072008,
+     "game_type": 2
+    }
+   ]
+  }
+ ],
+ "badges": [
+  "100 Greatest Players"
+ ],
+ "in_hhof": null,
+ "in_top_100_all_time": true,
+ "career_totals": {
+  "regularSeason": {
+   "assists": 758,
+   "avgToi": "20:27",
+   "faceoffWinningPctg": 0.34020000000000006,
+   "gameWinningGoals": 141,
+   "gamesPlayed": 1573,
+   "goals": 929,
+   "otGoals": 27,
+   "pim": 857,
+   "plusMinus": 55,
+   "points": 1687,
+   "powerPlayGoals": 331,
+   "powerPlayPoints": 622,
+   "shootingPctg": 0.1306,
+   "shorthandedGoals": 5,
+   "shorthandedPoints": 6,
+   "shots": 7108
+  },
+  "playoffs": {
+   "assists": 70,
+   "avgToi": "20:56",
+   "faceoffWinningPctg": 0.7333,
+   "gameWinningGoals": 11,
+   "gamesPlayed": 161,
+   "goals": 77,
+   "otGoals": 1,
+   "pim": 83,
+   "plusMinus": 3,
+   "points": 147,
+   "powerPlayGoals": 31,
+   "powerPlayPoints": 64,
+   "shootingPctg": 0.114,
+   "shorthandedGoals": 0,
+   "shorthandedPoints": 0,
+   "shots": 675
+  }
+ },
+ "last_5_games": [
+  {
+   "gameDate": "2026-04-14",
+   "gameTypeId": 2
+  },
+  {
+   "gameDate": "2026-04-12",
+   "gameTypeId": 2
+  },
+  {
+   "gameDate": "2026-04-11",
+   "gameTypeId": 2
+  },
+  {
+   "gameDate": "2026-04-08",
+   "gameTypeId": 2
+  },
+  {
+   "gameDate": "2026-04-05",
+   "gameTypeId": 2
+  }
+ ],
+ "season_totals": [
+  {
+   "assists": 1,
+   "gameTypeId": 2,
+   "gamesPlayed": 4,
+   "goals": 0,
+   "leagueAbbrev": "EYOF",
+   "points": 1,
+   "season": 20002001,
+   "sequence": 11,
+   "teamName": {
+    "default": "Russia U17"
+   }
+  },
+  {
+   "assists": 54,
+   "gameTypeId": 2,
+   "gamesPlayed": 81,
+   "goals": 52,
+   "leagueAbbrev": "NHL",
+   "points": 106,
+   "season": 20052006,
+   "sequence": 1,
+   "teamName": {
+    "default": "Washington Capitals"
+   }
+  },
+  {
+   "assists": 46,
+   "gameTypeId": 2,
+   "gamesPlayed": 82,
+   "goals": 46,
+   "leagueAbbrev": "NHL",
+   "points": 92,
+   "season": 20062007,
+   "sequence": 1,
+   "teamName": {
+    "default": "Washington Capitals"
+   }
+  },
+  {
+   "assists": 47,
+   "gameTypeId": 2,
+   "gamesPlayed": 82,
+   "goals": 65,
+   "leagueAbbrev": "NHL",
+   "points": 112,
+   "season": 20072008,
+   "sequence": 1,
+   "teamName": {
+    "default": "Washington Capitals"
+   }
+  },
+  {
+   "assists": 5,
+   "gameTypeId": 3,
+   "gamesPlayed": 7,
+   "goals": 4,
+   "leagueAbbrev": "NHL",
+   "points": 9,
+   "season": 20072008,
+   "sequence": 1,
+   "teamName": {
+    "default": "Washington Capitals"
+   }
+  },
+  {
+   "assists": 54,
+   "gameTypeId": 2,
+   "gamesPlayed": 79,
+   "goals": 56,
+   "leagueAbbrev": "NHL",
+   "points": 110,
+   "season": 20082009,
+   "sequence": 1,
+   "teamName": {
+    "default": "Washington Capitals"
+   }
+  },
+  {
+   "assists": 10,
+   "gameTypeId": 3,
+   "gamesPlayed": 14,
+   "goals": 11,
+   "leagueAbbrev": "NHL",
+   "points": 21,
+   "season": 20082009,
+   "sequence": 1,
+   "teamName": {
+    "default": "Washington Capitals"
+   }
+  },
+  {
+   "assists": 59,
+   "gameTypeId": 2,
+   "gamesPlayed": 72,
+   "goals": 50,
+   "leagueAbbrev": "NHL",
+   "points": 109,
+   "season": 20092010,
+   "sequence": 1,
+   "teamName": {
+    "default": "Washington Capitals"
+   }
+  },
+  {
+   "assists": 5,
+   "gameTypeId": 3,
+   "gamesPlayed": 7,
+   "goals": 5,
+   "leagueAbbrev": "NHL",
+   "points": 10,
+   "season": 20092010,
+   "sequence": 1,
+   "teamName": {
+    "default": "Washington Capitals"
+   }
+  },
+  {
+   "assists": 53,
+   "gameTypeId": 2,
+   "gamesPlayed": 79,
+   "goals": 32,
+   "leagueAbbrev": "NHL",
+   "points": 85,
+   "season": 20102011,
+   "sequence": 1,
+   "teamName": {
+    "default": "Washington Capitals"
+   }
+  },
+  {
+   "assists": 5,
+   "gameTypeId": 3,
+   "gamesPlayed": 9,
+   "goals": 5,
+   "leagueAbbrev": "NHL",
+   "points": 10,
+   "season": 20102011,
+   "sequence": 1,
+   "teamName": {
+    "default": "Washington Capitals"
+   }
+  },
+  {
+   "assists": 27,
+   "gameTypeId": 2,
+   "gamesPlayed": 78,
+   "goals": 38,
+   "leagueAbbrev": "NHL",
+   "points": 65,
+   "season": 20112012,
+   "sequence": 1,
+   "teamName": {
+    "default": "Washington Capitals"
+   }
+  },
+  {
+   "assists": 4,
+   "gameTypeId": 3,
+   "gamesPlayed": 14,
+   "goals": 5,
+   "leagueAbbrev": "NHL",
+   "points": 9,
+   "season": 20112012,
+   "sequence": 1,
+   "teamName": {
+    "default": "Washington Capitals"
+   }
+  },
+  {
+   "assists": 24,
+   "gameTypeId": 2,
+   "gamesPlayed": 48,
+   "goals": 32,
+   "leagueAbbrev": "NHL",
+   "points": 56,
+   "season": 20122013,
+   "sequence": 1,
+   "teamName": {
+    "default": "Washington Capitals"
+   }
+  },
+  {
+   "assists": 1,
+   "gameTypeId": 3,
+   "gamesPlayed": 7,
+   "goals": 1,
+   "leagueAbbrev": "NHL",
+   "points": 2,
+   "season": 20122013,
+   "sequence": 1,
+   "teamName": {
+    "default": "Washington Capitals"
+   }
+  },
+  {
+   "assists": 28,
+   "gameTypeId": 2,
+   "gamesPlayed": 78,
+   "goals": 51,
+   "leagueAbbrev": "NHL",
+   "points": 79,
+   "season": 20132014,
+   "sequence": 1,
+   "teamName": {
+    "default": "Washington Capitals"
+   }
+  },
+  {
+   "assists": 28,
+   "gameTypeId": 2,
+   "gamesPlayed": 81,
+   "goals": 53,
+   "leagueAbbrev": "NHL",
+   "points": 81,
+   "season": 20142015,
+   "sequence": 1,
+   "teamName": {
+    "default": "Washington Capitals"
+   }
+  },
+  {
+   "assists": 4,
+   "gameTypeId": 3,
+   "gamesPlayed": 14,
+   "goals": 5,
+   "leagueAbbrev": "NHL",
+   "points": 9,
+   "season": 20142015,
+   "sequence": 1,
+   "teamName": {
+    "default": "Washington Capitals"
+   }
+  },
+  {
+   "assists": 21,
+   "gameTypeId": 2,
+   "gamesPlayed": 79,
+   "goals": 50,
+   "leagueAbbrev": "NHL",
+   "points": 71,
+   "season": 20152016,
+   "sequence": 1,
+   "teamName": {
+    "default": "Washington Capitals"
+   }
+  },
+  {
+   "assists": 7,
+   "gameTypeId": 3,
+   "gamesPlayed": 12,
+   "goals": 5,
+   "leagueAbbrev": "NHL",
+   "points": 12,
+   "season": 20152016,
+   "sequence": 1,
+   "teamName": {
+    "default": "Washington Capitals"
+   }
+  },
+  {
+   "assists": 36,
+   "gameTypeId": 2,
+   "gamesPlayed": 82,
+   "goals": 33,
+   "leagueAbbrev": "NHL",
+   "points": 69,
+   "season": 20162017,
+   "sequence": 1,
+   "teamName": {
+    "default": "Washington Capitals"
+   }
+  },
+  {
+   "assists": 3,
+   "gameTypeId": 3,
+   "gamesPlayed": 13,
+   "goals": 5,
+   "leagueAbbrev": "NHL",
+   "points": 8,
+   "season": 20162017,
+   "sequence": 1,
+   "teamName": {
+    "default": "Washington Capitals"
+   }
+  },
+  {
+   "assists": 38,
+   "gameTypeId": 2,
+   "gamesPlayed": 82,
+   "goals": 49,
+   "leagueAbbrev": "NHL",
+   "points": 87,
+   "season": 20172018,
+   "sequence": 1,
+   "teamName": {
+    "default": "Washington Capitals"
+   }
+  },
+  {
+   "assists": 12,
+   "gameTypeId": 3,
+   "gamesPlayed": 24,
+   "goals": 15,
+   "leagueAbbrev": "NHL",
+   "points": 27,
+   "season": 20172018,
+   "sequence": 1,
+   "teamName": {
+    "default": "Washington Capitals"
+   }
+  },
+  {
+   "assists": 38,
+   "gameTypeId": 2,
+   "gamesPlayed": 81,
+   "goals": 51,
+   "leagueAbbrev": "NHL",
+   "points": 89,
+   "season": 20182019,
+   "sequence": 1,
+   "teamName": {
+    "default": "Washington Capitals"
+   }
+  },
+  {
+   "assists": 5,
+   "gameTypeId": 3,
+   "gamesPlayed": 7,
+   "goals": 4,
+   "leagueAbbrev": "NHL",
+   "points": 9,
+   "season": 20182019,
+   "sequence": 1,
+   "teamName": {
+    "default": "Washington Capitals"
+   }
+  },
+  {
+   "assists": 19,
+   "gameTypeId": 2,
+   "gamesPlayed": 68,
+   "goals": 48,
+   "leagueAbbrev": "NHL",
+   "points": 67,
+   "season": 20192020,
+   "sequence": 1,
+   "teamName": {
+    "default": "Washington Capitals"
+   }
+  },
+  {
+   "assists": 1,
+   "gameTypeId": 3,
+   "gamesPlayed": 8,
+   "goals": 4,
+   "leagueAbbrev": "NHL",
+   "points": 5,
+   "season": 20192020,
+   "sequence": 1,
+   "teamName": {
+    "default": "Washington Capitals"
+   }
+  },
+  {
+   "assists": 18,
+   "gameTypeId": 2,
+   "gamesPlayed": 45,
+   "goals": 24,
+   "leagueAbbrev": "NHL",
+   "points": 42,
+   "season": 20202021,
+   "sequence": 1,
+   "teamName": {
+    "default": "Washington Capitals"
+   }
+  },
+  {
+   "assists": 2,
+   "gameTypeId": 3,
+   "gamesPlayed": 5,
+   "goals": 2,
+   "leagueAbbrev": "NHL",
+   "points": 4,
+   "season": 20202021,
+   "sequence": 1,
+   "teamName": {
+    "default": "Washington Capitals"
+   }
+  },
+  {
+   "assists": 40,
+   "gameTypeId": 2,
+   "gamesPlayed": 77,
+   "goals": 50,
+   "leagueAbbrev": "NHL",
+   "points": 90,
+   "season": 20212022,
+   "sequence": 1,
+   "teamName": {
+    "default": "Washington Capitals"
+   }
+  },
+  {
+   "assists": 5,
+   "gameTypeId": 3,
+   "gamesPlayed": 6,
+   "goals": 1,
+   "leagueAbbrev": "NHL",
+   "points": 6,
+   "season": 20212022,
+   "sequence": 1,
+   "teamName": {
+    "default": "Washington Capitals"
+   }
+  },
+  {
+   "assists": 33,
+   "gameTypeId": 2,
+   "gamesPlayed": 73,
+   "goals": 42,
+   "leagueAbbrev": "NHL",
+   "points": 75,
+   "season": 20222023,
+   "sequence": 1,
+   "teamName": {
+    "default": "Washington Capitals"
+   }
+  },
+  {
+   "assists": 34,
+   "gameTypeId": 2,
+   "gamesPlayed": 79,
+   "goals": 31,
+   "leagueAbbrev": "NHL",
+   "points": 65,
+   "season": 20232024,
+   "sequence": 1,
+   "teamName": {
+    "default": "Washington Capitals"
+   }
+  },
+  {
+   "assists": 0,
+   "gameTypeId": 3,
+   "gamesPlayed": 4,
+   "goals": 0,
+   "leagueAbbrev": "NHL",
+   "points": 0,
+   "season": 20232024,
+   "sequence": 1,
+   "teamName": {
+    "default": "Washington Capitals"
+   }
+  },
+  {
+   "assists": 29,
+   "gameTypeId": 2,
+   "gamesPlayed": 65,
+   "goals": 44,
+   "leagueAbbrev": "NHL",
+   "points": 73,
+   "season": 20242025,
+   "sequence": 1,
+   "teamName": {
+    "default": "Washington Capitals"
+   }
+  },
+  {
+   "assists": 1,
+   "gameTypeId": 3,
+   "gamesPlayed": 10,
+   "goals": 5,
+   "leagueAbbrev": "NHL",
+   "points": 6,
+   "season": 20242025,
+   "sequence": 1,
+   "teamName": {
+    "default": "Washington Capitals"
+   }
+  },
+  {
+   "assists": 32,
+   "gameTypeId": 2,
+   "gamesPlayed": 82,
+   "goals": 32,
+   "leagueAbbrev": "NHL",
+   "points": 64,
+   "season": 20252026,
+   "sequence": 1,
+   "teamName": {
+    "default": "Washington Capitals"
+   }
+  }
+ ]
+}

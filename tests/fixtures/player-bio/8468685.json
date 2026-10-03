@@ -1,0 +1,538 @@
+{
+ "id": 8468685,
+ "is_active": false,
+ "first_name": "Henrik",
+ "last_name": "Lundqvist",
+ "full_name": "Henrik Lundqvist",
+ "sweater_number": 30,
+ "position": "G",
+ "current_team_abbrev": null,
+ "current_team_name": null,
+ "birth_date": "1982-03-02",
+ "birth_city": "Are",
+ "birth_state_province": null,
+ "birth_country": "SWE",
+ "draft": {
+  "year": 2000,
+  "team_abbrev": "NYR",
+  "round": 7,
+  "pick_in_round": 8,
+  "overall_pick": 205
+ },
+ "honors": [
+  {
+   "trophy": "Vezina Trophy",
+   "seasons": [
+    {
+     "season": 20112012,
+     "game_type": 2
+    }
+   ]
+  }
+ ],
+ "badges": [
+  "Hockey Hall of Fame"
+ ],
+ "in_hhof": true,
+ "in_top_100_all_time": null,
+ "career_totals": {
+  "regularSeason": {
+   "assists": 27,
+   "gamesPlayed": 887,
+   "gamesStarted": 871,
+   "goals": 0,
+   "goalsAgainst": 2101,
+   "goalsAgainstAvg": 2.432797,
+   "losses": 310,
+   "otLosses": 96,
+   "pim": 18,
+   "savePctg": 0.917962,
+   "shotsAgainst": 25610,
+   "shutouts": 64,
+   "timeOnIce": "51816:51",
+   "wins": 459
+  },
+  "playoffs": {
+   "assists": 1,
+   "gamesPlayed": 130,
+   "gamesStarted": 130,
+   "goals": 0,
+   "goalsAgainst": 304,
+   "goalsAgainstAvg": 2.298553,
+   "losses": 67,
+   "otLosses": 0,
+   "savePctg": 0.921467,
+   "shotsAgainst": 3871,
+   "shutouts": 10,
+   "timeOnIce": "7935:25",
+   "wins": 61
+  }
+ },
+ "last_5_games": [
+  {
+   "gameDate": "2020-08-03",
+   "gameTypeId": 3
+  },
+  {
+   "gameDate": "2020-08-01",
+   "gameTypeId": 3
+  },
+  {
+   "gameDate": "2020-03-07",
+   "gameTypeId": 2
+  },
+  {
+   "gameDate": "2020-03-01",
+   "gameTypeId": 2
+  },
+  {
+   "gameDate": "2020-02-11",
+   "gameTypeId": 2
+  }
+ ],
+ "season_totals": [
+  {
+   "gameTypeId": 2,
+   "gamesPlayed": 35,
+   "leagueAbbrev": "Swe-Jr.",
+   "season": 19981999,
+   "sequence": 1,
+   "teamName": {
+    "default": "V.Frolunda Jr."
+   },
+   "shutouts": 0
+  },
+  {
+   "assists": 2,
+   "gameTypeId": 2,
+   "gamesPlayed": 53,
+   "goals": 0,
+   "leagueAbbrev": "NHL",
+   "season": 20052006,
+   "sequence": 1,
+   "teamName": {
+    "default": "New York Rangers"
+   },
+   "wins": 30,
+   "losses": 12,
+   "shutouts": 2,
+   "gamesStarted": 50
+  },
+  {
+   "assists": 0,
+   "gameTypeId": 3,
+   "gamesPlayed": 3,
+   "goals": 0,
+   "leagueAbbrev": "NHL",
+   "season": 20052006,
+   "sequence": 1,
+   "teamName": {
+    "default": "New York Rangers"
+   },
+   "wins": 0,
+   "losses": 3,
+   "shutouts": 0,
+   "gamesStarted": 3
+  },
+  {
+   "assists": 0,
+   "gameTypeId": 2,
+   "gamesPlayed": 70,
+   "goals": 0,
+   "leagueAbbrev": "NHL",
+   "season": 20062007,
+   "sequence": 1,
+   "teamName": {
+    "default": "New York Rangers"
+   },
+   "wins": 37,
+   "losses": 22,
+   "shutouts": 5,
+   "gamesStarted": 69
+  },
+  {
+   "assists": 0,
+   "gameTypeId": 3,
+   "gamesPlayed": 10,
+   "goals": 0,
+   "leagueAbbrev": "NHL",
+   "season": 20062007,
+   "sequence": 1,
+   "teamName": {
+    "default": "New York Rangers"
+   },
+   "wins": 6,
+   "losses": 4,
+   "shutouts": 1,
+   "gamesStarted": 10
+  },
+  {
+   "assists": 0,
+   "gameTypeId": 2,
+   "gamesPlayed": 72,
+   "goals": 0,
+   "leagueAbbrev": "NHL",
+   "season": 20072008,
+   "sequence": 1,
+   "teamName": {
+    "default": "New York Rangers"
+   },
+   "wins": 37,
+   "losses": 24,
+   "shutouts": 10,
+   "gamesStarted": 72
+  },
+  {
+   "assists": 0,
+   "gameTypeId": 3,
+   "gamesPlayed": 10,
+   "goals": 0,
+   "leagueAbbrev": "NHL",
+   "season": 20072008,
+   "sequence": 1,
+   "teamName": {
+    "default": "New York Rangers"
+   },
+   "wins": 5,
+   "losses": 5,
+   "shutouts": 1,
+   "gamesStarted": 10
+  },
+  {
+   "assists": 2,
+   "gameTypeId": 2,
+   "gamesPlayed": 70,
+   "goals": 0,
+   "leagueAbbrev": "NHL",
+   "season": 20082009,
+   "sequence": 1,
+   "teamName": {
+    "default": "New York Rangers"
+   },
+   "wins": 38,
+   "losses": 25,
+   "shutouts": 3,
+   "gamesStarted": 70
+  },
+  {
+   "assists": 0,
+   "gameTypeId": 3,
+   "gamesPlayed": 7,
+   "goals": 0,
+   "leagueAbbrev": "NHL",
+   "season": 20082009,
+   "sequence": 1,
+   "teamName": {
+    "default": "New York Rangers"
+   },
+   "wins": 3,
+   "losses": 4,
+   "shutouts": 1,
+   "gamesStarted": 7
+  },
+  {
+   "assists": 1,
+   "gameTypeId": 2,
+   "gamesPlayed": 73,
+   "goals": 0,
+   "leagueAbbrev": "NHL",
+   "season": 20092010,
+   "sequence": 1,
+   "teamName": {
+    "default": "New York Rangers"
+   },
+   "wins": 35,
+   "losses": 27,
+   "shutouts": 4,
+   "gamesStarted": 72
+  },
+  {
+   "assists": 4,
+   "gameTypeId": 2,
+   "gamesPlayed": 68,
+   "goals": 0,
+   "leagueAbbrev": "NHL",
+   "season": 20102011,
+   "sequence": 1,
+   "teamName": {
+    "default": "New York Rangers"
+   },
+   "wins": 36,
+   "losses": 27,
+   "shutouts": 11,
+   "gamesStarted": 67
+  },
+  {
+   "assists": 0,
+   "gameTypeId": 3,
+   "gamesPlayed": 5,
+   "goals": 0,
+   "leagueAbbrev": "NHL",
+   "season": 20102011,
+   "sequence": 1,
+   "teamName": {
+    "default": "New York Rangers"
+   },
+   "wins": 1,
+   "losses": 4,
+   "shutouts": 0,
+   "gamesStarted": 5
+  },
+  {
+   "assists": 2,
+   "gameTypeId": 2,
+   "gamesPlayed": 62,
+   "goals": 0,
+   "leagueAbbrev": "NHL",
+   "season": 20112012,
+   "sequence": 1,
+   "teamName": {
+    "default": "New York Rangers"
+   },
+   "wins": 39,
+   "losses": 18,
+   "shutouts": 8,
+   "gamesStarted": 62
+  },
+  {
+   "assists": 0,
+   "gameTypeId": 3,
+   "gamesPlayed": 20,
+   "goals": 0,
+   "leagueAbbrev": "NHL",
+   "season": 20112012,
+   "sequence": 1,
+   "teamName": {
+    "default": "New York Rangers"
+   },
+   "wins": 10,
+   "losses": 10,
+   "shutouts": 3,
+   "gamesStarted": 20
+  },
+  {
+   "assists": 1,
+   "gameTypeId": 2,
+   "gamesPlayed": 43,
+   "goals": 0,
+   "leagueAbbrev": "NHL",
+   "season": 20122013,
+   "sequence": 1,
+   "teamName": {
+    "default": "New York Rangers"
+   },
+   "wins": 24,
+   "losses": 16,
+   "shutouts": 2,
+   "gamesStarted": 43
+  },
+  {
+   "assists": 0,
+   "gameTypeId": 3,
+   "gamesPlayed": 12,
+   "goals": 0,
+   "leagueAbbrev": "NHL",
+   "season": 20122013,
+   "sequence": 1,
+   "teamName": {
+    "default": "New York Rangers"
+   },
+   "wins": 5,
+   "losses": 7,
+   "shutouts": 2,
+   "gamesStarted": 12
+  },
+  {
+   "assists": 4,
+   "gameTypeId": 2,
+   "gamesPlayed": 63,
+   "goals": 0,
+   "leagueAbbrev": "NHL",
+   "season": 20132014,
+   "sequence": 1,
+   "teamName": {
+    "default": "New York Rangers"
+   },
+   "wins": 33,
+   "losses": 24,
+   "shutouts": 5,
+   "gamesStarted": 62
+  },
+  {
+   "assists": 1,
+   "gameTypeId": 3,
+   "gamesPlayed": 25,
+   "goals": 0,
+   "leagueAbbrev": "NHL",
+   "season": 20132014,
+   "sequence": 1,
+   "teamName": {
+    "default": "New York Rangers"
+   },
+   "wins": 13,
+   "losses": 11,
+   "shutouts": 1,
+   "gamesStarted": 25
+  },
+  {
+   "assists": 1,
+   "gameTypeId": 2,
+   "gamesPlayed": 46,
+   "goals": 0,
+   "leagueAbbrev": "NHL",
+   "season": 20142015,
+   "sequence": 1,
+   "teamName": {
+    "default": "New York Rangers"
+   },
+   "wins": 30,
+   "losses": 13,
+   "shutouts": 5,
+   "gamesStarted": 46
+  },
+  {
+   "assists": 0,
+   "gameTypeId": 3,
+   "gamesPlayed": 19,
+   "goals": 0,
+   "leagueAbbrev": "NHL",
+   "season": 20142015,
+   "sequence": 1,
+   "teamName": {
+    "default": "New York Rangers"
+   },
+   "wins": 11,
+   "losses": 8,
+   "shutouts": 0,
+   "gamesStarted": 19
+  },
+  {
+   "assists": 4,
+   "gameTypeId": 2,
+   "gamesPlayed": 65,
+   "goals": 0,
+   "leagueAbbrev": "NHL",
+   "season": 20152016,
+   "sequence": 1,
+   "teamName": {
+    "default": "New York Rangers"
+   },
+   "wins": 35,
+   "losses": 21,
+   "shutouts": 4,
+   "gamesStarted": 64
+  },
+  {
+   "assists": 0,
+   "gameTypeId": 3,
+   "gamesPlayed": 5,
+   "goals": 0,
+   "leagueAbbrev": "NHL",
+   "season": 20152016,
+   "sequence": 1,
+   "teamName": {
+    "default": "New York Rangers"
+   },
+   "wins": 1,
+   "losses": 3,
+   "shutouts": 0,
+   "gamesStarted": 5
+  },
+  {
+   "assists": 1,
+   "gameTypeId": 2,
+   "gamesPlayed": 57,
+   "goals": 0,
+   "leagueAbbrev": "NHL",
+   "season": 20162017,
+   "sequence": 1,
+   "teamName": {
+    "default": "New York Rangers"
+   },
+   "wins": 31,
+   "losses": 20,
+   "shutouts": 2,
+   "gamesStarted": 55
+  },
+  {
+   "assists": 0,
+   "gameTypeId": 3,
+   "gamesPlayed": 12,
+   "goals": 0,
+   "leagueAbbrev": "NHL",
+   "season": 20162017,
+   "sequence": 1,
+   "teamName": {
+    "default": "New York Rangers"
+   },
+   "wins": 6,
+   "losses": 6,
+   "shutouts": 1,
+   "gamesStarted": 12
+  },
+  {
+   "assists": 1,
+   "gameTypeId": 2,
+   "gamesPlayed": 63,
+   "goals": 0,
+   "leagueAbbrev": "NHL",
+   "season": 20172018,
+   "sequence": 1,
+   "teamName": {
+    "default": "New York Rangers"
+   },
+   "wins": 26,
+   "losses": 26,
+   "shutouts": 2,
+   "gamesStarted": 61
+  },
+  {
+   "assists": 3,
+   "gameTypeId": 2,
+   "gamesPlayed": 52,
+   "goals": 0,
+   "leagueAbbrev": "NHL",
+   "season": 20182019,
+   "sequence": 1,
+   "teamName": {
+    "default": "New York Rangers"
+   },
+   "wins": 18,
+   "losses": 23,
+   "shutouts": 0,
+   "gamesStarted": 52
+  },
+  {
+   "assists": 1,
+   "gameTypeId": 2,
+   "gamesPlayed": 30,
+   "goals": 0,
+   "leagueAbbrev": "NHL",
+   "season": 20192020,
+   "sequence": 1,
+   "teamName": {
+    "default": "New York Rangers"
+   },
+   "wins": 10,
+   "losses": 12,
+   "shutouts": 1,
+   "gamesStarted": 26
+  },
+  {
+   "assists": 0,
+   "gameTypeId": 3,
+   "gamesPlayed": 2,
+   "goals": 0,
+   "leagueAbbrev": "NHL",
+   "season": 20192020,
+   "sequence": 1,
+   "teamName": {
+    "default": "New York Rangers"
+   },
+   "wins": 0,
+   "losses": 2,
+   "shutouts": 0,
+   "gamesStarted": 2
+  }
+ ]
+}

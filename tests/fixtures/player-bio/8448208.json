@@ -1,0 +1,758 @@
+{
+ "id": 8448208,
+ "is_active": false,
+ "first_name": "Jaromir",
+ "last_name": "Jagr",
+ "full_name": "Jaromir Jagr",
+ "sweater_number": 68,
+ "position": "R",
+ "current_team_abbrev": null,
+ "current_team_name": null,
+ "birth_date": "1972-02-15",
+ "birth_city": "Kladno",
+ "birth_state_province": null,
+ "birth_country": "CZE",
+ "draft": {
+  "year": 1990,
+  "team_abbrev": "PIT",
+  "round": 1,
+  "pick_in_round": 5,
+  "overall_pick": 5
+ },
+ "honors": [
+  {
+   "trophy": "Stanley Cup",
+   "seasons": [
+    {
+     "season": 19911992,
+     "game_type": 3
+    },
+    {
+     "season": 19901991,
+     "game_type": 3
+    }
+   ]
+  },
+  {
+   "trophy": "Art Ross Trophy",
+   "seasons": [
+    {
+     "season": 20002001,
+     "game_type": 2
+    },
+    {
+     "season": 19992000,
+     "game_type": 2
+    },
+    {
+     "season": 19981999,
+     "game_type": 2
+    },
+    {
+     "season": 19971998,
+     "game_type": 2
+    },
+    {
+     "season": 19941995,
+     "game_type": 2
+    }
+   ]
+  },
+  {
+   "trophy": "Bill Masterton Memorial Trophy",
+   "seasons": [
+    {
+     "season": 20152016,
+     "game_type": 2
+    }
+   ]
+  },
+  {
+   "trophy": "Hart Memorial Trophy",
+   "seasons": [
+    {
+     "season": 19981999,
+     "game_type": 2
+    }
+   ]
+  },
+  {
+   "trophy": "Ted Lindsay Award",
+   "seasons": [
+    {
+     "season": 20052006,
+     "game_type": 2
+    },
+    {
+     "season": 19992000,
+     "game_type": 2
+    },
+    {
+     "season": 19981999,
+     "game_type": 2
+    }
+   ]
+  }
+ ],
+ "badges": [
+  "100 Greatest Players"
+ ],
+ "in_hhof": null,
+ "in_top_100_all_time": true,
+ "career_totals": {
+  "regularSeason": {
+   "assists": 1155,
+   "gameWinningGoals": 135,
+   "gamesPlayed": 1733,
+   "goals": 766,
+   "otGoals": 19,
+   "pim": 1167,
+   "plusMinus": 322,
+   "points": 1921,
+   "powerPlayGoals": 217,
+   "powerPlayPoints": 610,
+   "shootingPctg": 0.1358,
+   "shorthandedGoals": 11,
+   "shorthandedPoints": 15,
+   "shots": 5637
+  },
+  "playoffs": {
+   "assists": 123,
+   "gameWinningGoals": 16,
+   "gamesPlayed": 208,
+   "goals": 78,
+   "otGoals": 4,
+   "pim": 163,
+   "plusMinus": 30,
+   "points": 201,
+   "powerPlayGoals": 24,
+   "powerPlayPoints": 65,
+   "shootingPctg": 0.1143,
+   "shorthandedGoals": 2,
+   "shorthandedPoints": 2,
+   "shots": 682
+  }
+ },
+ "last_5_games": [
+  {
+   "gameDate": "2017-12-31",
+   "gameTypeId": 2
+  },
+  {
+   "gameDate": "2017-12-29",
+   "gameTypeId": 2
+  },
+  {
+   "gameDate": "2017-12-28",
+   "gameTypeId": 2
+  },
+  {
+   "gameDate": "2017-12-17",
+   "gameTypeId": 2
+  },
+  {
+   "gameDate": "2017-12-16",
+   "gameTypeId": 2
+  }
+ ],
+ "season_totals": [
+  {
+   "assists": 17,
+   "gameTypeId": 2,
+   "gamesPlayed": 34,
+   "goals": 24,
+   "leagueAbbrev": "Czech-Jr.",
+   "points": 41,
+   "season": 19841985,
+   "sequence": 1,
+   "teamName": {
+    "default": "Kladno Jr."
+   }
+  },
+  {
+   "assists": 30,
+   "gameTypeId": 2,
+   "gamesPlayed": 80,
+   "goals": 27,
+   "leagueAbbrev": "NHL",
+   "points": 57,
+   "season": 19901991,
+   "sequence": 1,
+   "teamName": {
+    "default": "Pittsburgh Penguins"
+   }
+  },
+  {
+   "assists": 10,
+   "gameTypeId": 3,
+   "gamesPlayed": 24,
+   "goals": 3,
+   "leagueAbbrev": "NHL",
+   "points": 13,
+   "season": 19901991,
+   "sequence": 1,
+   "teamName": {
+    "default": "Pittsburgh Penguins"
+   }
+  },
+  {
+   "assists": 37,
+   "gameTypeId": 2,
+   "gamesPlayed": 70,
+   "goals": 32,
+   "leagueAbbrev": "NHL",
+   "points": 69,
+   "season": 19911992,
+   "sequence": 1,
+   "teamName": {
+    "default": "Pittsburgh Penguins"
+   }
+  },
+  {
+   "assists": 13,
+   "gameTypeId": 3,
+   "gamesPlayed": 21,
+   "goals": 11,
+   "leagueAbbrev": "NHL",
+   "points": 24,
+   "season": 19911992,
+   "sequence": 1,
+   "teamName": {
+    "default": "Pittsburgh Penguins"
+   }
+  },
+  {
+   "assists": 60,
+   "gameTypeId": 2,
+   "gamesPlayed": 81,
+   "goals": 34,
+   "leagueAbbrev": "NHL",
+   "points": 94,
+   "season": 19921993,
+   "sequence": 1,
+   "teamName": {
+    "default": "Pittsburgh Penguins"
+   }
+  },
+  {
+   "assists": 4,
+   "gameTypeId": 3,
+   "gamesPlayed": 12,
+   "goals": 5,
+   "leagueAbbrev": "NHL",
+   "points": 9,
+   "season": 19921993,
+   "sequence": 1,
+   "teamName": {
+    "default": "Pittsburgh Penguins"
+   }
+  },
+  {
+   "assists": 67,
+   "gameTypeId": 2,
+   "gamesPlayed": 80,
+   "goals": 32,
+   "leagueAbbrev": "NHL",
+   "points": 99,
+   "season": 19931994,
+   "sequence": 1,
+   "teamName": {
+    "default": "Pittsburgh Penguins"
+   }
+  },
+  {
+   "assists": 4,
+   "gameTypeId": 3,
+   "gamesPlayed": 6,
+   "goals": 2,
+   "leagueAbbrev": "NHL",
+   "points": 6,
+   "season": 19931994,
+   "sequence": 1,
+   "teamName": {
+    "default": "Pittsburgh Penguins"
+   }
+  },
+  {
+   "assists": 38,
+   "gameTypeId": 2,
+   "gamesPlayed": 48,
+   "goals": 32,
+   "leagueAbbrev": "NHL",
+   "points": 70,
+   "season": 19941995,
+   "sequence": 1,
+   "teamName": {
+    "default": "Pittsburgh Penguins"
+   }
+  },
+  {
+   "assists": 5,
+   "gameTypeId": 3,
+   "gamesPlayed": 12,
+   "goals": 10,
+   "leagueAbbrev": "NHL",
+   "points": 15,
+   "season": 19941995,
+   "sequence": 1,
+   "teamName": {
+    "default": "Pittsburgh Penguins"
+   }
+  },
+  {
+   "assists": 87,
+   "gameTypeId": 2,
+   "gamesPlayed": 82,
+   "goals": 62,
+   "leagueAbbrev": "NHL",
+   "points": 149,
+   "season": 19951996,
+   "sequence": 1,
+   "teamName": {
+    "default": "Pittsburgh Penguins"
+   }
+  },
+  {
+   "assists": 12,
+   "gameTypeId": 3,
+   "gamesPlayed": 18,
+   "goals": 11,
+   "leagueAbbrev": "NHL",
+   "points": 23,
+   "season": 19951996,
+   "sequence": 1,
+   "teamName": {
+    "default": "Pittsburgh Penguins"
+   }
+  },
+  {
+   "assists": 48,
+   "gameTypeId": 2,
+   "gamesPlayed": 63,
+   "goals": 47,
+   "leagueAbbrev": "NHL",
+   "points": 95,
+   "season": 19961997,
+   "sequence": 1,
+   "teamName": {
+    "default": "Pittsburgh Penguins"
+   }
+  },
+  {
+   "assists": 4,
+   "gameTypeId": 3,
+   "gamesPlayed": 5,
+   "goals": 4,
+   "leagueAbbrev": "NHL",
+   "points": 8,
+   "season": 19961997,
+   "sequence": 1,
+   "teamName": {
+    "default": "Pittsburgh Penguins"
+   }
+  },
+  {
+   "assists": 67,
+   "gameTypeId": 2,
+   "gamesPlayed": 77,
+   "goals": 35,
+   "leagueAbbrev": "NHL",
+   "points": 102,
+   "season": 19971998,
+   "sequence": 1,
+   "teamName": {
+    "default": "Pittsburgh Penguins"
+   }
+  },
+  {
+   "assists": 5,
+   "gameTypeId": 3,
+   "gamesPlayed": 6,
+   "goals": 4,
+   "leagueAbbrev": "NHL",
+   "points": 9,
+   "season": 19971998,
+   "sequence": 1,
+   "teamName": {
+    "default": "Pittsburgh Penguins"
+   }
+  },
+  {
+   "assists": 83,
+   "gameTypeId": 2,
+   "gamesPlayed": 81,
+   "goals": 44,
+   "leagueAbbrev": "NHL",
+   "points": 127,
+   "season": 19981999,
+   "sequence": 1,
+   "teamName": {
+    "default": "Pittsburgh Penguins"
+   }
+  },
+  {
+   "assists": 7,
+   "gameTypeId": 3,
+   "gamesPlayed": 9,
+   "goals": 5,
+   "leagueAbbrev": "NHL",
+   "points": 12,
+   "season": 19981999,
+   "sequence": 1,
+   "teamName": {
+    "default": "Pittsburgh Penguins"
+   }
+  },
+  {
+   "assists": 54,
+   "gameTypeId": 2,
+   "gamesPlayed": 63,
+   "goals": 42,
+   "leagueAbbrev": "NHL",
+   "points": 96,
+   "season": 19992000,
+   "sequence": 1,
+   "teamName": {
+    "default": "Pittsburgh Penguins"
+   }
+  },
+  {
+   "assists": 8,
+   "gameTypeId": 3,
+   "gamesPlayed": 11,
+   "goals": 8,
+   "leagueAbbrev": "NHL",
+   "points": 16,
+   "season": 19992000,
+   "sequence": 1,
+   "teamName": {
+    "default": "Pittsburgh Penguins"
+   }
+  },
+  {
+   "assists": 69,
+   "gameTypeId": 2,
+   "gamesPlayed": 81,
+   "goals": 52,
+   "leagueAbbrev": "NHL",
+   "points": 121,
+   "season": 20002001,
+   "sequence": 1,
+   "teamName": {
+    "default": "Pittsburgh Penguins"
+   }
+  },
+  {
+   "assists": 10,
+   "gameTypeId": 3,
+   "gamesPlayed": 16,
+   "goals": 2,
+   "leagueAbbrev": "NHL",
+   "points": 12,
+   "season": 20002001,
+   "sequence": 1,
+   "teamName": {
+    "default": "Pittsburgh Penguins"
+   }
+  },
+  {
+   "assists": 48,
+   "gameTypeId": 2,
+   "gamesPlayed": 69,
+   "goals": 31,
+   "leagueAbbrev": "NHL",
+   "points": 79,
+   "season": 20012002,
+   "sequence": 1,
+   "teamName": {
+    "default": "Washington Capitals"
+   }
+  },
+  {
+   "assists": 41,
+   "gameTypeId": 2,
+   "gamesPlayed": 75,
+   "goals": 36,
+   "leagueAbbrev": "NHL",
+   "points": 77,
+   "season": 20022003,
+   "sequence": 1,
+   "teamName": {
+    "default": "Washington Capitals"
+   }
+  },
+  {
+   "assists": 5,
+   "gameTypeId": 3,
+   "gamesPlayed": 6,
+   "goals": 2,
+   "leagueAbbrev": "NHL",
+   "points": 7,
+   "season": 20022003,
+   "sequence": 1,
+   "teamName": {
+    "default": "Washington Capitals"
+   }
+  },
+  {
+   "assists": 29,
+   "gameTypeId": 2,
+   "gamesPlayed": 46,
+   "goals": 16,
+   "leagueAbbrev": "NHL",
+   "points": 45,
+   "season": 20032004,
+   "sequence": 1,
+   "teamName": {
+    "default": "Washington Capitals"
+   }
+  },
+  {
+   "assists": 14,
+   "gameTypeId": 2,
+   "gamesPlayed": 31,
+   "goals": 15,
+   "leagueAbbrev": "NHL",
+   "points": 29,
+   "season": 20032004,
+   "sequence": 2,
+   "teamName": {
+    "default": "New York Rangers"
+   }
+  },
+  {
+   "assists": 69,
+   "gameTypeId": 2,
+   "gamesPlayed": 82,
+   "goals": 54,
+   "leagueAbbrev": "NHL",
+   "points": 123,
+   "season": 20052006,
+   "sequence": 1,
+   "teamName": {
+    "default": "New York Rangers"
+   }
+  },
+  {
+   "assists": 1,
+   "gameTypeId": 3,
+   "gamesPlayed": 3,
+   "goals": 0,
+   "leagueAbbrev": "NHL",
+   "points": 1,
+   "season": 20052006,
+   "sequence": 1,
+   "teamName": {
+    "default": "New York Rangers"
+   }
+  },
+  {
+   "assists": 66,
+   "gameTypeId": 2,
+   "gamesPlayed": 82,
+   "goals": 30,
+   "leagueAbbrev": "NHL",
+   "points": 96,
+   "season": 20062007,
+   "sequence": 1,
+   "teamName": {
+    "default": "New York Rangers"
+   }
+  },
+  {
+   "assists": 6,
+   "gameTypeId": 3,
+   "gamesPlayed": 10,
+   "goals": 5,
+   "leagueAbbrev": "NHL",
+   "points": 11,
+   "season": 20062007,
+   "sequence": 1,
+   "teamName": {
+    "default": "New York Rangers"
+   }
+  },
+  {
+   "assists": 46,
+   "gameTypeId": 2,
+   "gamesPlayed": 82,
+   "goals": 25,
+   "leagueAbbrev": "NHL",
+   "points": 71,
+   "season": 20072008,
+   "sequence": 1,
+   "teamName": {
+    "default": "New York Rangers"
+   }
+  },
+  {
+   "assists": 10,
+   "gameTypeId": 3,
+   "gamesPlayed": 10,
+   "goals": 5,
+   "leagueAbbrev": "NHL",
+   "points": 15,
+   "season": 20072008,
+   "sequence": 1,
+   "teamName": {
+    "default": "New York Rangers"
+   }
+  },
+  {
+   "assists": 35,
+   "gameTypeId": 2,
+   "gamesPlayed": 73,
+   "goals": 19,
+   "leagueAbbrev": "NHL",
+   "points": 54,
+   "season": 20112012,
+   "sequence": 1,
+   "teamName": {
+    "default": "Philadelphia Flyers"
+   }
+  },
+  {
+   "assists": 7,
+   "gameTypeId": 3,
+   "gamesPlayed": 11,
+   "goals": 1,
+   "leagueAbbrev": "NHL",
+   "points": 8,
+   "season": 20112012,
+   "sequence": 1,
+   "teamName": {
+    "default": "Philadelphia Flyers"
+   }
+  },
+  {
+   "assists": 12,
+   "gameTypeId": 2,
+   "gamesPlayed": 34,
+   "goals": 14,
+   "leagueAbbrev": "NHL",
+   "points": 26,
+   "season": 20122013,
+   "sequence": 1,
+   "teamName": {
+    "default": "Dallas Stars"
+   }
+  },
+  {
+   "assists": 7,
+   "gameTypeId": 2,
+   "gamesPlayed": 11,
+   "goals": 2,
+   "leagueAbbrev": "NHL",
+   "points": 9,
+   "season": 20122013,
+   "sequence": 2,
+   "teamName": {
+    "default": "Boston Bruins"
+   }
+  },
+  {
+   "assists": 10,
+   "gameTypeId": 3,
+   "gamesPlayed": 22,
+   "goals": 0,
+   "leagueAbbrev": "NHL",
+   "points": 10,
+   "season": 20122013,
+   "sequence": 1,
+   "teamName": {
+    "default": "Boston Bruins"
+   }
+  },
+  {
+   "assists": 43,
+   "gameTypeId": 2,
+   "gamesPlayed": 82,
+   "goals": 24,
+   "leagueAbbrev": "NHL",
+   "points": 67,
+   "season": 20132014,
+   "sequence": 1,
+   "teamName": {
+    "default": "New Jersey Devils"
+   }
+  },
+  {
+   "assists": 18,
+   "gameTypeId": 2,
+   "gamesPlayed": 57,
+   "goals": 11,
+   "leagueAbbrev": "NHL",
+   "points": 29,
+   "season": 20142015,
+   "sequence": 1,
+   "teamName": {
+    "default": "New Jersey Devils"
+   }
+  },
+  {
+   "assists": 12,
+   "gameTypeId": 2,
+   "gamesPlayed": 20,
+   "goals": 6,
+   "leagueAbbrev": "NHL",
+   "points": 18,
+   "season": 20142015,
+   "sequence": 2,
+   "teamName": {
+    "default": "Florida Panthers"
+   }
+  },
+  {
+   "assists": 39,
+   "gameTypeId": 2,
+   "gamesPlayed": 79,
+   "goals": 27,
+   "leagueAbbrev": "NHL",
+   "points": 66,
+   "season": 20152016,
+   "sequence": 1,
+   "teamName": {
+    "default": "Florida Panthers"
+   }
+  },
+  {
+   "assists": 2,
+   "gameTypeId": 3,
+   "gamesPlayed": 6,
+   "goals": 0,
+   "leagueAbbrev": "NHL",
+   "points": 2,
+   "season": 20152016,
+   "sequence": 1,
+   "teamName": {
+    "default": "Florida Panthers"
+   }
+  },
+  {
+   "assists": 30,
+   "gameTypeId": 2,
+   "gamesPlayed": 82,
+   "goals": 16,
+   "leagueAbbrev": "NHL",
+   "points": 46,
+   "season": 20162017,
+   "sequence": 1,
+   "teamName": {
+    "default": "Florida Panthers"
+   }
+  },
+  {
+   "assists": 6,
+   "gameTypeId": 2,
+   "gamesPlayed": 22,
+   "goals": 1,
+   "leagueAbbrev": "NHL",
+   "points": 7,
+   "season": 20172018,
+   "sequence": 1,
+   "teamName": {
+    "default": "Calgary Flames"
+   }
+  }
+ ]
+}

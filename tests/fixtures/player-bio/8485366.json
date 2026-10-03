@@ -1,0 +1,102 @@
+{
+ "id": 8485366,
+ "is_active": true,
+ "first_name": "Matthew",
+ "last_name": "Schaefer",
+ "full_name": "Matthew Schaefer",
+ "sweater_number": 48,
+ "position": "D",
+ "current_team_abbrev": "NYI",
+ "current_team_name": "New York Islanders",
+ "birth_date": "2007-09-05",
+ "birth_city": "Hamilton",
+ "birth_state_province": "Ontario",
+ "birth_country": "CAN",
+ "draft": {
+  "year": 2025,
+  "team_abbrev": "NYI",
+  "round": 1,
+  "pick_in_round": 1,
+  "overall_pick": 1
+ },
+ "honors": [
+  {
+   "trophy": "Calder Memorial Trophy",
+   "seasons": [
+    {
+     "season": 20252026,
+     "game_type": 2
+    }
+   ]
+  }
+ ],
+ "badges": [],
+ "in_hhof": null,
+ "in_top_100_all_time": null,
+ "career_totals": {
+  "regularSeason": {
+   "assists": 36,
+   "avgToi": "24:43",
+   "gameWinningGoals": 4,
+   "gamesPlayed": 83,
+   "goals": 23,
+   "otGoals": 2,
+   "pim": 40,
+   "plusMinus": 13,
+   "points": 59,
+   "powerPlayGoals": 8,
+   "powerPlayPoints": 18,
+   "shootingPctg": 0.10220000000000001,
+   "shorthandedGoals": 0,
+   "shorthandedPoints": 0,
+   "shots": 225
+  }
+ },
+ "last_5_games": [
+  {
+   "gameDate": "2026-09-30",
+   "gameTypeId": 2
+  }
+ ],
+ "season_totals": [
+  {
+   "assists": 34,
+   "gameTypeId": 2,
+   "gamesPlayed": 31,
+   "goals": 17,
+   "leagueAbbrev": "SCTA U15",
+   "points": 51,
+   "season": 20212022,
+   "sequence": 11,
+   "teamName": {
+    "default": "Hamilton Jr. Bulldogs U15 AAA"
+   }
+  },
+  {
+   "assists": 36,
+   "gameTypeId": 2,
+   "gamesPlayed": 82,
+   "goals": 23,
+   "leagueAbbrev": "NHL",
+   "points": 59,
+   "season": 20252026,
+   "sequence": 1,
+   "teamName": {
+    "default": "New York Islanders"
+   }
+  },
+  {
+   "assists": 0,
+   "gameTypeId": 2,
+   "gamesPlayed": 1,
+   "goals": 0,
+   "leagueAbbrev": "NHL",
+   "points": 0,
+   "season": 20262027,
+   "sequence": 1,
+   "teamName": {
+    "default": "New York Islanders"
+   }
+  }
+ ]
+}
