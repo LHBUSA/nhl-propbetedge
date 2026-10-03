@@ -1,316 +1,136 @@
-// Goalie Center. Who is starting, how rested, how they have been working.
-// Truth levels are never collapsed: CONFIRMED / PROJECTED·REPORTED / UNKNOWN.
-// The backend emits PROJECTED only from the NHL.com daily lineup report and
-// CONFIRMED from the boxscore starter flag at/after puck drop.
-import { $, esc, on, safeUrl } from '../lib/dom.js';
-import { dataLayer, describeError, nhl } from '../lib/api.js';
+// Goalie Center 3.0. Answers first: who is in net, saves, goals allowed,
+// record, save rate, workload, and how the two goalies compare — then
+// shot-location tracking, then PBE analysis.
+//
+// One starter truth per team (nhl-metrics goalie-truth library, by NHL id):
+//   Confirmed  = official NHL boxscore (starter flag, or the only goalie with
+//                ice time — the NHL omits the flag during live games)
+//   Projected  = NHL.com projected lineup (reported, not official), bound to the
+//                official roster id
+//   Unknown    = no approved starter evidence yet
+// "In net now" (play-by-play) is shown separately and never becomes "started".
+import { $, esc, on } from '../lib/dom.js';
+import { dataLayer, describeError } from '../lib/api.js';
 import { freshStamp } from '../lib/freshness.js';
-import { addDays, clockET, dateLabel, dayET, gameTypeLabel, n, num, svPct, timeET, todayET } from '../lib/format.js';
+import { addDays, dateLabel, dayET, gameTypeLabel, timeET, todayET } from '../lib/format.js';
 import { createPoller } from '../lib/poll.js';
-import { teamAccent, TEAM_BY_ABBREV } from '../lib/teams.js';
+import { teamAccent } from '../lib/teams.js';
 import { stateBadge, stateOf, teamMark } from '../components/game.js';
-import { playerIdentity } from '../components/player.js';
 import { intel } from '../lib/intel.js';
-import { goalieIntelCards, goalieIntelTop } from '../components/goalie-intel.js';
-import { describeError as describeIntelError } from '../lib/api.js';
+import { comparisonRows, sideView, sortBoard } from '../lib/goalie-center.js';
+import { comparisonTable, leagueBoard, liveLine, overviewCell, recentForm, seasonSection, stamp, truthBlock } from '../components/goalie-center.js';
+import { edgeSplits, goalieWarnings, workloadTimeline } from '../components/goalie-intel.js';
+import { lockPanel, pct3, scoreRing, versionTag, weightedComponents } from '../components/intel-ui.js';
+import { playerIdentity } from '../components/player.js';
+import { num, svPct } from '../lib/format.js';
 
-// Logos here always sit next to visible team text: decorative, so alt="".
 const mark = (team, size) => teamMark(team, size).replace(/ alt="[^"]*"/, ' alt=""');
-
 const YMD = /^\d{4}-\d{2}-\d{2}$/;
 const LIVEISH = new Set(['LIVE', 'INTERMISSION']);
 const PREISH = new Set(['SCHEDULED', 'PREGAME']);
-const LEADER_CATS = [
-  ['savePctg', 'Save %', v => svPct(v)],
-  ['goalsAgainstAverage', 'Goals-against average', v => num(v, 2)],
-  ['wins', 'Wins', v => num(v)]
-];
-
-// ---------------------------------------------------------------- helpers
-const seasonLabel = id => {
-  const s = String(id || '');
-  return /^\d{8}$/.test(s) ? `${s.slice(0, 4)}–${s.slice(6, 8)}` : '';
-};
-const typeWord = t => ({ 1: 'preseason', 2: 'regular season', 3: 'playoffs' }[Number(t)] || '');
-// NHL game ids encode the game type in digits 5-6 (01 pre, 02 reg, 03 playoffs).
-const idType = id => ({ '01': 'PRE', '02': 'REG', '03': 'PO' }[String(id || '').slice(4, 6)] || '');
-// Season id a calendar date belongs to (NHL seasons roll over in summer).
-const seasonIdFor = ymd => {
-  const y = Number(String(ymd).slice(0, 4)); const m = Number(String(ymd).slice(5, 7));
-  return m >= 7 ? Number(`${y}${y + 1}`) : Number(`${y - 1}${y}`);
-};
-const monogram = name => esc(String(name || '').split(/\s+/).filter(Boolean).map(w => w[0]).slice(0, 2).join('').toUpperCase() || '—');
-const shortDate = ymd => (YMD.test(ymd || '') ? dateLabel(ymd).replace(/^\w+,\s*/, '') : '—');
-const teamName = abbrev => TEAM_BY_ABBREV.get(abbrev)?.name || abbrev || '';
-const whenText = g => `${dayET(g.start_time_utc)} · ${timeET(g.start_time_utc)}`;
+const LIVE_MS = 15000;          // live goalie lane (gateway coalesces ~10 s)
+const INTEL_LIVE_MS = 120000;   // heavier intelligence while live
+const INTEL_PRE_MS = 300000;
 
 async function pool(items, limit, fn) {
   let i = 0;
-  const lanes = Array.from({ length: Math.min(limit, items.length) }, async () => {
-    while (i < items.length) await fn(items[i++]);
-  });
-  await Promise.all(lanes);
+  await Promise.all(Array.from({ length: Math.min(limit, items.length) }, async () => { while (i < items.length) await fn(items[i++]); }));
+}
+const errorBox = error => { const e = describeError(error); return `<div class="pbe-error"><strong>${esc(e.title)}</strong>${esc(e.body)}</div>`; };
+const semOf = g => stateOf(g).key;
+const metricsState = g => (LIVEISH.has(semOf(g)) ? 'LIVE' : semOf(g) === 'FINAL' ? 'FINAL' : 'PRE');
+
+const METHOD_NOTE = `<aside class="gc-method" aria-label="How to read the Goalie Center">
+  <dl>
+    <div><dt><span class="pbe-badge gc-badge gc-badge--confirmed">Confirmed</span></dt><dd>Official NHL boxscore after puck drop — the starter flag, or the only goalie with ice time (the NHL omits the flag while a game is live).</dd></div>
+    <div><dt><span class="pbe-badge gc-badge gc-badge--projected">Projected · Reported</span></dt><dd>NHL.com projected lineup when it names the starter, matched to the official roster by NHL id. Reported, not official.</dd></div>
+    <div><dt><span class="pbe-badge gc-badge gc-badge--unknown">Unknown</span></dt><dd>No approved starter evidence yet. Nobody is put in the starter slot.</dd></div>
+    <div><dt>In net now</dt><dd>The goalie on the latest opponent shot in the NHL play-by-play — observed, never treated as the starter.</dd></div>
+  </dl>
+  <p class="micro">GSAx is not shown because PropBetEdge has not released a validated NHL expected-goals model. <a class="gold" href="#/methodology">Methodology</a></p>
+</aside>`;
+
+function gameHead(g, { big = false, links = true } = {}) {
+  const a = g.teams?.away || {}; const h = g.teams?.home || {};
+  return `<header class="gc-game__head">
+    <div class="gc-game__match">${mark(a, big ? 44 : 28)}<b>${esc(a.abbrev || 'TBD')}</b><span class="faint">@</span>${mark(h, big ? 44 : 28)}<b>${esc(h.abbrev || 'TBD')}</b></div>
+    <div class="gc-game__meta">${stateBadge(g)}<span class="mono">${esc(dayET(g.start_time_utc))} · ${esc(timeET(g.start_time_utc))}</span>${gameTypeLabel(g.game_type) ? `<span class="micro">${esc(gameTypeLabel(g.game_type))}</span>` : ''}</div>
+    ${links ? `<div class="gc-game__links">${big ? '' : `<a class="dk-link dk-link--gold" href="#/goalies/${esc(g.id)}">Focus</a>`}<a class="dk-link" href="#/cast/${esc(g.id)}">PBE Cast</a><a class="dk-link" href="#/matchup/${esc(g.id)}">Matchup</a></div>` : ''}
+  </header>`;
 }
 
-function level(status) {
-  if (status === 'CONFIRMED') return 'CONFIRMED';
-  if (status === 'PROJECTED' || status === 'REPORTED') return 'PROJECTED';
-  return 'UNKNOWN';
+function views(entry) {
+  const i = entry?.intel?.data?.sides || null;
+  const l = entry?.live?.data?.sides || null;
+  return { away: sideView(i?.away, l?.away), home: sideView(i?.home, l?.home) };
 }
 
-function errorBox(error) {
-  const e = describeError(error);
-  return `<div class="pbe-error"><strong>${esc(e.title)}</strong>${esc(e.body)}</div>`;
+function stamps(entry) {
+  const out = [];
+  if (entry?.intel?.data) out.push(freshStamp(entry.intel.meta, { failed: entry.intel.failed, source: 'PBE intelligence · NHL', label: 'Starters & season' }));
+  if (entry?.live?.data?.sides) out.push(freshStamp(entry.live.meta, { failed: entry.live.failed, source: 'NHL boxscore', label: 'Live line' }));
+  return out.join('');
 }
 
-// ---------------------------------------------------------------- pieces
-function ladder(lv) {
-  const cells = [['CONFIRMED', 'Confirmed'], ['PROJECTED', 'Projected · Reported'], ['UNKNOWN', 'Unknown']];
-  return `<div class="dk-ladder" role="img" aria-label="Starter truth level: ${esc(lv)}">${cells.map(([k, l]) =>
-    `<span class="dk-ladder__cell${k === lv ? ' is-on' : ''}" data-lv="${k}">${esc(l)}</span>`).join('')}</div>`;
-}
-
-function starterBlock(t, big) {
-  const s = t.starter || { status: 'UNKNOWN', basis: 'The source did not return a starter record.' };
-  const lv = level(s.status);
-  const g = (t.goalies || []).find(x => x.id === s.goalie_id);
-  const name = g?.name || s.name;
-  const src = safeUrl(s.source_url);
-  const who = lv === 'UNKNOWN'
-    ? `<div class="dk-starter__who">${playerIdentity({ team: t.team, size: big ? 'lg' : 'md' })}<div><b>Starter not confirmed</b><span class="micro">Official lineup report not published yet</span></div></div>`
-    : `<div class="dk-starter__who">${playerIdentity({ id: s.goalie_id, name, team: t.team, size: big ? 'lg' : 'md' })}<div>${s.goalie_id ? `<a href="#/player/${esc(s.goalie_id)}"><b>${esc(name || 'Unnamed')}</b></a>` : `<b>${esc(name || 'Unnamed')}</b>`}<span class="micro">${lv === 'CONFIRMED' ? 'Started · on record' : 'Projected starter · not official'}</span></div></div>`;
-  return `<div class="dk-starter dk-starter--${lv.toLowerCase()}${big ? ' dk-starter--big' : ''}">
-    ${ladder(lv)}
-    ${who}
-    <p class="dk-starter__basis">${esc(s.basis || '')}</p>
-    ${lv !== 'UNKNOWN' ? `<p class="micro dk-starter__src">Source ${esc(s.source || '—')}${s.captured_at ? ` · captured ${esc(dayET(s.captured_at))} ${esc(clockET(s.captured_at))}` : ''}${src ? ` · <a class="gold" href="${esc(src)}" target="_blank" rel="noopener nofollow">record ↗</a>` : ''}</p>` : ''}
-  </div>`;
-}
-
-function restBlock(t, game) {
-  const r = t.rest;
-  // Rest is computed from the game's own season schedule (backend 7edb1a5).
-  if (!r) return '<p class="micro dk-rest__note">Rest context unavailable — the team schedule source did not answer.</p>';
-  const prev = r.previous_game_date;
-  const b2b = r.back_to_back;
-  return `<dl class="kv dk-rest">
-    <div><dt>Days rest</dt><dd>${prev ? esc(r.days_rest ?? '—') : '—'}</dd></div>
-    <div><dt>Back-to-back</dt><dd>${b2b === true ? '<span class="pbe-badge pbe-badge--alert">B2B</span>' : b2b === false ? 'No' : '—'}</dd></div>
-    <div class="dk-rest__prev"><dt>Previous game</dt><dd>${prev ? `${esc(shortDate(prev))}${r.previous_game_type ? ` <span class="faint">${esc(gameTypeLabel(r.previous_game_type))}</span>` : ''}` : '<span class="dk-dd-text">No prior game this season</span>'}</dd></div>
-  </dl>`;
-}
-
-function goalieTable(t, big, gameId = '') {
-  const rows = t.goalies || [];
-  const starterId = t.starter?.status === 'CONFIRMED' ? t.starter.goalie_id : null;
-  const season = `${seasonLabel(t.stats_season) || 'Season not stated'} ${typeWord(t.stats_game_type) || ''}`.trim();
-  if (!rows.length) {
-    return `<p class="micro dk-note-line">${t.partial?.club_stats ? 'Club goalie stats unavailable — source did not answer.' : 'No goalie season lines listed by the source.'}</p>`;
+// ---------------------------------------------------------------- overview
+function overviewGame(g, entry) {
+  const st = metricsState(g);
+  let body;
+  if (!entry?.intel) body = '<div class="pbe-skeleton" style="height:120px"></div>';
+  else if (!entry.intel.data && !entry.live?.data?.sides) body = `<p class="micro">Goalie data unavailable — ${esc(describeError(entry.intel.error).title)}.</p>`;
+  else {
+    const v = views(entry);
+    body = `<div class="gc-cells">${overviewCell(v.away, { state: st })}${overviewCell(v.home, { state: st })}</div>`;
   }
-  return `<div class="dk-tablehead"><span class="micro">Goalies · ${esc(season)}</span><span class="micro faint">NHL club stats</span></div>
-    <div class="table-wrap" tabindex="0" role="region" aria-label="${esc(t.team || '')} goalie season lines${gameId ? ` · game ${esc(gameId)}` : ''}"><table class="pbe-table dk-gtable">
-      <thead><tr><th>Goalie</th><th class="num">GP</th><th class="num">GS</th><th class="num">W-L-OTL</th><th class="num">SV%</th><th class="num">GAA</th><th class="num">SA</th>${big ? '<th class="num">SO</th>' : ''}</tr></thead>
-      <tbody>${rows.map(g => `<tr${g.id === starterId ? ' class="is-starter"' : ''}>
-        <td><a class="dk-gname" href="#/player/${esc(g.id)}">${playerIdentity({ id: g.id, name: g.name, team: t.team, size: 'sm' })}<span>${esc(g.name || 'Unnamed')}</span></a>${g.id === starterId ? ' <span class="pbe-badge pbe-badge--confirmed">Started</span>' : ''}</td>
-        <td class="num">${num(g.games_played)}</td><td class="num">${num(g.games_started)}</td>
-        <td class="num">${num(g.wins)}-${num(g.losses)}-${num(g.ot_losses)}</td>
-        <td class="num">${svPct(g.save_pct)}</td><td class="num">${num(g.gaa, 2)}</td><td class="num">${num(g.shots_against)}</td>
-        ${big ? `<td class="num">${num(g.shutouts)}</td>` : ''}
-      </tr>`).join('')}</tbody>
-    </table></div>`;
+  return `<article class="gc-game" data-game="${esc(g.id)}" style="--away:${teamAccent(g.teams?.away?.abbrev)};--home:${teamAccent(g.teams?.home?.abbrev)}">
+    ${gameHead(g)}${body}<div class="gc-stamps">${stamps(entry)}</div></article>`;
 }
 
-function workload(g, game) {
-  if (!Array.isArray(g.recent)) {
-    return `<div class="dk-work"><div class="dk-work__head"><b>${esc(g.name || '')}</b><span class="micro">Game log unavailable</span></div></div>`;
-  }
-  if (!g.recent.length) {
-    return `<div class="dk-work"><div class="dk-work__head"><b>${esc(g.name || '')}</b><span class="micro">No appearances in the source game log</span></div></div>`;
-  }
-  const games = [...g.recent].reverse(); // oldest → newest, newest on the right
-  const po = games.filter(x => idType(x.game_id) === 'PO').length;
-  // The game log is "now": for a past game the latest appearances can post-date it.
-  const after = game?.date && g.recent[0]?.date && g.recent[0].date > game.date;
-  const cells = games.map(x => {
-    const sa = n(x.shots_against);
-    const h = sa === null ? 0 : Math.max(4, Math.min(sa, 50) / 50 * 100);
-    const t = idType(x.game_id);
-    const tip = `${x.date || ''} ${x.home_road === 'H' ? 'vs' : '@'} ${x.opponent || ''} · ${x.started ? 'started' : 'relief'} · ${sa ?? '—'} SA · ${x.goals_against ?? '—'} GA · SV ${svPct(x.save_pct)}${x.decision ? ` · ${x.decision}` : ''}${x.toi ? ` · TOI ${x.toi}` : ''}`;
-    return `<li class="dk-work__cell${x.started ? ' is-start' : ''}" title="${esc(tip)}">
-      <span class="dk-work__date mono">${esc(shortDate(x.date))}</span>
-      <span class="dk-work__opp mono">${x.home_road === 'H' ? 'vs' : '@'}${esc(x.opponent || '—')}${t === 'PO' ? '<em>PO</em>' : t === 'PRE' ? '<em>PRE</em>' : ''}</span>
-      <span class="dk-work__bar" aria-hidden="true"><i style="height:${h.toFixed(0)}%"></i></span>
-      <b class="dk-work__sa mono">${sa ?? '—'}<small>SA</small></b>
-      <span class="dk-work__sv mono">${svPct(x.save_pct)}</span>
-      <span class="dk-work__gs">${x.started ? 'GS' : 'REL'}</span>
-    </li>`;
-  }).join('');
-  return `<div class="dk-work">
-    <div class="dk-work__head"><b>${esc(g.name || '')}</b><span class="micro">Last ${games.length} appearances${po ? ` · ${po} playoff` : ''}${after ? ' · latest on record, after this game' : ''}</span></div>
-    <ol class="dk-work__strip">${cells}</ol>
-  </div>`;
+// ---------------------------------------------------------------- focus
+function formBlock(g, pro) {
+  const f = g?.form && !g.form.locked ? g.form : null;
+  if (!f) return lockPanel('PBE Goalie Form', 'A transparent 0–100 PropBetEdge reading from shot-weighted recent save rate, the season baseline, rest and workload, and the opponent’s shot volume — every component shown. It is PBE analysis, not an NHL statistic.', { compact: true });
+  return `<div class="gc-pbe">${scoreRing(f.score, { label: `${g.name} PBE Goalie Form`, size: 64, caption: 'PBE Goalie Form' })}
+    <details><summary class="micro gold">Components ${versionTag(f.version)}</summary>${weightedComponents(f.components, { valueFmt: c => (c.key.includes('save') ? pct3(c.value) : c.value === null || c.value === undefined ? '—' : String(c.value)) })}${f.unavailable_reason ? `<p class="micro faint">${esc(f.unavailable_reason)}</p>` : ''}</details></div>`;
 }
 
-function workloadTable(g) {
-  if (!Array.isArray(g.recent) || !g.recent.length) return '';
-  return `<div class="table-wrap dk-worktable" tabindex="0" role="region" aria-label="${esc(g.name || 'Goalie')} recent appearances"><table class="pbe-table">
-    <thead><tr><th>Date</th><th>Opp</th><th>Type</th><th>Role</th><th class="num">SA</th><th class="num">GA</th><th class="num">SV%</th><th>Dec</th><th class="num">TOI</th></tr></thead>
-    <tbody>${g.recent.map(x => `<tr><td class="mono">${esc(shortDate(x.date))}</td><td class="mono">${x.home_road === 'H' ? 'vs' : '@'} ${esc(x.opponent || '—')}</td><td class="mono">${esc(idType(x.game_id) || '—')}</td><td>${x.started ? 'Started' : 'Relief'}</td><td class="num">${num(x.shots_against)}</td><td class="num">${num(x.goals_against)}</td><td class="num">${svPct(x.save_pct)}</td><td class="mono">${esc(x.decision || '—')}</td><td class="num">${esc(x.toi || '—')}</td></tr>`).join('')}</tbody>
-  </table></div>`;
-}
-
-function teamPanel(t, side, game, big) {
-  const abbrev = t?.team || game.teams?.[side]?.abbrev || '';
-  const teamObj = { ...(game.teams?.[side] || {}), abbrev };
-  const where = side === 'away' ? 'Away' : 'Home';
-  if (!t) {
-    return `<section class="dk-tp" style="--c:${teamAccent(abbrev)}"><header class="dk-tp__head">${mark(teamObj, big ? 44 : 34)}<div><b>${esc(abbrev || 'TBD')}</b><span>${where}</span></div></header><p class="dim">Team not yet set by the source.</p></section>`;
-  }
-  const topTwo = (t.goalies || []).slice(0, 2);
-  return `<section class="dk-tp" style="--c:${teamAccent(abbrev)}">
-    <header class="dk-tp__head">${mark(teamObj, big ? 44 : 34)}<div><b>${esc(abbrev)}</b><span>${esc(game.teams?.[side]?.name || teamName(abbrev))} · ${where}</span></div>
-      <a class="dk-link" href="#/team/${esc(abbrev)}">Team</a></header>
-    ${starterBlock(t, big)}
-    ${restBlock(t, game)}
-    ${goalieTable(t, big, game.id)}
-    ${topTwo.length ? `<div class="dk-tablehead"><span class="micro">Recent workload · top ${topTwo.length} by starts</span><span class="micro faint">Player game logs</span></div>
-      <div class="dk-works">${topTwo.map(g => `${workload(g, game)}${big ? workloadTable(g) : ''}`).join('')}</div>` : ''}
+function teamFocus(view, g, entry, { pro }) {
+  if (!view) return '<section class="gc-team"><p class="dim">Team not set by the source.</p></section>';
+  const st = metricsState(g);
+  const h = view.headline;
+  const rec = h?.record || null;
+  const others = view.others.filter(o => (o.season_lines?.current?.line?.gp ?? 0) > 0 || (o.season_lines?.previous?.line?.gp ?? 0) > 0 || o.live?.toi_s);
+  return `<section class="gc-team" style="--c:${teamAccent(view.team)}">
+    <header class="gc-team__head">${playerIdentity({ id: h?.id, name: h?.name, team: view.team, size: 'lg' })}
+      <div><span class="eyebrow">${esc(view.team || '')}</span>${h ? `<h3><a href="#/player/${esc(h.id)}">${esc(h.name || 'Unnamed')}</a></h3>` : `<h3 class="gc-name--none">${st === 'PRE' ? 'Starter not reported' : 'Starter flag unavailable'}</h3>`}</div></header>
+    ${truthBlock(view, { live: st !== 'PRE' })}
+    ${h && st !== 'PRE' ? liveLine(h.live, { final: st === 'FINAL' }) : ''}
+    ${view.inNet && !view.inNet.same_as_starter && !view.inNet.net_empty_now ? liveLine(view.others.find(o => o.id === view.inNet.goalie_id)?.live || null, { title: `${view.inNet.name || 'Goalie'} · in net now` }) : ''}
+    ${rec ? `<div class="gc-block">${seasonSection(rec)}</div>
+      <div class="gc-block"><div class="gc-sub"><span class="eyebrow">Recent form</span></div>${recentForm(rec)}</div>
+      <div class="gc-block"><div class="gc-sub"><span class="eyebrow">Workload &amp; rest</span>${stamp('NHL schedule + game logs')}</div>${goalieWarnings(rec)}${workloadTimeline(rec, entry.intel?.data?.game?.date)}</div>
+      <div class="gc-block"><div class="gc-sub"><span class="eyebrow">Shot location · NHL EDGE</span></div>${edgeSplits(rec)}</div>
+      <div class="gc-block gc-block--pbe"><div class="gc-sub"><span class="eyebrow">PBE analysis</span></div>${formBlock(rec, pro)}</div>` : h ? '<p class="micro gc-none">No season, form or tracking record for this goalie in the intelligence payload yet.</p>' : ''}
+    ${others.length ? `<div class="gc-block"><div class="gc-sub"><span class="eyebrow">Other goalies</span></div><ul class="gc-others">${others.map(o => {
+      const cur = o.season_lines?.current?.line; const prev = o.season_lines?.previous?.line;
+      const l = cur && cur.gp ? cur : prev; const lab = cur && cur.gp ? '' : ' (prior season)';
+      return `<li>${playerIdentity({ id: o.id, name: o.name, team: view.team, size: 'sm' })}<a href="#/player/${esc(o.id)}">${esc(o.name || 'Unnamed')}</a><span class="micro">${l ? `${l.gp} GP · ${l.gs ?? '—'} GS · ${l.save_pct !== null && l.save_pct !== undefined ? svPct(l.save_pct) : '—'} SV%${esc(lab)}` : 'No season line'}</span></li>`;
+    }).join('')}</ul></div>` : ''}
   </section>`;
 }
 
-// Goalie Intelligence 2.0 (nhl-metrics): workload timeline, rest warnings,
-// season vs recent, NHL Edge splits; PBE Goalie Form for NHL Pro.
-function intelTop(ie) {
-  if (!ie) return '<div class="pbe-skeleton" style="height:84px;margin:12px 16px 0"></div>';
-  if (!ie.data) return '';
-  return `<div class="dk-gi dk-gi--top">${goalieIntelTop(ie.data, { pro: ie.tier === 'pro' })}</div>`;
-}
-
-function intelBlock(ie, big) {
-  if (!ie) return '<div class="pbe-skeleton" style="height:90px;margin-top:12px"></div>';
-  if (!ie.data) {
-    const e = describeIntelError(ie.error);
-    return `<p class="micro faint" style="margin-top:10px">Goalie intelligence unavailable — ${esc(e.title)}. Starter truth and workload above are unaffected.</p>`;
-  }
-  return `<div class="dk-gi">${goalieIntelCards(ie.data, { pro: ie.tier === 'pro', big })}<p class="micro faint">${ie.data.captured_at ? `Intelligence computed ${esc(dayET(ie.data.captured_at))} ${esc(clockET(ie.data.captured_at))} · ` : ''}GSAx and xG are not shown: no validated model exists.</p></div>`;
-}
-
-function gameArticle(game, entry, { big = false, intelEntry = undefined } = {}) {
-  const g = entry?.data?.game || game;
-  const a = g.teams?.away || {}; const h = g.teams?.home || {};
-  const body = !entry
-    ? '<div class="dk-game__teams"><div class="pbe-skeleton" style="height:360px"></div><div class="pbe-skeleton" style="height:360px"></div></div>'
-    : entry.data
-      ? `<div class="dk-game__teams">${teamPanel(entry.data.teams?.away, 'away', g, big)}${teamPanel(entry.data.teams?.home, 'home', g, big)}</div>`
-      : errorBox(entry.error);
-  const type = gameTypeLabel(g.game_type);
-  return `<article class="dk-game${big ? ' dk-game--big' : ''}" data-game="${esc(g.id)}" data-fresh-scope style="--away:${teamAccent(a.abbrev)};--home:${teamAccent(h.abbrev)}">
-    <header class="dk-game__head">
-      <div class="dk-game__match">
-        ${mark(a, big ? 56 : 36)}<span class="dk-game__abbr">${esc(a.abbrev || 'TBD')}</span>
-        <span class="dk-game__at">@</span>
-        ${mark(h, big ? 56 : 36)}<span class="dk-game__abbr">${esc(h.abbrev || 'TBD')}</span>
-      </div>
-      <div class="dk-game__meta">
-        ${stateBadge(g)}
-        <span class="mono">${esc(whenText(g))}</span>
-        ${type ? `<span class="micro">${esc(type)}</span>` : ''}
-        ${g.venue ? `<span class="dim dk-game__venue">${esc(g.venue)}</span>` : ''}
-      </div>
-      <div class="dk-game__links">
-        ${entry?.data ? freshStamp(entry.meta, { failed: entry.failed }) : ''}
-        ${big ? '' : `<a class="dk-link dk-link--gold" href="#/goalies/${esc(g.id)}">Focus</a>`}
-        <a class="dk-link" href="#/cast/${esc(g.id)}">PBE Cast</a>
-        <a class="dk-link" href="#/matchup/${esc(g.id)}">Matchup</a>
-      </div>
-    </header>
-    ${intelEntry === undefined ? '' : intelTop(intelEntry)}
-    ${body}
-    ${intelEntry === undefined ? '' : intelBlock(intelEntry, big)}
-    <footer class="dk-game__foot micro">GSAx: unavailable — requires a validated xG model; none is released.</footer>
+function focusMarkup(g, entry) {
+  if (!entry?.intel) return '<div class="pbe-skeleton" style="height:520px"></div>';
+  if (!entry.intel.data && !entry.live?.data?.sides) return errorBox(entry.intel.error);
+  const v = views(entry);
+  const pro = entry.intel.tier === 'pro';
+  const rows = comparisonRows(v.away, v.home, { fmtSv: x => (x === null || x === undefined ? '—' : svPct(x)), fmtNum: (x, d = 0) => (x === null || x === undefined || !Number.isFinite(Number(x)) ? '—' : d ? num(x, d) : Number(x).toLocaleString('en-US')) });
+  return `<article class="gc-focus" data-game="${esc(g.id)}">
+    ${gameHead(g, { big: true })}
+    <div class="gc-stamps">${stamps(entry)}</div>
+    <section class="gc-block" aria-labelledby="gc-cmp-h"><div class="gc-sub"><span class="eyebrow" id="gc-cmp-h">Goalie vs goalie</span></div>${comparisonTable(rows, v.away, v.home)}</section>
+    <div class="gc-teams">${teamFocus(v.away, g, entry, { pro })}${teamFocus(v.home, g, entry, { pro })}</div>
   </article>`;
-}
-
-function starterGrid(games, store, limited = false) {
-  const cell = (entry, side, game) => {
-    const team = game.teams?.[side] || {};
-    const head = `${mark(team, 24)}<b>${esc(team.abbrev || 'TBD')}</b>`;
-    if (limited) return `<span class="dk-sg__team">${head}<span class="pbe-badge pbe-badge--unavailable">Unavailable</span></span>`;
-    if (!entry) return `<span class="dk-sg__team">${head}<span class="pbe-skeleton dk-sg__skel"></span></span>`;
-    if (!entry.data) return `<span class="dk-sg__team">${head}<span class="micro">No data</span></span>`;
-    const t = entry.data.teams?.[side];
-    const lv = level(t?.starter?.status);
-    const g = (t?.goalies || []).find(x => x.id === t?.starter?.goalie_id);
-    const name = g?.name || t?.starter?.name;
-    const badge = lv === 'CONFIRMED' ? '<span class="pbe-badge pbe-badge--confirmed">Confirmed</span>'
-      : lv === 'PROJECTED' ? '<span class="pbe-badge pbe-badge--reported">Reported</span>'
-        : '<span class="pbe-badge pbe-badge--unknown">Unknown</span>';
-    return `<span class="dk-sg__team">${head}${badge}${lv !== 'UNKNOWN' && name ? `<span class="dk-sg__name">${esc(name)}</span>` : ''}</span>`;
-  };
-  return `<div class="dk-sg">
-    ${games.map(g => {
-      const entry = store.get(String(g.id));
-      return `<a class="dk-sg__row" href="#/goalies/${esc(g.id)}" title="${esc(`${g.teams?.away?.abbrev || 'TBD'} @ ${g.teams?.home?.abbrev || 'TBD'} · goalie detail`)}">
-        <span class="dk-sg__when">${stateBadge(g)}</span>
-        <span class="dk-sg__cell">${cell(entry, 'away', g)}</span>
-        <span class="dk-sg__cell">${cell(entry, 'home', g)}</span>
-        <span class="dk-sg__go" aria-hidden="true">›</span>
-      </a>`;
-    }).join('')}
-  </div>`;
-}
-
-function gridBlock(games, store, limited = false) {
-  if (limited) {
-    return `<div class="dk-sgwrap">
-      <div class="pbe-note dk-banner"><b>Limited mode.</b> Goalie status, rest and season lines need the NHL intelligence v2 routes, which this environment's API does not serve yet. The schedule below is real (legacy route); nothing else is shown rather than guessed.</div>
-      <div class="dk-sgwrap__head"><span class="eyebrow">Schedule</span><span class="micro">${games.length} game${games.length === 1 ? '' : 's'}</span></div>
-      ${starterGrid(games, store, true)}
-    </div>`;
-  }
-  let confirmed = 0; let loaded = 0;
-  games.forEach(g => {
-    const d = store.get(String(g.id))?.data;
-    if (d) loaded += 1;
-    ['away', 'home'].forEach(s => { if (d?.teams?.[s]?.starter?.status === 'CONFIRMED') confirmed += 1; });
-  });
-  return `<div class="dk-sgwrap">
-    <div class="dk-sgwrap__head"><span class="eyebrow">Starter board</span>
-      <span class="micro">${games.length} game${games.length === 1 ? '' : 's'} · ${confirmed} of ${games.length * 2} starters confirmed${loaded < games.length ? ` · loading ${games.length - loaded}` : ''}</span></div>
-    ${starterGrid(games, store)}
-    <p class="micro dk-sgwrap__foot">Confirmed = NHL box-score starter flag, recorded at puck drop. Before that every starter stays Unknown — no licensed pregame source is integrated and we do not project starters.</p>
-  </div>`;
-}
-
-function leadersMarkup(leaders, calendar) {
-  const entries = LEADER_CATS.map(([k]) => leaders[k]);
-  if (entries.every(x => !x)) return `<div class="dk-leaders">${'<div class="pbe-skeleton" style="height:320px"></div>'.repeat(3)}</div>`;
-  if (entries.every(x => x && !x.data)) return errorBox(entries[0].error);
-  const anyData = entries.find(x => x?.data)?.data;
-  let seasonText = 'window as served by the source';
-  if (anyData?.season) seasonText = `${seasonLabel(anyData.season)} ${typeWord(anyData.game_type) || ''}`.trim();
-  else if (calendar?.regular_season_start && todayET() < calendar.regular_season_start) {
-    const y = Number(calendar.regular_season_start.slice(0, 4));
-    seasonText = `${y - 1}–${String(y).slice(2)} ${typeWord(anyData?.game_type) || 'regular season'} (most recent completed season)`;
-  }
-  const panel = ([key, label, fmt]) => {
-    const entry = leaders[key];
-    if (!entry) return '<div class="pbe-skeleton" style="height:320px"></div>';
-    if (!entry.data) return `<section class="pbe-panel dk-lead"><div class="panel-head"><h3>${esc(label)}</h3></div>${errorBox(entry.error)}</section>`;
-    const rows = entry.data.leaders || [];
-    return `<section class="pbe-panel dk-lead">
-      <div class="panel-head"><h3>${esc(label)}</h3>${freshStamp(entry.meta)}</div>
-      ${rows.length ? `<ol class="dk-lead__list">${rows.map((r, i) => `<li>
-        <span class="dk-lead__rk mono">${i + 1}</span>
-        ${mark({ abbrev: r.team, logo: r.team_logo }, 22)}
-        <a class="dk-lead__name" href="#/player/${esc(r.id)}">${esc(r.name || '')}</a>
-        <span class="dk-lead__team mono">${esc(r.team || '')}</span>
-        <b class="dk-lead__val mono">${esc(fmt(r.value))}</b>
-      </li>`).join('')}</ol>` : '<p class="dim">The source lists no leaders for this window.</p>'}
-    </section>`;
-  };
-  return `<p class="dk-season"><span class="pbe-badge pbe-badge--sched">Season</span> <span>${esc(seasonText)}</span>${anyData?.season_note ? ` <span class="faint">· ${esc(anyData.season_note)}</span>` : ''}</p>
-    <div class="dk-leaders">${LEADER_CATS.map(panel).join('')}</div>`;
 }
 
 // ---------------------------------------------------------------- mount
@@ -318,55 +138,54 @@ export function mount(root, params, ctx) {
   const focusId = params.gameId || null;
   const state = {
     date: YMD.test(params.date || '') ? params.date : null,
-    resolved: false,
-    slateNote: '',
+    resolved: false, slateNote: '',
     board: null, boardMeta: null, boardFailed: false, boardError: null,
-    games: [],
-    store: new Map(),       // gameId -> { data, meta, failed, error }
-    intel: new Map(),       // gameId -> { data, tier, error } (nhl-metrics)
-    loadedOnce: false,
-    leaders: {},
-    calendar: null,
-    focus: null,            // { data, meta, failed, error }
-    pickGames: [],
-    limited: false          // environment without the v2 data layer
+    games: [], store: new Map(),          // gameId -> { intel:{data,meta,tier,error,failed,at}, live:{...} }
+    focusGame: null, pickGames: [], limited: false,
+    league: null, sort: 'wins', minGs: 0
   };
   const ctl = new AbortController();
-
-  root.innerHTML = `<section class="wrap section dk dk-goalies">
+  root.innerHTML = `<section class="wrap section dk dk-goalies gc">
     <div class="section-head">
-      <div><span class="eyebrow">Goalie Center${focusId ? ' · Game focus' : ''}</span><h2 id="dk-g-title">${focusId ? 'Who is in net' : 'Who is starting in goal'}</h2></div>
-      <p>Starter status in three truth levels — Confirmed, Projected · Reported, Unknown — with rest, workload and season lines, each labelled by source and season.</p>
+      <div><span class="eyebrow">Goalie Center${focusId ? ' · Focus' : ''}</span><h2 id="dk-g-title">${focusId ? 'Who is in net' : 'Who is in net tonight'}</h2></div>
+      <p>Starter truth, saves, goals allowed, record and save rate first — then recent form, workload, NHL EDGE shot location and PBE analysis.</p>
     </div>
     <div id="dk-g-tools"></div>
     <div id="dk-g-body"></div>
-    <section class="dk-sub" aria-labelledby="dk-lead-title">
-      <div class="section-head section-head--editorial"><div><span class="eyebrow">League</span><h2 id="dk-lead-title">Goalie leaders</h2></div></div>
+    <section class="dk-sub gc-league" aria-labelledby="dk-lead-title">
+      <div class="section-head section-head--editorial"><div><span class="eyebrow">League</span><h2 id="dk-lead-title">League goalie board</h2></div><div id="gc-league-stamp"></div></div>
       <div id="dk-g-leaders"></div>
     </section>
+    ${METHOD_NOTE}
   </section>`;
   const tools = $('#dk-g-tools', root);
   const body = $('#dk-g-body', root);
-  const leadersEl = $('#dk-g-leaders', root);
+  const leagueEl = $('#dk-g-leaders', root);
+  const entryFor = id => { const k = String(id); if (!state.store.has(k)) state.store.set(k, {}); return state.store.get(k); };
 
-  const renderLeaders = () => { leadersEl.innerHTML = leadersMarkup(state.leaders, state.calendar); };
+  const renderLeague = () => {
+    const L = state.league;
+    $('#gc-league-stamp', root).innerHTML = L?.data ? freshStamp(L.meta, { source: 'NHL stats', label: 'Season totals' }) : '';
+    if (!L) { leagueEl.innerHTML = '<div class="pbe-skeleton" style="height:320px"></div>'; return; }
+    if (!L.data) { leagueEl.innerHTML = errorBox(L.error); return; }
+    leagueEl.innerHTML = leagueBoard(L.data, sortBoard(L.data.goalies, state.sort, { minGs: state.minGs }), { sort: state.sort, minGs: state.minGs });
+  };
 
   const renderTools = () => {
     if (focusId) {
-      const date = state.focus?.data?.game?.date;
+      const date = state.focusGame?.date;
       tools.innerHTML = `<div class="dk-toolbar">
         <a class="pbe-btn pbe-btn--sm" href="#/goalies${date ? `?date=${esc(date)}` : ''}">‹ All games${date ? ` · ${esc(dateLabel(date))}` : ''}</a>
-        ${state.pickGames.length <= 1 ? '<div class="dk-picker" aria-hidden="true"></div>' : `<nav class="dk-picker" aria-label="Other games this date">${state.pickGames.map(g => `<a class="dk-pick${String(g.id) === String(focusId) ? ' is-active' : ''}"${String(g.id) === String(focusId) ? ' aria-current="page"' : ''} href="#/goalies/${esc(g.id)}"><span class="mono">${esc(g.teams.away.abbrev)} <span class="faint">@</span> ${esc(g.teams.home.abbrev)}</span><span class="micro">${esc(stateOf(g).text)}</span></a>`).join('')}</nav>`}
+        ${state.pickGames.length <= 1 ? '' : `<nav class="dk-picker" aria-label="Other games this date">${state.pickGames.map(g => `<a class="dk-pick${String(g.id) === String(focusId) ? ' is-active' : ''}"${String(g.id) === String(focusId) ? ' aria-current="page"' : ''} href="#/goalies/${esc(g.id)}"><span class="mono">${esc(g.teams.away.abbrev)} <span class="faint">@</span> ${esc(g.teams.home.abbrev)}</span><span class="micro">${esc(stateOf(g).text)}</span></a>`).join('')}</nav>`}
       </div>`;
       return;
     }
     const date = state.date || todayET();
-    const isToday = date === todayET();
     tools.innerHTML = `<div class="dk-toolbar">
       <div class="dk-toolbar__title"><b>${esc(dateLabel(date, { long: true }))}</b>${state.slateNote ? `<span class="pbe-badge pbe-badge--sched">${esc(state.slateNote)}</span>` : ''}</div>
       <div class="datenav" role="group" aria-label="Choose date">
         <button class="pbe-btn pbe-btn--sm" data-shift="-1" aria-label="Previous day">‹</button>
-        <button class="pbe-btn pbe-btn--sm${isToday ? ' is-current' : ''}" data-goto="${todayET()}">Today</button>
+        <button class="pbe-btn pbe-btn--sm${date === todayET() ? ' is-current' : ''}" data-goto="${todayET()}">Today</button>
         <button class="pbe-btn pbe-btn--sm" data-shift="1" aria-label="Next day">›</button>
         <label class="sr-only" for="dk-g-date">Date</label>
         <input id="dk-g-date" class="datenav__input" type="date" value="${esc(date)}">
@@ -375,185 +194,142 @@ export function mount(root, params, ctx) {
     </div>`;
   };
 
-  const renderSlate = () => {
-    if (!state.board) {
-      body.innerHTML = state.boardError ? errorBox(state.boardError) : '<div class="pbe-skeleton" style="height:120px;margin-bottom:16px"></div><div class="pbe-skeleton" style="height:420px"></div>';
-      return;
+  const summary = () => {
+    let confirmed = 0; let projected = 0;
+    for (const g of state.games) {
+      const v = views(state.store.get(String(g.id)));
+      for (const s of [v.away, v.home]) { if (s?.level === 'CONFIRMED') confirmed += 1; else if (s?.level === 'PROJECTED') projected += 1; }
     }
-    const games = state.games;
-    if (!games.length) {
+    return `<p class="gc-summary micro">${state.games.length} game${state.games.length === 1 ? '' : 's'} · <b>${confirmed}</b> confirmed · <b>${projected}</b> projected · <b>${state.games.length * 2 - confirmed - projected}</b> unknown</p>`;
+  };
+
+  const renderSlate = () => {
+    if (!state.board) { body.innerHTML = state.boardError ? errorBox(state.boardError) : '<div class="pbe-skeleton" style="height:420px"></div>'; return; }
+    if (!state.games.length) {
       const next = state.board.next_puck_drop;
       body.innerHTML = `<div class="pbe-empty"><h3>No NHL games on ${esc(dateLabel(state.date, { long: true }))}.</h3>
-        <p>${next ? `Next puck drop: <b>${esc(dayET(next.start_time_utc, true))} · ${esc(timeET(next.start_time_utc))}</b> — ${esc(next.games_that_day)} game${next.games_that_day === 1 ? '' : 's'}.` : 'The source schedule lists no upcoming game in its current window.'}</p>
+        <p>${next ? `Next puck drop: <b>${esc(dayET(next.start_time_utc, true))} · ${esc(timeET(next.start_time_utc))}</b>.` : 'The source schedule lists no upcoming game in its current window.'}</p>
         ${next && next.date !== state.date ? `<p style="margin-top:14px"><button class="pbe-btn pbe-btn--primary" data-goto="${esc(next.date)}">Open the ${esc(dateLabel(next.date))} slate</button></p>` : ''}</div>`;
       return;
     }
-    if (state.limited) { body.innerHTML = gridBlock(games, state.store, true); return; }
-    body.innerHTML = `${gridBlock(games, state.store)}
-      <div class="dk-games">${games.map(g => gameArticle(g, state.store.get(String(g.id)), { intelEntry: state.intel.get(String(g.id)) || null })).join('')}</div>`;
+    if (state.limited) {
+      body.innerHTML = '<div class="pbe-note dk-banner"><b>Limited mode.</b> Goalie truth needs the NHL intelligence routes, which this environment does not serve. Nothing is shown rather than guessed.</div>';
+      return;
+    }
+    body.innerHTML = `<div class="gc-board-head"><span class="eyebrow">Tonight’s goalie board</span>${summary()}</div>
+      <div class="gc-games">${state.games.map(g => overviewGame(g, state.store.get(String(g.id)))).join('')}</div>`;
   };
-
-  // Replace one game (and the grid summary) without re-rendering the page.
-  const patchGame = id => {
-    const game = state.games.find(g => String(g.id) === String(id));
-    const node = body.querySelector(`[data-game="${CSS.escape(String(id))}"]`);
-    if (!game || !node) { renderSlate(); return; }
-    node.outerHTML = gameArticle(game, state.store.get(String(id)), { intelEntry: state.intel.get(String(id)) || null });
-    const grid = body.querySelector('.dk-sgwrap');
-    if (grid) grid.outerHTML = gridBlock(state.games, state.store);
+  const renderFocus = () => {
+    const g = state.focusGame;
+    if (!g) { body.innerHTML = state.boardError ? errorBox(state.boardError) : '<div class="pbe-skeleton" style="height:520px"></div>'; return; }
+    $('#dk-g-title', root).textContent = `${g.teams?.away?.abbrev || 'TBD'} @ ${g.teams?.home?.abbrev || 'TBD'} · who is in net`;
+    body.innerHTML = focusMarkup(g, state.store.get(String(focusId)));
   };
+  const render = () => (focusId ? renderFocus() : renderSlate());
 
-  async function loadGoalies(id, signal) {
-    const key = String(id);
+  async function loadIntel(id, signal) {
+    const e = entryFor(id);
     try {
-      const res = await nhl(`/nhl/game/${key}/goalies`, {}, { signal, timeout: 15000 });
-      state.store.set(key, { data: res.data, meta: res.meta, failed: false, error: null });
+      const res = await intel(`/game/${id}`, { signal });
+      e.intel = { data: res.data, meta: res.meta, tier: res.tier, failed: false, at: Date.now() };
     } catch (error) {
       if (error.kind === 'aborted' || signal.aborted) return;
-      const prev = state.store.get(key);
-      state.store.set(key, prev?.data ? { ...prev, failed: true, error } : { data: null, meta: null, failed: true, error });
+      e.intel = e.intel?.data ? { ...e.intel, failed: true, at: Date.now() } : { data: null, error, failed: true, at: Date.now() };
     }
-    if (!signal.aborted) patchGame(key);
   }
-
-  async function loadIntel(id, signal, { focus = false } = {}) {
-    const key = String(id);
+  async function loadLive(id, signal) {
+    const e = entryFor(id);
     try {
-      const res = await intel(`/game/${key}`, { signal });
-      state.intel.set(key, { data: res.data, tier: res.tier, error: null });
+      const res = await intel(`/goalies/live/${id}`, { signal, tier: 'free' });
+      e.live = { data: res.data, meta: res.meta, failed: false, at: Date.now() };
     } catch (error) {
       if (error.kind === 'aborted' || signal.aborted) return;
-      const prev = state.intel.get(key);
-      state.intel.set(key, prev?.data ? prev : { data: null, error });
+      e.live = e.live?.data ? { ...e.live, failed: true } : { data: null, error, failed: true };
     }
-    if (signal.aborted) return;
-    if (focus) renderFocus(); else patchGame(key);
   }
+  const intelDue = g => {
+    const e = state.store.get(String(g.id));
+    if (!e?.intel) return true;
+    const st = metricsState(g);
+    if (st === 'FINAL') return !e.intel.data;
+    return Date.now() - (e.intel.at || 0) > (st === 'LIVE' ? INTEL_LIVE_MS : INTEL_PRE_MS);
+  };
+  const liveDue = g => {
+    const st = metricsState(g);
+    if (st === 'LIVE') return true;
+    return st === 'FINAL' && !state.store.get(String(g.id))?.live?.data;
+  };
+  const nextDelay = games => (games.some(g => LIVEISH.has(semOf(g))) ? LIVE_MS
+    : state.date === todayET() && games.some(g => PREISH.has(semOf(g))) ? INTEL_PRE_MS : null);
 
   async function resolveDate(signal) {
     if (state.date) { state.resolved = true; return; }
     const today = await ctx.board(todayET(), { signal });
-    state.calendar = today.data.calendar || null;
-    if (today.data.games?.length) {
-      state.date = todayET();
-      state.slateNote = 'Today';
-    } else if (today.data.next_puck_drop?.date) {
-      state.date = today.data.next_puck_drop.date;
-      state.slateNote = 'Next slate';
-    } else {
-      state.date = todayET();
-    }
+    if (today.data.games?.length) { state.date = todayET(); state.slateNote = 'Today'; }
+    else if (today.data.next_puck_drop?.date) { state.date = today.data.next_puck_drop.date; state.slateNote = 'Next slate'; }
+    else state.date = todayET();
     state.resolved = true;
   }
 
-  const volatile = g => {
-    const k = stateOf(g).key;
-    if (LIVEISH.has(k) || k === 'PREGAME') return true;
-    // A scheduled game inside 15 minutes of puck drop is about to flip.
-    return k === 'SCHEDULED' && Date.parse(g.start_time_utc) - Date.now() < 15 * 60 * 1000;
-  };
-
   const slatePoller = focusId ? null : createPoller(async signal => {
     if (!state.resolved) await resolveDate(signal);
-    const res = await ctx.board(state.date, { signal, maxAgeMs: 20000 });
+    const res = await ctx.board(state.date, { signal, maxAgeMs: 15000 });
     state.board = res.data; state.boardMeta = res.meta; state.boardFailed = false; state.boardError = null;
-    state.calendar = state.calendar || res.data.calendar || null;
     state.games = res.data.games || [];
     state.limited = (await dataLayer()) === 'legacy';
-    renderTools();
-    renderSlate();
-    renderLeaders();
+    renderTools(); renderSlate();
     if (state.limited) return null;
-    const targets = state.loadedOnce ? state.games.filter(volatile) : state.games;
-    state.loadedOnce = true;
-    await pool(targets, 4, g => loadGoalies(g.id, signal));
-    // Intelligence rides on the same cadence; the first pass loads every game.
-    pool(targets, 2, g => loadIntel(g.id, signal)).catch(() => {});
-    const anyLive = state.games.some(g => LIVEISH.has(stateOf(g).key));
-    const anyPending = state.date === todayET() && state.games.some(g => PREISH.has(stateOf(g).key));
-    return anyLive ? 60000 : anyPending ? 300000 : null;
-  }, {
-    onError(error) {
-      state.boardError = error;
-      state.boardFailed = Boolean(state.board);
-      renderTools();
-      renderSlate();
-      return error.kind === 'not_deployed' || error.kind === 'legacy' ? null : 15000;
-    }
-  });
-
-  const renderFocus = () => {
-    const f = state.focus;
-    if (!f) { body.innerHTML = '<div class="pbe-skeleton" style="height:520px"></div>'; return; }
-    if (!f.data) { body.innerHTML = errorBox(f.error); return; }
-    const g = f.data.game;
-    $('#dk-g-title', root).textContent = `${g.teams.away.abbrev || 'TBD'} @ ${g.teams.home.abbrev || 'TBD'} · who is in net`;
-    body.innerHTML = gameArticle(g, f, { big: true, intelEntry: state.intel.get(String(focusId)) || null });
-  };
+    await pool(state.games.filter(liveDue), 4, async g => { await loadLive(g.id, signal); if (!signal.aborted) renderSlate(); });
+    pool(state.games.filter(intelDue), 2, async g => { await loadIntel(g.id, signal); if (!signal.aborted) renderSlate(); }).catch(() => {});
+    return nextDelay(state.games);
+  }, { onError(error) { state.boardError = error; state.boardFailed = Boolean(state.board); renderTools(); renderSlate(); return error.kind === 'not_deployed' || error.kind === 'legacy' ? null : 15000; } });
 
   const focusPoller = focusId ? createPoller(async signal => {
-    const res = await nhl(`/nhl/game/${focusId}/goalies`, {}, { signal, timeout: 15000 });
-    state.focus = { data: res.data, meta: res.meta, failed: false, error: null };
-    renderFocus();
-    loadIntel(focusId, signal, { focus: true });
-    renderTools();
-    if (!state.pickGames.length && res.data.game?.date) {
-      ctx.board(res.data.game.date, { signal: ctl.signal }).then(b => {
+    const e = entryFor(focusId);
+    const g0 = state.focusGame;
+    const tasks = [];
+    if (!g0 || liveDue(g0)) tasks.push(loadLive(focusId, signal));
+    if (!g0 || intelDue(g0)) tasks.push(loadIntel(focusId, signal));
+    await Promise.all(tasks);
+    const ig = e.intel?.data?.game; const lg = e.live?.data?.game;
+    // Game header: the live lane's state is fresher than the intelligence build.
+    const base = ig ? { ...ig, status: lg?.status || { semantics: ig.state } } : lg ? { ...lg } : null;
+    if (base) {
+      state.focusGame = { ...base, teams: { away: { abbrev: ig?.teams?.away?.abbrev || lg?.teams?.away?.abbrev }, home: { abbrev: ig?.teams?.home?.abbrev || lg?.teams?.home?.abbrev } } };
+    }
+    renderTools(); renderFocus();
+    if (state.focusGame?.date && !state.pickGames.length) {
+      ctx.board(state.focusGame.date, { signal: ctl.signal }).then(b => {
         state.pickGames = b.data.games || [];
-        renderTools();
+        const live = state.pickGames.find(x => String(x.id) === String(focusId));
+        if (live) state.focusGame = { ...state.focusGame, ...live, teams: { ...live.teams } };
+        renderTools(); renderFocus();
       }).catch(() => {});
     }
-    const k = stateOf(res.data.game).key;
-    return LIVEISH.has(k) ? 60000 : PREISH.has(k) ? 300000 : null;
-  }, {
-    onError(error) {
-      state.focus = state.focus?.data ? { ...state.focus, failed: true } : { data: null, meta: null, failed: true, error };
-      renderFocus();
-      return error.kind === 'not_deployed' || error.kind === 'legacy' ? null : 15000;
-    }
-  }) : null;
+    return state.focusGame ? nextDelay([state.focusGame]) : 15000;
+  }, { onError(error) { state.boardError = error; renderFocus(); return 15000; } }) : null;
 
-  // League leaders are season aggregates: fetched once.
-  LEADER_CATS.forEach(([key]) => {
-    nhl('/nhl/goalies/leaders', { category: key, limit: 10 }, { signal: ctl.signal })
-      .then(res => { state.leaders[key] = { data: res.data, meta: res.meta }; })
-      .catch(error => { if (error.kind !== 'aborted') state.leaders[key] = { data: null, error }; })
-      .finally(() => { if (!ctl.signal.aborted) renderLeaders(); });
-  });
-  ctx.board(todayET(), { signal: ctl.signal })
-    .then(b => { state.calendar = b.data.calendar || state.calendar; if (!ctl.signal.aborted) renderLeaders(); })
-    .catch(() => {});
+  intel('/goalies/league', { signal: ctl.signal, tier: 'free' })
+    .then(res => { state.league = { data: res.data, meta: res.meta }; })
+    .catch(error => { if (error.kind !== 'aborted') state.league = { data: null, error }; })
+    .finally(() => { if (!ctl.signal.aborted) renderLeague(); });
 
-  renderTools();
-  if (focusId) renderFocus(); else renderSlate();
-  renderLeaders();
-  slatePoller?.start();
-  focusPoller?.start();
+  renderTools(); render(); renderLeague();
+  slatePoller?.start(); focusPoller?.start();
 
   const setDate = date => {
     if (!YMD.test(date || '') || focusId) return;
-    state.date = date;
-    state.resolved = true;
-    state.slateNote = date === todayET() ? 'Today' : '';
-    state.board = null; state.boardError = null; state.games = [];
-    state.store.clear();
-    state.loadedOnce = false;
+    state.date = date; state.resolved = true; state.slateNote = date === todayET() ? 'Today' : '';
+    state.board = null; state.boardError = null; state.games = []; state.store.clear();
     history.replaceState(null, '', `#/goalies?date=${date}`);
-    renderTools();
-    renderSlate();
-    slatePoller?.refresh();
+    renderTools(); renderSlate(); slatePoller?.refresh();
   };
-
   const disposers = [
     on(root, 'click', '[data-shift]', (_, btn) => setDate(addDays(state.date || todayET(), Number(btn.dataset.shift)))),
     on(root, 'click', '[data-goto]', (_, btn) => setDate(btn.dataset.goto)),
-    on(root, 'change', '#dk-g-date', (_, input) => setDate(input.value))
+    on(root, 'change', '#dk-g-date', (_, input) => setDate(input.value)),
+    on(root, 'click', '[data-gc-sort]', (_, b) => { state.sort = b.dataset.gcSort; renderLeague(); }),
+    on(root, 'click', '[data-gc-mings]', (_, b) => { state.minGs = Number(b.dataset.gcMings) || 0; renderLeague(); })
   ];
-
-  return () => {
-    slatePoller?.stop();
-    focusPoller?.stop();
-    ctl.abort();
-    disposers.forEach(d => d());
-  };
+  return () => { slatePoller?.stop(); focusPoller?.stop(); ctl.abort(); disposers.forEach(d => d()); };
 }

@@ -67,7 +67,7 @@ export function seasonVsRecent(g) {
 
 export function edgeSplits(g) {
   const e = g?.edge;
-  if (!e?.locations?.length) return '<p class="micro faint">Shot-location tracking splits unavailable for this goalie.</p>';
+  if (!e?.locations?.length) return '<p class="micro faint">Shot-location splits unavailable.</p>';
   const season = e.season ? `${String(e.season).slice(0, 4)}-${String(e.season).slice(6, 8)}` : '';
   return `<div><span class="micro">Save % by shot location${season ? ` · ${esc(season)}` : ''} · tracking data via PropSports</span>
     <table class="pbe-table gi-split"><thead><tr><th>Location</th><th>SV%</th><th>League</th><th>Pctile</th><th>Saves</th></tr></thead>

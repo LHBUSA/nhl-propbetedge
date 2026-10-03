@@ -158,7 +158,7 @@ function goaliePanel(g) {
   const seasons = [...new Set(['away', 'home'].map(k => seasonLabel(teams[k]?.stats_season)).filter(Boolean))];
   return `${panelHead('Goalies', `<span class="micro">${esc(seasons.join(' / '))} regular season stats</span>`)}
     <div class="rs-gcols">${col('away')}${col('home')}</div>
-    <p class="micro rs-after">PropBetEdge does not project starters. Pregame status stays UNKNOWN until the NHL box score records the starter at puck drop. ${esc(g.gsax_status && /unavailable|not/i.test(g.gsax_status) ? 'GSAx: not available until a validated xG model is released.' : '')}</p>`;
+    <p class="micro rs-after">Confirmed = official NHL boxscore after puck drop. Projected · Reported = the NHL.com projected lineup, not official. Unknown = no approved starter evidence yet. Full goalie lines in the <a class="gold" href="#/goalies/${esc(g.game_id || g.game?.id || '')}">Goalie Center</a>. ${esc(g.gsax_status && /unavailable|not/i.test(g.gsax_status) ? 'GSAx: not available until a validated xG model is released.' : '')}</p>`;
 }
 
 function restPanel(g) {

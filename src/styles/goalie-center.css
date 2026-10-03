@@ -1,0 +1,109 @@
+/* Goalie Center 3.0 — official performance first, PBE analysis second. */
+.gc .gc-board-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px 16px; margin: 0 0 var(--s-3); }
+.gc-summary { margin: 0; color: var(--pbe-dim); }
+.gc-summary b { color: var(--pbe-paper); }
+.gc-games { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--s-3); }
+@media (min-width: 1100px) { .gc-games { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+.gc-game, .gc-focus { border: 1px solid var(--pbe-line); border-radius: var(--r-md); background: var(--pbe-ink-2); padding: var(--s-3) var(--s-4); min-width: 0; }
+.gc-game { border-top: 3px solid; border-image: linear-gradient(90deg, var(--away) 0 50%, var(--home) 50% 100%) 1; }
+.gc-game__head { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; margin-bottom: var(--s-3); }
+.gc-game__match { display: flex; align-items: center; gap: 8px; font: 800 var(--fs-h3)/1 var(--pbe-font-ui); }
+.gc-game__meta { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; color: var(--pbe-dim); font-size: var(--fs-sm); }
+.gc-game__links { display: flex; gap: 6px; margin-left: auto; }
+.gc-stamps { display: flex; flex-wrap: wrap; gap: 4px 12px; margin-top: var(--s-2); }
+.gc-src { color: var(--pbe-faint); text-transform: none; letter-spacing: .02em; }
+
+.gc-cells { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--s-3); }
+.gc-cell { min-width: 0; padding: var(--s-2) 0 0; border-top: 1px solid var(--pbe-line-faint); }
+.gc-cell__who { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.gc-cell__who > div { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.gc-name { font-weight: 800; color: var(--pbe-paper); overflow-wrap: anywhere; }
+a.gc-name:hover { color: var(--pbe-gold-bright); }
+.gc-name--none { color: var(--pbe-dim); font-weight: 700; }
+.gc-badge { align-self: flex-start; }
+.gc-badge--confirmed { background: var(--pbe-pos-soft); color: #8fd3aa; border-color: rgba(78,163,115,.45); }
+.gc-badge--projected { background: var(--pbe-gold-soft); color: var(--pbe-gold-bright); border-color: rgba(212,175,55,.45); }
+.gc-badge--unknown { background: rgba(255,255,255,.04); color: var(--pbe-dim); border-color: var(--pbe-line-strong); }
+.gc-cell__live { display: flex; flex-wrap: wrap; gap: 4px 14px; margin-top: 8px; font-size: var(--fs-sm); color: var(--pbe-dim); }
+.gc-cell__live b { font: 800 var(--fs-data-lg)/1 var(--pbe-font-data); color: var(--pbe-paper); margin-right: 3px; }
+.gc-cell__season { margin: 8px 0 0; text-transform: none; letter-spacing: .02em; color: var(--pbe-dim); }
+.gc-cell__season b { color: var(--pbe-paper); font-family: var(--pbe-font-data); }
+.gc-cell__season span { color: var(--pbe-faint); }
+.gc-cell__net { margin: 6px 0 0; text-transform: none; }
+
+/* stat strips */
+.gc-strip { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 1px; margin: 0 0 var(--s-2); background: var(--pbe-line); border: 1px solid var(--pbe-line); border-radius: var(--r-sm); overflow: hidden; }
+.gc-strip > div { background: var(--pbe-ink-2); padding: 8px 10px; min-width: 0; }
+.gc-strip dt { font: 700 var(--fs-label)/1.2 var(--pbe-font-ui); letter-spacing: var(--ls-label); text-transform: uppercase; color: var(--pbe-dim); }
+.gc-strip dd { margin: 4px 0 0; font: 800 var(--fs-data-lg)/1.1 var(--pbe-font-data); color: var(--pbe-paper); overflow-wrap: anywhere; }
+.gc-strip--live dd { font-size: var(--fs-data-xl); }
+.gc-strip--base > div { background: var(--pbe-ink); }
+.gc-strip--base dd { color: var(--pbe-paper-2); }
+@media (min-width: 700px) { .gc-strip { grid-template-columns: repeat(8, minmax(0, 1fr)); } .gc-strip--live { grid-template-columns: repeat(auto-fit, minmax(92px, 1fr)); } }
+.gc-splits { margin: 0 0 var(--s-2); display: flex; flex-wrap: wrap; gap: 4px 14px; text-transform: none; letter-spacing: .02em; }
+.gc-splits b { font-family: var(--pbe-font-data); color: var(--pbe-paper); }
+.gc-held { font-size: var(--fs-sm); color: var(--pbe-dim); }
+
+.gc-sub { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; margin: var(--s-3) 0 var(--s-2); }
+.gc-sub .eyebrow { color: var(--pbe-gold); }
+.gc-sub--base .eyebrow { color: var(--pbe-dim); }
+.gc-none { margin: 0 0 var(--s-2); color: var(--pbe-dim); font-size: var(--fs-sm); }
+.gc-note { margin: 6px 0 0; color: var(--pbe-faint); text-transform: none; letter-spacing: .02em; }
+
+/* truth */
+.gc-truth { display: grid; gap: 6px; padding: var(--s-2) var(--s-3); border: 1px solid var(--pbe-line); border-left: 3px solid var(--pbe-line-strong); border-radius: var(--r-sm); background: rgba(255,255,255,.015); }
+.gc-truth--confirmed { border-left-color: var(--pbe-pos); }
+.gc-truth--projected { border-left-color: var(--pbe-gold); }
+.gc-truth__row { display: grid; grid-template-columns: 92px minmax(0, 1fr) auto; align-items: center; gap: 8px; }
+.gc-truth__k { font: 700 var(--fs-label)/1.2 var(--pbe-font-ui); letter-spacing: var(--ls-label); text-transform: uppercase; color: var(--pbe-dim); }
+.gc-truth__basis { margin: 0; color: var(--pbe-faint); text-transform: none; letter-spacing: .02em; }
+
+/* focus */
+.gc-focus .gc-game__head { margin-bottom: var(--s-2); }
+.gc-teams { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--s-4); margin-top: var(--s-3); }
+@media (min-width: 1100px) { .gc-teams { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.gc-team { min-width: 0; padding-top: var(--s-3); border-top: 3px solid var(--c); }
+.gc-team__head { display: flex; align-items: center; gap: 12px; margin-bottom: var(--s-3); }
+.gc-team__head h3 { margin: 2px 0 0; font: 800 clamp(20px, 2.4vw, 28px)/1.1 var(--pbe-font-display); }
+.gc-team__head h3 a:hover { color: var(--pbe-gold-bright); }
+.gc-block { min-width: 0; }
+.gc-block--pbe { opacity: .95; }
+.gc-pbe { display: flex; flex-wrap: wrap; align-items: flex-start; gap: var(--s-3); }
+.gc-others { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.gc-others li { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; font-size: var(--fs-sm); }
+.gc-others a { font-weight: 700; }
+.gc-cmp th[scope="row"] { text-align: left; color: var(--pbe-dim); font-weight: 600; white-space: nowrap; }
+.gc-cmp td { font-family: var(--pbe-font-data); font-size: var(--fs-data-sm); }
+.gc-cmp__g { text-align: right; }
+.gc-cmp__g .pid { display: none; }
+@media (min-width: 700px) { .gc-cmp__g .pid { display: inline-flex; vertical-align: middle; margin-right: 6px; } }
+.gc-form td, .gc-form th { white-space: nowrap; }
+.gc-form__pre td { color: var(--pbe-dim); }
+
+/* league */
+.gc-league .section-head { align-items: flex-end; }
+.gc-board__bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: var(--s-2); }
+.gc-board__wrap { max-height: 640px; overflow: auto; }
+.gc-board td, .gc-board th { white-space: nowrap; }
+.gc-board__name { display: inline-flex; align-items: center; gap: 8px; font-weight: 700; }
+.gc-sort { all: unset; cursor: pointer; font: inherit; color: var(--pbe-dim); padding: 2px 4px; border-radius: var(--r-xs); }
+.gc-sort:hover, .gc-sort.is-on { color: var(--pbe-gold-bright); }
+.gc-sort.is-on::after { content: ' ▾'; }
+.gc-sort:focus-visible { outline: 2px solid var(--pbe-gold); }
+
+.gc-method { margin-top: var(--s-6); padding: var(--s-4); border: 1px solid var(--pbe-line); border-radius: var(--r-md); background: var(--pbe-ink-2); }
+.gc-method dl { display: grid; grid-template-columns: minmax(0, 1fr); gap: 10px; margin: 0 0 var(--s-3); }
+@media (min-width: 900px) { .gc-method dl { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.gc-method dl > div { display: grid; gap: 4px; }
+.gc-method dt { font-weight: 800; color: var(--pbe-paper); }
+.gc-method dd { margin: 0; color: var(--pbe-dim); font-size: var(--fs-sm); }
+.gc-method p { margin: 0; text-transform: none; letter-spacing: .02em; color: var(--pbe-dim); }
+
+@media (max-width: 560px) {
+  .gc-cells { grid-template-columns: minmax(0, 1fr); }
+  .gc-game, .gc-focus { padding: var(--s-3); }
+  .gc-game__links { margin-left: 0; }
+  .gc-truth__row { grid-template-columns: 74px minmax(0, 1fr); }
+  .gc-truth__row > .pbe-badge { grid-column: 2; justify-self: start; }
+}
