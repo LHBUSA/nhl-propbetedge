@@ -24,7 +24,10 @@ import { accountMembership, membershipBadgeHtml, picksProHeading } from '../lib/
 import { freshStamp } from '../lib/freshness.js';
 import { addDays, ageText, dateLabel, dayET, gameTypeLabel, pct, timeET, timeLocal, todayET } from '../lib/format.js';
 import { stateOf, teamMark } from '../components/game.js';
+import { wireKalshi } from '../vendor/kalshi/kalshi-market-ui.js';
 import { teamAccent } from '../lib/teams.js';
+import { kalshi, loadAlgoVsMarket } from '../data/kalshi.js';
+import { findAvmRow, pickMarketSlot } from '../lib/pick-market.js';
 
 const DASH = '—';
 
@@ -435,7 +438,7 @@ function goalieBlock(goalies) {
   </div>`;
 }
 
-export function gameCardMarkup(game, { pipelineAvailable = true, splitSquad = false } = {}) {
+export function gameCardMarkup(game, { pipelineAvailable = true, splitSquad = false, marketFor = null, avm = null } = {}) {
   const pick = game.pick || null;
   const pickTeam = pick ? readKey(pick, ['pick_team']) : null;
   const pHome = pick ? readKey(pick, ['p_home']) : null;
@@ -452,6 +455,14 @@ export function gameCardMarkup(game, { pipelineAvailable = true, splitSquad = fa
   const pickProb = probabilityText(
     pickTeam && pickTeam === homeAbbrev ? pHome : pickTeam && pickTeam === awayAbbrev ? pAway : null
   );
+  // Kalshi line for the SAME game and the SAME side as the pick (src/lib/pick-market.js): live/pregame
+  // Mid-market while the market trades, stored close evidence once the game is over, the frozen Algo vs
+  // Market comparison when one exists; nothing otherwise. Pro values only reach here for a Pro account.
+  const pickRole = pickTeam && pickTeam === homeAbbrev ? 'home' : pickTeam && pickTeam === awayAbbrev ? 'away' : null;
+  const market = pick && pickRole && !splitSquad ? pickMarketSlot(marketFor?.(game.id) || null, pickRole, {
+    settled: gameOver(game),
+    avmRow: findAvmRow(avm, game.id, pickRole)
+  }) : '';
 
   const pickStrip = splitSquad
     ? `<p class="pkc-none pkc-none--split">No PBE pick — this is a split-squad game, so the team-level model cannot reliably separate the two rosters playing at the same time.</p>`
@@ -461,6 +472,7 @@ export function gameCardMarkup(game, { pipelineAvailable = true, splitSquad = fa
           <b class="pkc-pick__team">${esc(pickTeam || DASH)}</b>
           ${pickProb ? `<span class="mono pkc-pick__p">${esc(pickProb)}</span>` : ''}
         </div>
+        ${market}
         <dl class="kv pkc-kv">
           ${probabilityText(pAway) ? `<div><dt>${esc(awayAbbrev || 'Away')}</dt><dd>${esc(probabilityText(pAway))}</dd></div>` : ''}
           ${probabilityText(pHome) ? `<div><dt>${esc(homeAbbrev || 'Home')}</dt><dd>${esc(probabilityText(pHome))}</dd></div>` : ''}
@@ -497,6 +509,11 @@ export function gameCardMarkup(game, { pipelineAvailable = true, splitSquad = fa
       <a href="#/goalies/${esc(game.id)}">Goalies</a>
     </footer>
   </article>`;
+}
+
+// A finished game: its pick shows stored market evidence only, never a live quote.
+export function gameOver(game) {
+  return ['FINAL', 'REPLAY'].includes(game?.boardState?.key) || ['OFF', 'FINAL'].includes(String(game?.slateState || '').toUpperCase());
 }
 
 // ------------------------------------------------------------ explanation
@@ -583,7 +600,15 @@ export function picksMode(state, games = []) {
 export const REHEARSAL_BADGE = 'PRESEASON';
 export const REHEARSAL_COPY = 'Preseason results are tracked separately and do not count toward the regular-season PBE record.';
 
-export function rehearsalCard(game) {
+// Preseason pick: same rule, keyed by the pick's own game id and side.
+function rehearsalMarket(game, marketFor) {
+  const role = game.pick_team && game.pick_team === game.home ? 'home' : game.pick_team && game.pick_team === game.away ? 'away' : null;
+  if (!role || !marketFor) return '';
+  const settled = present(game.result) !== null || Date.parse(game.puck_drop_utc || '') <= Date.now();
+  return pickMarketSlot(marketFor(String(game.game_id || '')) || null, role, { settled });
+}
+
+export function rehearsalCard(game, { marketFor = null } = {}) {
   const call = game.is_call === true && present(game.pick_team);
   const pickP = call ? probabilityText(game.probability) : null;
   const home = esc(game.home || '');
@@ -610,6 +635,7 @@ export function rehearsalCard(game) {
           <span class="pks-pick__label">NO PICK</span>
           <b class="pks-pick__team">${esc(game.no_call_reason || 'no call')}</b>
         </div>`}
+    ${call ? rehearsalMarket(game, marketFor) : ''}
     <dl class="pks-pick__grid">
       <div><dt>Puck Drop</dt><dd>${esc(puckLabel(game.puck_drop_utc))}</dd></div>
       <div><dt>Locked</dt><dd>${esc(lockLabel(game.locked_at))}</dd></div>
@@ -712,7 +738,7 @@ export function rehearsalSection(state) {
   return `<section class="pks-preseason" id="pks-preseason" data-fresh-scope>
     ${calls.length ? preseasonRecordStrip(rec, calls.length, calls[0]?.season ?? games[0]?.season ?? null) : ''}
     ${consumerModelStatus(state)}
-    <div class="pks-picks">${games.map(rehearsalCard).join('')}</div>
+    <div class="pks-picks">${games.map(g => rehearsalCard(g, { marketFor: state.marketFor })).join('')}</div>
   </section>`;
 }
 
@@ -737,6 +763,8 @@ function slateSection(state, games, { quiet = false } = {}) {
     body = `<div class="pks-grid">${games.map(g => gameCardMarkup(g, {
       pipelineAvailable,
       splitSquad: splitIds.has(String(g.id)),
+      marketFor: state.marketFor,
+      avm: state.avm
     })).join('')}</div>`;
   }
   return `<div class="section-head">
@@ -831,6 +859,9 @@ export function picksView(state) {
 }
 
 // ------------------------------------------------------------------- mount
+const MARKET_FIRST_PAINT_MS = 800;
+const withinMs = (promise, ms) => Promise.race([Promise.resolve(promise).catch(() => null), new Promise(r => setTimeout(() => r(undefined), ms))]);
+
 export function mount(root, params, ctx) {
   const state = {
     date: /^\d{4}-\d{2}-\d{2}$/.test(params?.date || '') ? params.date : todayET(),
@@ -839,10 +870,12 @@ export function mount(root, params, ctx) {
     board: null, boardMeta: null, boardError: null,
     pro: null, proError: null,
     preseason: null, preseasonError: null, preseasonRecord: null, splitSquad: [],
-    account: { state: 'unknown' }
+    account: { state: 'unknown' },
+    // Kalshi (one shared board read, coalesced with the score ticker's) + frozen Algo vs Market.
+    marketFor: null, avm: null
   };
 
-  const render = () => { root.innerHTML = picksView(state); };
+  const render = () => { root.innerHTML = picksView(state); wireKalshi(root); };
   render();
 
   let controller = new AbortController();
@@ -869,7 +902,14 @@ export function mount(root, params, ctx) {
         render();
       });
 
-    const data = await loadPicksData({ date: state.date, account: state.account, signal });
+    // The market reads run beside the picks reads and are awaited (bounded) so a pick's Kalshi line is in
+    // the same paint as the pick: no late insert, no layout shift. A failed or slow read renders nothing.
+    const wantAvm = proEligible(state.account);
+    const [data] = await Promise.all([
+      loadPicksData({ date: state.date, account: state.account, signal }),
+      withinMs(kalshi.loadBoard(), MARKET_FIRST_PAINT_MS).then(() => { state.marketFor = id => kalshi.forEvent(id); }),
+      wantAvm && !state.avm ? withinMs(loadAlgoVsMarket(), MARKET_FIRST_PAINT_MS).then(body => { if (body) state.avm = body; }) : null
+    ]);
     if (mine !== token) return;
     Object.assign(state, data);
     state.splitSquad = splitSquadGames(state.slate || state.board);

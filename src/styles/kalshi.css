@@ -48,3 +48,17 @@ section.kx { border-width: 1px; border-style: solid; border-radius: var(--r-md);
 .cast-avm-slot { margin-top: var(--s-3); min-width: 0; }
 .trk-avm section.kx { margin: 0; }
 .trk-avm section.kx + section.kx { margin-top: var(--s-3); }
+
+/* PBE pick x Kalshi (src/lib/pick-market.js): one compact line under the pick, clearly separate from the
+   pick's own numbers. The pick side's Kalshi Mid-market (or stored close evidence) + the frozen Algo vs
+   Market line. Single line that wraps inside its column: never widens a card or a table cell. */
+.pick-kx { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; margin: 8px 0 2px; min-width: 0; }
+.pick-kx .kx-pick { flex-wrap: wrap; text-decoration: none; padding: 3px 8px; border: 1px solid rgba(127, 184, 255, .32); border-radius: 999px; background: rgba(127, 184, 255, .07); color: var(--pbe-paper); line-height: 1.25; max-width: 100%; }
+.pick-kx .kx-pick:hover, .pick-kx .kx-pick:focus-visible { border-color: #7fb8ff; }
+.pick-kx .kx-pick__px { font-weight: 800; }
+.pick-kx .kx-pick__tag { font-size: 10px; letter-spacing: .08em; text-transform: uppercase; color: var(--pbe-gold, #d8b25a); }
+.pick-kx .kx-line--closed { border-color: var(--pbe-line, rgba(255, 255, 255, .14)); background: transparent; }
+.pick-kx .kx-avm { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: 11px; color: var(--pbe-dim); min-width: 0; }
+.pick-kx .kx-avm a { color: var(--pbe-paper); text-decoration: underline; text-underline-offset: 2px; }
+.trk-kx .pick-kx { margin: 0; }
+.trk-kx { min-width: 150px; }

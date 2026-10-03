@@ -15,8 +15,9 @@ import { describeError, picksLedger, picksPreseasonHistory, picksPreseasonLedger
 import { freshStamp } from '../lib/freshness.js';
 import { dayET, pct, timeET } from '../lib/format.js';
 import { bookFullName } from '../components/market.js';
-import { avmWithEventLabels, loadAlgoVsMarket, splitMatchup } from '../data/kalshi.js';
-import { algoVsMarketCard } from '../vendor/kalshi/kalshi-market-ui.js';
+import { avmWithEventLabels, kalshi, loadAlgoVsMarket, splitMatchup } from '../data/kalshi.js';
+import { algoVsMarketCard, wireKalshi } from '../vendor/kalshi/kalshi-market-ui.js';
+import { findAvmRow, pickMarketSlot } from '../lib/pick-market.js';
 
 const DASH = '—';
 const LEDGER_LIMIT = 25;
@@ -203,6 +204,25 @@ const LEDGER_COLUMNS = [
   }]
 ];
 
+// Kalshi for a ledger pick: the SAME game and the SAME side (src/lib/pick-market.js). A graded or started
+// pick shows only stored market evidence (market.close) and the frozen Algo vs Market comparison; an
+// upcoming preseason pick shows the live Mid-market. '' when there is nothing real to show.
+export function ledgerMarket(row, state) {
+  const id = readKey(row, ['game_id']);
+  const pick = readKey(row, ['pick', 'pick_team', 'selection']);
+  const teams = splitMatchup(readKey(row, ['matchup'])) || (readKey(row, ['away']) && readKey(row, ['home']) ? { away: readKey(row, ['away']), home: readKey(row, ['home']) } : null);
+  const role = pick && teams ? (pick === teams.home ? 'home' : pick === teams.away ? 'away' : null) : null;
+  if (!id || !role) return '';
+  const result = String(readKey(row, ['result', 'outcome']) || '').toUpperCase();
+  const start = Date.parse(readKey(row, ['start_utc', 'puck_drop_utc']) || '');
+  const settled = (result && result !== 'PENDING') || (Number.isFinite(start) && start <= Date.now());
+  return pickMarketSlot(state.marketFor?.(String(id)) || null, role, {
+    settled,
+    avmRow: state.segment === 'regular' ? findAvmRow(state.avm, id, role) : null,
+    placement: 'track-ledger'
+  });
+}
+
 function ledgerRows(data) {
   const rows = readKey(data, ['picks', 'rows', 'items', 'ledger']);
   return Array.isArray(rows) ? rows : [];
@@ -216,21 +236,25 @@ function ledgerTable(state) {
   const activeRecord = state.segment === 'preseason' ? state.preseasonRecord : state.regularRecord;
   const reason = apiReason(state.ledger) || apiReason(activeRecord);
   const code = apiReasonCode(state.ledger) || apiReasonCode(activeRecord);
+  // The Kalshi column exists only when at least one row on this page has a real market value.
+  const markets = rows.map(row => ledgerMarket(row, state));
+  const withMarket = markets.some(Boolean);
+  const columns = withMarket ? [...LEDGER_COLUMNS, ['Kalshi', 'trk-kx']] : LEDGER_COLUMNS;
   let body;
   if (rows.length) {
-    body = rows.map(row => '<tr>' + LEDGER_COLUMNS.map(([, cls, read, title]) => {
+    body = rows.map((row, i) => '<tr>' + LEDGER_COLUMNS.map(([, cls, read, title]) => {
       const value = read(row);
       const tip = title ? title(row) : null;
       return '<td class="' + cls + '"' + (tip ? ' title="' + esc(tip) + '"' : '') + '>' +
         (value === null || value === undefined ? DASH : esc(String(value))) + '</td>';
-    }).join('') + '</tr>').join('');
+    }).join('') + (withMarket ? '<td class="trk-kx">' + (markets[i] || DASH) + '</td>' : '') + '</tr>').join('');
   } else {
     const message = state.ledgerError
       ? unavailableText(state.ledgerError)
       : reason
         ? String(reason)
         : 'The ledger API returned no rows and no reason.';
-    body = '<tr class="trk-ledger__empty"><td colspan="' + LEDGER_COLUMNS.length + '">' +
+    body = '<tr class="trk-ledger__empty"><td colspan="' + columns.length + '">' +
       '<div class="trk-ledger__msg">' +
         '<b>No picks on this page.</b>' +
         '<span>' + esc(message) + '</span>' +
@@ -240,7 +264,7 @@ function ledgerTable(state) {
   }
   return '<div class="table-wrap trk-ledger">' +
     '<table class="pbe-table">' +
-      '<thead><tr>' + LEDGER_COLUMNS.map(([label, cls]) => '<th class="' + cls + '" scope="col">' + esc(label) + '</th>').join('') + '</tr></thead>' +
+      '<thead><tr>' + columns.map(([label, cls]) => '<th class="' + cls + '" scope="col">' + esc(label) + '</th>').join('') + '</tr></thead>' +
       '<tbody>' + body + '</tbody>' +
     '</table>' +
   '</div>';
@@ -540,10 +564,11 @@ export function mount(root) {
     preseasonRecord: null, preseasonRecordMeta: null, preseasonRecordError: null,
     regularRecord: null, regularRecordMeta: null, regularRecordError: null,
     ledger: null, ledgerMeta: null, ledgerError: null,
-    avm: null
+    avm: null,
+    marketFor: null
   };
 
-  const render = () => { root.innerHTML = trackView(state); };
+  const render = () => { root.innerHTML = trackView(state); wireKalshi(root); };
   render();
 
   const controller = new AbortController();
@@ -588,7 +613,11 @@ export function mount(root) {
           offset: state.page * LEDGER_LIMIT
         }, { signal, timeout: 9000 });
 
-    return request
+    // The Kalshi board (one shared read, coalesced with the score ticker's) is awaited beside the ledger,
+    // bounded, so any Kalshi column paints with the rows instead of appearing later.
+    const board = Promise.race([kalshi.loadBoard().catch(() => null), new Promise(r => setTimeout(r, 800))])
+      .then(() => { state.marketFor = id => kalshi.forEvent(id); });
+    return Promise.all([request, board]).then(([res]) => res)
       .then(res => {
         state.ledger = res.data;
         state.ledgerMeta = res.meta;
