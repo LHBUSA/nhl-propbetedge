@@ -107,3 +107,12 @@ a.gc-name:hover { color: var(--pbe-gold-bright); }
   .gc-truth__row { grid-template-columns: 74px minmax(0, 1fr); }
   .gc-truth__row > .pbe-badge { grid-column: 2; justify-self: start; }
 }
+/* Comparison fits a phone without sideways scrolling. */
+.gc-cmp { width: 100%; table-layout: fixed; }
+.gc-cmp th[scope="row"] { width: 34%; }
+.gc-cmp td, .gc-cmp__g { overflow-wrap: anywhere; }
+@media (max-width: 560px) {
+  .gc-cmp th, .gc-cmp td { padding: 7px 6px; font-size: var(--fs-label); }
+  .gc-cmp th[scope="row"] { white-space: normal; }
+  .gc-cmp .gc-name { font-size: var(--fs-label); }
+}
