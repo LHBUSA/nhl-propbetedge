@@ -12,7 +12,7 @@ import { createPoller } from '../lib/poll.js';
 import { resolveRecentCompleted } from '../lib/recent-games.js';
 import { TEAM_BY_ABBREV, teamAccent } from '../lib/teams.js';
 import { kalshi, kalshiPollState } from '../data/kalshi.js';
-import { kalshiCard, kalshiStrip, wireKalshi } from '../vendor/kalshi/kalshi-market-ui.js';
+import { kalshiStrip, marketModule, wireKalshi } from '../vendor/kalshi/kalshi-market-ui.js';
 import { STATE, clockText, specialTeams } from '../lib/special-teams.js';
 import { compactLines, loadDna, momentContext, peekDna, renderCompactDna, roleLabel } from '../lib/cast-dna.js';
 import { stateBadge, stateOf, teamMark } from '../components/game.js';
@@ -20,7 +20,7 @@ import { LAYERS, attachRinkInspector, renderRink, rinkInspector, rinkLegend, sho
 import { SPEEDS, replayBar, seek, sliceCast } from '../components/replay.js';
 import { watchButton } from '../components/alerts-ui.js';
 
-const KALSHI_FIRST_PAINT_MS = 3000;
+const KALSHI_FIRST_PAINT_MS = 800;
 const FEED_FILTERS = [
   ['all', 'All'], ['goal', 'Goals'], ['shots', 'Shots'], ['fight', '🥊 Fights'], ['penalty', 'Penalties'],
   ['faceoff', 'Faceoffs'], ['hit', 'Hits'], ['other', 'Other']
@@ -679,16 +679,36 @@ export function kalshiColors(game) {
 // Kalshi prediction market on the Cast (separate from the sportsbook Market
 // panel). Pregame: the full card in the moment column. Live: the one-line strip
 // under the broadcast header (it expands to the compact card); when the book is
-// too wide for a strip, the full card stays in the column instead. Final or any
-// non-playing state: nothing. No entry: nothing.
+// too wide for a strip, the full card stays in the column instead. Final (the
+// replay): marketModule — the live card while the market still trades, "How the
+// market closed" once it has CLOSED or SETTLED. Postponed / cancelled with no
+// market: nothing. No entry: nothing.
 export function castKalshiSlots(entry, game, { open = false } = {}) {
-  const mode = kalshiPollState(stateOf(game).key);
-  if (!entry || !mode || String(entry.event?.canonical_event_id) !== String(game?.id)) return { strip: '', card: '' };
+  if (!entry || String(entry.event?.canonical_event_id) !== String(game?.id)) return { strip: '', card: '' };
+  const key = stateOf(game).key;
+  const mode = kalshiPollState(key);
+  if (!mode && key !== 'FINAL') return { strip: '', card: '' };
   const colors = kalshiColors(game);
-  let strip = mode === 'live' ? kalshiStrip(entry, { placement: 'cast-live', colors }) : '';
+  const closed = isMarketClosed(entry);
+  let strip = mode === 'live' && !closed ? kalshiStrip(entry, { placement: 'cast-live', colors }) : '';
   if (strip && open) strip = strip.replace('<details class="kx-strip"', '<details open class="kx-strip"');
-  const card = strip ? '' : kalshiCard(entry, { placement: 'game-page', colors });
+  const card = strip ? '' : marketModule(entry, { placement: closed ? 'market-history' : 'game-page', colors });
   return { strip, card };
+}
+
+const isMarketClosed = entry => ['CLOSED', 'SETTLED'].includes(entry?.market?.lifecycle);
+
+// Market poll cadence for this game: live 20 s, pregame 45 s; once the market
+// has CLOSED every 5 min until it SETTLES; SETTLED stops. A final game whose
+// market is still trading keeps the client's idle cadence until it closes.
+export const KALSHI_CLOSED_POLL_MS = 300000;
+export function kalshiPollMs(entry, gameKey) {
+  const lc = entry?.market?.lifecycle;
+  if (lc === 'SETTLED') return null;
+  if (lc === 'CLOSED') return KALSHI_CLOSED_POLL_MS;
+  const mode = kalshiPollState(gameKey);
+  if (!mode && gameKey !== 'FINAL') return null;
+  return kalshi.pollMsFor(mode);
 }
 
 function sortPickerGames(games) {
@@ -1094,17 +1114,19 @@ export function mount(root, params, ctx) {
   }) : null;
 
   // Kalshi market poll (our propsports-markets API, never Kalshi) while this
-  // game is on screen: live 20 s, pregame 45 s; final/postponed stops it and
-  // clears the card. Visibility-aware and stopped on unmount via createPoller.
+  // game is on screen: live 20 s, pregame 45 s, CLOSED 5 min until SETTLED,
+  // SETTLED stops (the history is final). Postponed / cancelled stop and clear.
+  // Visibility-aware and stopped on unmount via createPoller.
   const kalshiPoller = createPoller(async () => {
-    const mode = state.cast ? kalshiPollState(stateOf(state.cast.game).key) : null;
-    if (!mode) {
+    const key = state.cast ? stateOf(state.cast.game).key : null;
+    if (state.kalshi?.market?.lifecycle === 'SETTLED') return null;
+    if (!key || (!kalshiPollState(key) && key !== 'FINAL')) {
       if (state.kalshi) { state.kalshi = null; updateKalshi(); }
       return null;
     }
     state.kalshi = await kalshi.loadEvent(state.gameId);
     updateKalshi();
-    return kalshi.pollMsFor(mode);
+    return kalshiPollMs(state.kalshi, key);
   }, { onError: () => 60000, maxBackoff: 300000 });
 
   const pickerPoller = createPoller(async signal => loadPicker(signal), {

@@ -28,7 +28,7 @@ import { modePanel, seasonMode } from '../components/mode.js';
 import { playerIdentity } from '../components/player.js';
 import { cardMarket } from '../components/market.js';
 import { kalshi } from '../data/kalshi.js';
-import { kalshiLine, wireKalshi } from '../vendor/kalshi/kalshi-market-ui.js';
+import { kalshiLine, marketCloseLine, wireKalshi } from '../vendor/kalshi/kalshi-market-ui.js';
 import { watchButton } from '../components/alerts-ui.js';
 import { TEAM_BY_ABBREV, teamAccent } from '../lib/teams.js';
 import { dataLayer, oddsConfigured } from '../lib/api.js';
@@ -430,7 +430,7 @@ export function slateCard(game, { market = null, marketMeta = null, lock = null,
       <a href="#/pbe-picks${game.date ? `?date=${esc(game.date)}` : ''}">PBE Picks</a>
       ${market ? `<a href="#/props?game=${esc(game.id)}&focus=market">Betting Odds</a>` : oddsOn ? '<span class="scard__action-off" aria-disabled="true">Odds pending</span>' : ''}
       ${Array.isArray(market?.props) && market.props.length ? `<a href="#/props?game=${esc(game.id)}&focus=props">View Props</a>` : ''}
-      ${final ? '' : kalshiLine(kalshiEntry)}
+      ${final ? marketCloseLine(kalshiEntry) : kalshiLine(kalshiEntry)}
     </footer>
   </article>`;
 }
