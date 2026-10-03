@@ -32,7 +32,7 @@ export function truthBlock(view, { live = false } = {}) {
   // Customer label: PropSports for observed data; a named publisher (linked reporting) keeps its credit + link.
   const pubUrl = publisherUrl(s.source_url);
   const srcName = customerSource(s.source);
-  const when = s.captured_at ? ` · ${dayET(s.captured_at)} ${clockET(s.captured_at)} ET` : '';
+  const when = s.captured_at ? ` · ${dayET(s.captured_at)} ${clockET(s.captured_at)}` : '';
   const src = srcName ? `${srcName}${when}` : '';
   const started = lv === 'UNKNOWN'
     ? `<div class="gc-truth__row"><span class="gc-truth__k">${live ? 'Started' : 'Starter'}</span><span><b>${live ? 'Starter flag unavailable' : 'Starter not reported'}</b></span>${badge('UNKNOWN')}</div>`
