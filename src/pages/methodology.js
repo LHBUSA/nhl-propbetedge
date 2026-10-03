@@ -306,7 +306,7 @@ const SECTIONS = [
   {
     id: 'kalshi',
     title: 'Kalshi prediction markets',
-    lede: 'Game pages and the Ice Board can show the Kalshi market for an NHL game. These are prediction-market contract prices: not sportsbook odds and not a PropBetEdge model.',
+    lede: 'Live prediction-market pricing is part of every NHL game page on PropBetEdge: game pages and the Ice Board carry the Kalshi market for the game. These are prediction-market contract prices: not sportsbook odds and not a PropBetEdge model.',
     body: `${defs([
       ['What it is', 'Kalshi is a regulated prediction market. A YES contract pays $1 if that team wins the game, so a price is what traders are paying for that contract right now.'],
       ['Links', 'Every Kalshi price on this site links to that market on Kalshi. No link, no price: a game without a verified market shows nothing.'],
