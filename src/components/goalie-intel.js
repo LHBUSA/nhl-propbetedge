@@ -7,6 +7,7 @@
 // Nothing here computes a score; missing values render as unavailable.
 import { esc } from '../lib/dom.js';
 import { playerIdentity } from './player.js';
+import { confirmedLabel } from '../lib/goalie-center.js';
 import { DASH, edgeLine, lockPanel, pct3, scoreRing, versionTag, weightedComponents } from './intel-ui.js';
 
 const LOC = { all: 'All shots', high: 'High-danger', mid: 'Mid-range', long: 'Long-range' };
@@ -97,7 +98,7 @@ export function goalieMatchup(intel, { pro = false } = {}) {
     const f = formOf(g);
     return `<div class="gi-matchup__side">
       ${f ? scoreRing(f.score, { label: `${st.name || t.team} Goalie Form`, size: 58 }) : playerIdentity({ id: st.goalie_id, name: st.name, team: t.team, size: 'md' })}
-      <div class="gi-matchup__who"${st.basis ? ` title="${esc(st.basis)}"` : ''}><span class="micro">${esc(t.team)} · ${esc(LEVEL(st.status))}</span><b>${esc(st.name || 'No starter yet')}</b>
+      <div class="gi-matchup__who"${st.basis ? ` title="${esc(st.basis)}"` : ''}><span class="micro">${esc(t.team)} · ${esc(st.status === 'CONFIRMED' ? confirmedLabel(st) : LEVEL(st.status))}</span><b>${esc(st.name || 'No starter yet')}</b>
         <span class="micro faint">${g ? (() => { const w = workloadOf(g); return w ? `${Number.isFinite(w.days_rest) ? `${w.days_rest}d rest` : 'rest n/a'} · ${w.starts_7d} GS/7d` : ''; })() : (st.status === 'UNKNOWN' ? 'Not confirmed or projected' : '')}</span></div>
     </div>`;
   };

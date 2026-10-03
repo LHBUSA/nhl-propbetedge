@@ -148,3 +148,29 @@ test('page copy: no stale "we do not project starters" text, one GSAx note', () 
   const matchup = fs.readFileSync(new URL('../src/pages/matchup.js', import.meta.url), 'utf8');
   assert.doesNotMatch(matchup, /does not project starters/);
 });
+
+test('starter basis: the official flag and the derived only-goalie-with-TOI inference are labelled apart', async () => {
+  const { starterBasis, confirmedLabel } = await import('../src/lib/goalie-center.js');
+  // propsports /nhl/game/:id/goalies (starter_basis), captured from production 2026-10-03.
+  const flag = { status: 'CONFIRMED', goalie_id: 8482193, basis_code: 'BOXSCORE_STARTER_FLAG', starter_basis: 'OFFICIAL_STARTER_FLAG' };
+  const derived = { status: 'CONFIRMED', goalie_id: 8480981, basis_code: 'BOXSCORE_ONLY_GOALIE_WITH_TOI', starter_basis: 'DERIVED_ONLY_GOALIE_WITH_TOI' };
+  assert.equal(starterBasis(flag), 'OFFICIAL_STARTER_FLAG');
+  assert.equal(starterBasis(derived), 'DERIVED_ONLY_GOALIE_WITH_TOI');
+  assert.equal(confirmedLabel(flag), 'Confirmed · NHL starter flag');
+  assert.equal(confirmedLabel(derived), 'Confirmed · only goalie with ice time');
+  assert.doesNotMatch(confirmedLabel(derived), /flag/, 'the derived basis never claims the NHL flag');
+  // nhl-metrics sends only basis_code: same mapping.
+  assert.equal(starterBasis({ status: 'CONFIRMED', basis_code: 'BOXSCORE_ONLY_GOALIE_WITH_TOI' }), 'DERIVED_ONLY_GOALIE_WITH_TOI');
+  // No basis outside CONFIRMED; an unknown basis is not invented.
+  assert.equal(starterBasis({ status: 'PROJECTED', starter_basis: 'OFFICIAL_STARTER_FLAG' }), null);
+  assert.equal(starterBasis({ status: 'UNKNOWN', basis_code: 'STARTER_FLAG_UNAVAILABLE' }), null);
+  assert.equal(confirmedLabel({ status: 'CONFIRMED' }), 'Confirmed');
+});
+
+test('methodology states both confirmed bases and never says confirmed comes only from the flag', () => {
+  const src = fs.readFileSync(new URL('../src/pages/methodology.js', import.meta.url), 'utf8');
+  assert.doesNotMatch(src, /Only from the NHL box score starter flag/);
+  assert.match(src, /OFFICIAL_STARTER_FLAG/);
+  assert.match(src, /DERIVED_ONLY_GOALIE_WITH_TOI/);
+  assert.match(src, /not an NHL starter flag/);
+});

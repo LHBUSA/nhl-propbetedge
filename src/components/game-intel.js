@@ -3,6 +3,7 @@
 // "confidence" number: no such aggregation is defined or validated.
 import { esc } from '../lib/dom.js';
 import { goalieMatchup } from './goalie-intel.js';
+import { confirmedLabel } from '../lib/goalie-center.js';
 import { DASH, edgeLine, fatigueChips, fmtScore, lockPanel, pct3, scoreRing, unavailableBox } from './intel-ui.js';
 
 const pctText = v => (Number.isFinite(v) ? `${(v * 100).toFixed(1)}%` : DASH);
@@ -69,7 +70,7 @@ export function gameIntelPanel(intel, { pro = false, props = null, propsError = 
 export function gameIntelStrip(intel, { pro = false } = {}) {
   if (!intel?.sides) return '';
   const a = intel.sides.away; const h = intel.sides.home;
-  const starter = s => `${esc(s.team)} ${esc(s.starter?.name || 'starter unknown')}${s.starter?.status && s.starter.status !== 'UNKNOWN' ? ` <span class="faint">(${esc(s.starter.status === 'CONFIRMED' ? 'confirmed' : 'projected')})</span>` : ''}`;
+  const starter = s => `${esc(s.team)} ${esc(s.starter?.name || 'starter unknown')}${s.starter?.status && s.starter.status !== 'UNKNOWN' ? ` <span class="faint">(${esc(s.starter.status === 'CONFIRMED' ? confirmedLabel(s.starter, 'confirmed') : 'projected')})</span>` : ''}`;
   const rest = s => (s.fatigue?.facts?.back_to_back ? '<span class="iq-chip iq-chip--warn">B2B</span>' : Number.isFinite(s.fatigue?.facts?.days_rest) ? `<span class="iq-chip">${s.fatigue.facts.days_rest}d rest</span>` : '');
   return `<div class="gx-strip" aria-label="Pregame intelligence">
     <span><span class="micro">Goalies</span> ${starter(a)} · ${starter(h)}</span>

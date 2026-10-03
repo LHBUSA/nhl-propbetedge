@@ -148,11 +148,11 @@ const SECTIONS = [
     title: 'Goalie status',
     lede: 'Three truth levels that are never collapsed into one.',
     body: `${table(['Status', 'When it is used'], [
-      [tag('Confirmed', 'confirmed'), 'Only from the NHL box score starter flag, at or after puck drop. It marks the goalie who started, even if he was later pulled.'],
+      [tag('Confirmed', 'confirmed'), 'From the official NHL box score at or after puck drop, on one of two bases, always shown with the status. NHL starter flag (starter_basis OFFICIAL_STARTER_FLAG): the NHL published this goalie as the starter. Only goalie with ice time (starter_basis DERIVED_ONLY_GOALIE_WITH_TOI): the NHL does not publish the starter flag during live games, so when exactly one of a team’s goalies has recorded ice time in the official box score we derive that he started; this is our inference, not an NHL starter flag. Two goalies with ice time and no flag stays Unknown. Either way it marks the goalie who started, even if he was later pulled.'],
       [tag('Projected / Reported', 'reported'), 'From NHL.com’s daily projected-lineups report, linked and timestamped. This is an editorial projection, never an official confirmation.'],
       [tag('Unknown', 'unknown'), 'Used when NHL.com has not published a projection for the matchup, the source check is unavailable, or the box score has not yet confirmed a starter.']
     ])}
-    <p>The prior-season goalie comparison in the NHL game centre lists the two goalies with the most games played last season. It is not a starter signal and is never shown as one. A projected starter automatically yields to the NHL box-score starter flag at puck drop.</p>
+    <p>The prior-season goalie comparison in the NHL game centre lists the two goalies with the most games played last season. It is not a starter signal and is never shown as one. A projected starter automatically yields to the confirmed starter from the official box score at puck drop.</p>
     <p class="dim">GSAx (goals saved above expected) is not available until a validated xG model is released.</p>`
   },
   {

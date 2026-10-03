@@ -10,6 +10,22 @@
 export const STATUS_TEXT = { CONFIRMED: 'Confirmed', PROJECTED: 'Projected · Reported', UNKNOWN: 'Unknown' };
 export const level = s => (s === 'CONFIRMED' ? 'CONFIRMED' : s === 'PROJECTED' || s === 'REPORTED' ? 'PROJECTED' : 'UNKNOWN');
 
+// How a CONFIRMED starter was established. propsports sends starter_basis;
+// nhl-metrics sends the equivalent basis_code. The derived basis is our
+// inference from the official boxscore and never claims the NHL starter flag.
+const BASIS_FROM_CODE = { BOXSCORE_STARTER_FLAG: 'OFFICIAL_STARTER_FLAG', BOXSCORE_ONLY_GOALIE_WITH_TOI: 'DERIVED_ONLY_GOALIE_WITH_TOI' };
+export const BASIS_SHORT = { OFFICIAL_STARTER_FLAG: 'NHL starter flag', DERIVED_ONLY_GOALIE_WITH_TOI: 'only goalie with ice time' };
+export function starterBasis(starter) {
+  if (!starter || starter.status !== 'CONFIRMED') return null;
+  if (BASIS_SHORT[starter.starter_basis]) return starter.starter_basis;
+  return BASIS_FROM_CODE[starter.basis_code] || null;
+}
+// "Confirmed · NHL starter flag" / "Confirmed · only goalie with ice time" / "Confirmed".
+export const confirmedLabel = (starter, word = 'Confirmed') => {
+  const b = starterBasis(starter);
+  return b ? `${word} · ${BASIS_SHORT[b]}` : word;
+};
+
 const nn = v => (v === null || v === undefined || v === '' || !Number.isFinite(Number(v)) ? null : Number(v));
 export const seasonText = s => {
   const t = String(s ?? '');
