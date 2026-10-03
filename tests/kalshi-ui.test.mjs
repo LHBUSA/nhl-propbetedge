@@ -302,3 +302,33 @@ test('Cast mounts the market module for FINAL games, with a bounded first-paint 
   assert.ok(ms > 0 && ms <= 800, `first-paint wait ${ms} ms`);
   assert.match(fs.readFileSync('src/pages/board.js', 'utf8'), /final \? marketCloseLine\(kalshiEntry\)/);
 });
+
+// Mirrors propbetedge-workers a229028 (history-regression): a completed market with NO live quote
+// (kalshi: null) must survive the board and event loaders and render history, never a live card.
+test('completed market with kalshi null survives the NHL loaders and renders history', async () => {
+  const noQuote = { ...structuredClone(SETTLED), kalshi: null };
+  const closedNoQuote = { ...closedOf(SETTLED), kalshi: null };
+  const client = createKalshiClient({
+    sport: 'nhl',
+    fetchImpl: async url => ({ ok: true, json: async () => url.includes('/event/')
+      ? { contract: 'market-intel/1', enabled: true, event: noQuote }
+      : { enabled: true, events: [noQuote, { ...closedNoQuote, event: { ...closedNoQuote.event, canonical_event_id: '2026020099' } }] } })
+  });
+  const board = await client.loadBoard();
+  assert.ok(board.has(String(GAME_ID)), 'board dropped the completed entry');
+  assert.ok(board.has('2026020099'), 'board dropped the CLOSED entry');
+  const ev = await client.loadEvent(GAME_ID);
+  assert.ok(ev, 'event read nulled the completed entry');
+  assert.equal(ev.kalshi, null);
+  const { strip, card } = castKalshiSlots(ev, game('FINAL'));
+  assert.equal(strip, '');
+  assert.match(text(card), /How the market closed/);
+  assert.match(text(card), /Kalshi settlement: BUF — YES/);
+  assert.doesNotMatch(card, /class="ic kx"[^>]*data-kx-placement="game-page"/, 'never a live card');
+  const closedCard = text(castKalshiSlots(closedNoQuote, game('FINAL')).card);
+  assert.match(closedCard, /Market closed · awaiting settlement/);
+  assert.doesNotMatch(closedCard, /Settled YES|Settled NO/);
+  assert.match(text(slateCard(game('FINAL'), { kalshi: client.forEvent(GAME_ID) })), /MARKET BUF .*settled YES/);
+  // A stale quote is never labelled live on a compact card.
+  assert.equal(kalshiLine({ ...ENTRY, kalshi: { ...ENTRY.kalshi, freshness: 'stale' } }), '');
+});
