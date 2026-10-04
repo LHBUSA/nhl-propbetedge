@@ -97,9 +97,17 @@ function premiumFooter() {
             <a class="footer-premium__aa" href="${ALL_ACCESS_URL}" rel="noopener" data-pbe-footer-all-access-included>WHAT'S INCLUDED <span>↗</span></a>
             <a href="${PBE_NETWORK.news}">NHL News <span>↗</span></a>
             <a href="${PBE_NETWORK.learn}">Learn PropBetEdge <span>↗</span></a>
+            <a href="https://propbetedge.ai/about">About PropBetEdge <span>↗</span></a>
             <a href="https://propbetedge.ai/terms">Terms <span>↗</span></a>
+            <a href="https://propbetedge.ai/legal">Legal <span>↗</span></a>
             <a href="https://propbetedge.ai/support">Support <span>↗</span></a>
             <a href="https://propbetedge.ai/media">Media <span>↗</span></a>
+            <a href="https://propbetedge.ai/authors">Editorial Team <span>↗</span></a>
+            <a href="https://propbetedge.ai/authors/justin-erickson">Justin Erickson <span>↗</span></a>
+            <a href="https://propbetedge.ai/authors/propbetedge-editorial-team">PropBetEdge Editorial Team <span>↗</span></a>
+            <a href="https://propbetedge.ai/authors/ty-whitney">Ty Whitney <span>↗</span></a>
+            <a href="https://propbetedge.ai/authors/erik-schwartz">Erik Schwartz <span>↗</span></a>
+            <a href="https://propbetedge.ai/editorial-standards">Editorial Standards <span>↗</span></a>
             <a href="${PBE_NETWORK.store}">PBE Store <span>↗</span></a>
             <a href="https://billing.stripe.com/p/login/cNi3cv2vY7em3lr4oj7wA00" target="_blank" rel="noopener noreferrer">Manage billing <span>↗</span></a>
             <a href="mailto:sales@proptechusa.ai">Contact us <span>→</span></a>
