@@ -101,7 +101,6 @@ function premiumFooter() {
             <a href="https://propbetedge.ai/terms">Terms <span>↗</span></a>
             <a href="https://propbetedge.ai/legal">Legal <span>↗</span></a>
             <a href="https://propbetedge.ai/support">Support <span>↗</span></a>
-            <a href="https://propbetedge.ai/media">Media <span>↗</span></a>
             <a href="${PBE_NETWORK.store}">PBE Store <span>↗</span></a>
             <a href="https://billing.stripe.com/p/login/cNi3cv2vY7em3lr4oj7wA00" target="_blank" rel="noopener noreferrer">Manage billing <span>↗</span></a>
             <a href="mailto:sales@proptechusa.ai">Contact us <span>→</span></a>
