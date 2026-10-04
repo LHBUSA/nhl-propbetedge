@@ -295,6 +295,11 @@
 .footer-premium__network-head > a { font:700 9px/1 var(--pbe-font-data); color:var(--pbe-dim); white-space:nowrap; }
 .footer-premium__network-head > a:hover { color:var(--pbe-gold-bright); }
 .footer-premium__sports { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:8px; }
+.footer-premium__intel { display:flex; flex-wrap:wrap; align-items:baseline; gap:6px 12px; margin-top:12px; padding-top:12px; border-top:1px solid rgba(255,255,255,.07); }
+.footer-premium__intel .micro { color:rgba(232,196,82,.58); }
+.footer-premium__intel a { font:700 11px/1.3 var(--pbe-font-data); color:var(--pbe-paper); }
+.footer-premium__intel a span { color:var(--pbe-gold); }
+.footer-premium__intel a:hover { color:var(--pbe-gold-bright); }
 .network-sport {
   display:grid;
   grid-template-columns:28px 1fr auto;

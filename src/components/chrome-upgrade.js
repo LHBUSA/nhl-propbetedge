@@ -25,6 +25,7 @@ function mobileNetwork() {
     </div>
     <div class="sheet-network__links">
       <a href="${PBE_NETWORK.news}">NHL News ↗</a>
+      ${PBE_NETWORK.products.map(p => `<a href="${p.href}">${p.label} ↗</a>`).join('')}
       <a href="${PBE_NETWORK.learn}">Learn ↗</a>
       <a href="${PBE_NETWORK.store}">Store ↗</a>
       <a href="${PBE_NETWORK.discord}" target="_blank" rel="noopener">Discord ↗</a>
@@ -74,6 +75,10 @@ function premiumFooter() {
           </div>
           <div class="footer-premium__sports">
             ${PBE_NETWORK.sports.map(sport => sportLink(sport)).join('')}
+          </div>
+          <div class="footer-premium__intel" aria-label="PropBetEdge Intelligence">
+            <span class="micro">INTELLIGENCE</span>
+            ${PBE_NETWORK.products.map(p => `<a href="${p.href}">${p.label} <span aria-hidden="true">↗</span></a>`).join('')}
           </div>
         </aside>
       </div>
