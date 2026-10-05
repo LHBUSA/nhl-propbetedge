@@ -20,7 +20,7 @@
 import { esc, on } from '../lib/dom.js';
 import { describeError, picksHealth, picksPreseason, picksPreseasonRecord, picksSlate } from '../lib/api.js';
 import { onAccount, proData, refreshAccount, signInAvailable } from '../lib/account.js';
-import { accountMembership, membershipBadgeHtml, picksProHeading } from '../lib/pro-membership-ui.js';
+import { accountMembership, memberBadgeHtml, picksProHeading } from '../lib/pro-membership-ui.js';
 import { freshStamp } from '../lib/freshness.js';
 import { addDays, ageText, dateLabel, dayET, gameTypeLabel, pct, timeET, timeLocal, todayET } from '../lib/format.js';
 import { stateOf, teamMark } from '../components/game.js';
@@ -553,7 +553,7 @@ export function proBlock(state) {
   return `<section class="pks-block pks-pro" aria-labelledby="pks-pro-h" data-pbe-membership="${esc(m.state)}">
     <div class="pks-block__head">
       <div><span class="eyebrow">NHL Pro</span><h2 id="pks-pro-h">${pro ? esc(picksProHeading(m)) : 'What NHL Pro adds to this page'}</h2></div>
-      ${pro ? membershipBadgeHtml(m) : '<span class="pbe-badge pbe-badge--sched">PRO</span>'}
+      ${pro ? memberBadgeHtml(m) : '<span class="pbe-badge pbe-badge--sched">PRO</span>'}
     </div>
     <ul class="pks-pro__list">
       <li><b>The selection itself</b><span>Which team an official model took, with its probability and the opponent's.</span></li>

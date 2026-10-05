@@ -1,0 +1,131 @@
+<!doctype html>
+<html lang="en">
+  <head>
+  <link rel="stylesheet" href="/pbe-consent-v1.css">
+  <script src="/pbe-consent-v1.js"></script>
+  <!-- PropBetEdge network analytics: GA4 nhl -->
+  <script>
+    (function () {
+      var GA_ID = 'G-BRS48R8PG9';
+      var SURFACE = 'nhl';
+      var HASH_ROUTES = true;
+      var host = String(location.hostname || '').toLowerCase();
+      var isProd = host === 'propbetedge.ai' || host.endsWith('.propbetedge.ai');
+      if (!isProd || host.endsWith('.vercel.app') || host.endsWith('.workers.dev') || host.endsWith('.pages.dev') || host === 'localhost' || host === '127.0.0.1') return;
+
+      window.dataLayer = window.dataLayer || [];
+      window.gtag = window.gtag || function () { window.dataLayer.push(arguments); };
+      window.gtag('js', new Date());
+      window.gtag('set', { pbe_surface: SURFACE });
+      window.gtag('config', GA_ID, {
+        cookie_domain: '.propbetedge.ai',
+        cookie_flags: 'SameSite=Lax;Secure'
+      });
+
+      var tag = document.createElement('script');
+      tag.async = true;
+      tag.src = 'https://www.googletagmanager.com/gtag/js?id=' + encodeURIComponent(GA_ID);
+      document.head.appendChild(tag);
+
+      // GA4 Enhanced Measurement owns normal page loads and browser-history
+      // page views. Hash-router surfaces need one supplement because their
+      // primary route changes do not necessarily call pushState/replaceState.
+      var lastManualHash = '';
+      var lastPopStateAt = 0;
+      addEventListener('popstate', function () { lastPopStateAt = Date.now(); });
+      if (HASH_ROUTES) {
+        addEventListener('hashchange', function () {
+          // Back/forward can emit popstate + hashchange. Let GA4 own popstate.
+          if (Date.now() - lastPopStateAt < 250) return;
+          var currentHash = location.hash || '#/';
+          if (currentHash === lastManualHash) return;
+          lastManualHash = currentHash;
+          window.gtag('event', 'page_view', {
+            page_title: document.title,
+            page_location: location.href,
+            page_path: location.pathname + location.search + currentHash,
+            pbe_surface: SURFACE,
+            pbe_route_type: 'hash'
+          });
+        });
+      }
+
+      document.addEventListener('click', function (event) {
+        var target = event.target && event.target.closest ? event.target.closest('a[href]') : null;
+        if (!target) return;
+        try {
+          var url = new URL(target.href, location.href);
+          if (url.hostname !== host && (url.hostname === 'propbetedge.ai' || url.hostname.endsWith('.propbetedge.ai'))) {
+            window.gtag('event', 'pbe_network_click', {
+              pbe_surface: SURFACE,
+              source_host: host,
+              target_host: url.hostname,
+              link_url: url.href
+            });
+          }
+        } catch (_) {}
+      }, { capture: true });
+    })();
+  </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>PropBetEdge All Access on NHL — 10 sports + Predictions, $29/month</title>
+    <meta name="description" content="The NHL hockey desk is one part of PropBetEdge. All Access adds MLB, NFL, NBA, WNBA, UFC, Tennis, Soccer, Golf and F1 Intelligence, plus PropBetEdge Predictions, for $29/month." />
+    <link rel="canonical" href="https://nhl.propbetedge.ai/all-access" />
+    <meta name="robots" content="index, follow, max-image-preview:large" />
+    <meta name="application-name" content="PropBetEdge NHL" />
+    <meta name="publisher" content="PropBetEdge" />
+    <meta name="theme-color" content="#14110d" />
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="PropBetEdge" />
+    <meta property="og:locale" content="en_US" />
+    <meta property="og:title" content="PropBetEdge All Access · NHL" />
+    <meta property="og:description" content="The hockey desk is one desk. All Access opens the network: 10 sports + PropBetEdge Predictions, one membership." />
+    <meta property="og:url" content="https://nhl.propbetedge.ai/all-access" />
+    <meta property="og:image" content="https://nhl.propbetedge.ai/og/propbetedge-nhl-1200x630.jpg" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:site" content="@PROPBETEDGE" />
+    <meta name="twitter:title" content="PropBetEdge All Access · NHL" />
+    <meta name="twitter:description" content="10 sports + PropBetEdge Predictions, one membership, $29/month." />
+    <meta name="twitter:image" content="https://nhl.propbetedge.ai/og/propbetedge-nhl-1200x630.jpg" />
+    <link rel="icon" href="/favicon.ico" sizes="48x48" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="manifest" href="/site.webmanifest" />
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebPage",
+      "@id": "https://nhl.propbetedge.ai/all-access#webpage",
+      "url": "https://nhl.propbetedge.ai/all-access",
+      "name": "PropBetEdge All Access on NHL — 10 sports + Predictions, $29/month",
+      "description": "The NHL hockey desk is one part of PropBetEdge. All Access adds MLB, NFL, NBA, WNBA, UFC, Tennis, Soccer, Golf and F1 Intelligence, plus PropBetEdge Predictions, for $29/month.",
+      "isPartOf": { "@id": "https://nhl.propbetedge.ai/#website" },
+      "publisher": { "@id": "https://propbetedge.ai/#organization" }
+    }
+    </script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <!-- Fonts load without blocking first paint (was 1.1 s render-blocking on mobile). -->
+    <link rel="preload" as="style" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700;800&family=Playfair+Display:wght@800;900&display=swap" onload="this.onload=null;this.rel='stylesheet'">
+    <noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700;800&family=Playfair+Display:wght@800;900&display=swap"></noscript>
+  </head>
+  <body class="aap-body">
+    <div id="app">
+      <main class="aap-static">
+        <h1>The hockey desk is one desk. All Access opens the network.</h1>
+        <p>PropBetEdge All Access: 10 sports + PropBetEdge Predictions, one membership, $29/month. MLB, NFL, NBA, WNBA, NHL, UFC, Tennis, Soccer, Golf and F1 Intelligence, plus PropBetEdge Predictions, an intelligence product rather than a sport.</p>
+      </main>
+    </div>
+    <noscript>
+      <main style="padding:24px;max-width:720px;color:#f5f1eb;background:#14110d;font-family:system-ui,sans-serif;line-height:1.6">
+        <h1>PropBetEdge All Access on NHL</h1>
+        <p>10 sports + PropBetEdge Predictions, one membership, $29/month. The membership page needs JavaScript.</p>
+      </main>
+    </noscript>
+    <script type="module" src="/src/all-access-main.js"></script>
+  </body>
+</html>

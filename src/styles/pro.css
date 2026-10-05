@@ -157,3 +157,96 @@ html.pbepro-lock{overflow:hidden;overscroll-behavior:none}
 .pbepro__renewal{margin:8px 0 0;color:#8f8a82;font-size:11.5px}
 .pbepro__account .pbepro__signout{margin-top:14px}
 .pks-pro .pbe-mbr-badge{align-self:flex-start}
+
+/* ---- Network account standard (owner 2026-10-05, NFL benchmark) ----------
+   One premium shell, one view per gateway verdict (.pbepro[data-view]).
+   Story column: the approved Pexels rink photograph (Tony Schnagl 6468935,
+   docs/IMAGE_SOURCES.md section 1) warmed into the brand palette, never a cold
+   slab. Members see ownership (designation, verified card, unlocked grid); the
+   access check sells nothing; a reader without access is never called FREE. */
+.pbepro__story{display:flex;flex-direction:column;justify-content:flex-end;min-height:600px;overflow:hidden;isolation:isolate;border-radius:22px 0 0 22px;background:#0e0b08 url('/assets/nhl/hero-ice-m-900.webp') 46% 38%/cover}
+.pbepro__story::before{content:'';position:absolute;inset:0;z-index:-1;background:linear-gradient(180deg,rgba(14,11,8,.78),rgba(14,11,8,.26) 22%,rgba(14,11,8,.18) 32%,rgba(14,11,8,.72) 50%,rgba(14,11,8,.94) 66%,#0e0b08),radial-gradient(120% 60% at 30% 0%,rgba(212,175,55,.16),transparent 60%)}
+.pbepro__story::after{content:'';position:absolute;inset:0;z-index:-2;background:rgba(120,82,28,.42);mix-blend-mode:color;pointer-events:none}
+.pbepro__chips{position:absolute;top:26px;right:26px;margin:0;padding:0;list-style:none;display:flex;flex-direction:column;align-items:flex-end;gap:6px}
+.pbepro__chips li{display:inline-flex;align-items:center;gap:7px;padding:6px 9px;border:1px solid rgba(255,245,220,.12);border-radius:999px;background:rgba(14,11,8,.55);color:#b8b3a8;font:700 9px/1 'JetBrains Mono',monospace;letter-spacing:.12em}
+.pbepro__chips li::before{content:'';width:6px;height:6px;border-radius:50%;background:#e9c75a}
+.pbepro__chips li.is-on{border-color:rgba(127,224,164,.4);color:#c9f2d8}
+.pbepro__chips li.is-on::before{background:#7fe0a4;box-shadow:0 0 8px rgba(127,224,164,.7)}
+.pbepro[data-view='check'] .pbepro__chips li::before{background:#8a857b}
+.pbepro__story-copy{max-width:520px}
+.pbepro__story h2{margin:12px 0 12px}
+.pbepro__story-caps{margin-top:20px}
+.pbepro[data-view='sport_pro'] #nhl-pro-story-eyebrow,.pbepro[data-view='owner'] #nhl-pro-story-eyebrow{color:#7fe0a4}
+.pbepro[data-view='all_access'] #nhl-pro-story-eyebrow{color:#e4ded2}
+.pbepro[data-view='sport_pro'] .pbepro__story h2 em,.pbepro[data-view='owner'] .pbepro__story h2 em{color:#7fe0a4}
+.pbepro[data-view='all_access'] .pbepro__story h2 em{color:#efe9dc}
+/* visibility per view */
+.pbepro [data-member-only]{display:none}
+.pbepro[data-view='sport_pro'] [data-member-only],.pbepro[data-view='all_access'] [data-member-only],.pbepro[data-view='owner'] [data-member-only]{display:inline-flex}
+.pbepro[data-view='sport_pro'] [data-prospect-only],.pbepro[data-view='all_access'] [data-prospect-only],.pbepro[data-view='owner'] [data-prospect-only],.pbepro[data-view='check'] [data-prospect-only]{display:none}
+.pbepro[data-view='check'] .pbepro__purchase-only,.pbepro[data-view='check'] .pbepro__signin,.pbepro[data-view='check'] .pbepro__note{display:none!important}
+.pbepro[data-view='sport_pro'] .pbepro__signin,.pbepro[data-view='all_access'] .pbepro__signin,.pbepro[data-view='owner'] .pbepro__signin,.pbepro[data-view='sport_pro'] .pbepro__note,.pbepro[data-view='all_access'] .pbepro__note,.pbepro[data-view='owner'] .pbepro__note{display:none!important}
+.pbepro__statepanel[hidden]{display:none!important}
+.pbepro__statepanel{margin-bottom:14px}
+/* capability grid */
+.pbepro__caps h3{margin:0 0 8px;color:#8a857b;font:700 10px/1 'JetBrains Mono',monospace;letter-spacing:.16em}
+.pbepro__caps ul{margin:0;padding:0;list-style:none;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+.pbepro__caps li>a,.pbepro__caps li>div{display:grid;grid-template-columns:auto minmax(0,1fr);grid-template-rows:auto auto;column-gap:10px;align-items:center;min-height:48px;padding:8px 11px;border:1px solid rgba(255,245,220,.10);border-radius:10px;background:rgba(14,11,8,.42);text-decoration:none;box-sizing:border-box}
+.pbepro__caps i{grid-row:span 2;width:7px;height:7px;border-radius:50%;background:#e9c75a;box-shadow:0 0 0 3px rgba(233,199,90,.12)}
+.pbepro__caps.is-unlocked i{background:#7fe0a4;box-shadow:0 0 0 3px rgba(127,224,164,.12),0 0 10px rgba(127,224,164,.5)}
+.pbepro__caps b{color:#f5f1eb;font:700 12px/1.2 Inter,sans-serif;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pbepro__caps span{color:#b8b3a8;font:500 10.5px/1.3 Inter,sans-serif;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pbepro__caps.is-unlocked li>a:hover,.pbepro__caps.is-unlocked li>a:focus-visible{border-color:rgba(127,224,164,.45);background:rgba(127,224,164,.05)}
+.pbepro__free{margin:8px 0 0;color:#8f8a82;font-size:11px;line-height:1.45}
+/* member + state panels */
+.pbepro__account[hidden]{display:none!important}
+.pbepro__account{margin-top:0;padding-top:0;border-top:0}
+.pbepro__member,.pbepro__state{display:flex;flex-direction:column;gap:13px}
+.pbepro__eyebrow.is-member{color:#7fe0a4}
+.pbepro__member[data-member='all_access'] .pbepro__eyebrow.is-member{color:#e4ded2}
+.pbepro__member-head{margin:0;color:#fff;font:900 clamp(28px,2.6vw,38px)/1.04 'Playfair Display',Georgia,serif;letter-spacing:-.01em}
+.pbepro__member-lede{margin:0;color:#c4bfb5;font-size:13.5px;line-height:1.55}
+.pbepro__verified{padding:15px 17px;border:1px solid rgba(127,224,164,.26);border-radius:14px;background:radial-gradient(260px 140px at 100% 0%,rgba(127,224,164,.10),transparent 70%),rgba(255,245,220,.025)}
+.pbepro__verified.is-platinum{border-color:rgba(228,222,210,.42);background:radial-gradient(300px 160px at 100% 0%,rgba(239,233,220,.14),transparent 70%),linear-gradient(135deg,rgba(255,245,220,.05),rgba(255,245,220,.015))}
+.pbepro__verified.is-owner{border-color:rgba(233,199,90,.45);background:radial-gradient(260px 140px at 100% 0%,rgba(233,199,90,.14),transparent 70%),rgba(255,245,220,.025)}
+.pbepro__verified-top{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.pbepro__verified-top span{color:#7fe0a4;font:700 10px/1 'JetBrains Mono',monospace;letter-spacing:.14em}
+.pbepro__badge{padding:6px 10px;border-radius:999px;font:800 10px/1 'JetBrains Mono',monospace;letter-spacing:.12em;white-space:nowrap}
+.pbepro__badge.is-pro{border:1px solid rgba(127,224,164,.45);color:#c9f2d8;background:rgba(127,224,164,.08)}
+.pbepro__badge.is-platinum{border:1px solid rgba(239,233,220,.6);color:#1a1712;background:linear-gradient(135deg,#f3eee3,#cfc8b9 55%,#ece6d8)}
+.pbepro__badge.is-owner{border:1px solid rgba(233,199,90,.7);color:#17120a;background:linear-gradient(135deg,#e9c75a,#d4af37)}
+.pbepro__verified-email{margin-top:10px;color:#fff;font:700 17px/1.2 Inter,sans-serif;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.pbepro__verified-meta{display:flex;flex-wrap:wrap;gap:4px 14px;margin-top:8px;color:#b8b3a8;font:600 11px/1.4 'JetBrains Mono',monospace}
+.pbepro__actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.pbepro__go{grid-column:1/-1;display:flex;align-items:center;justify-content:center;min-height:50px;border:0;border-radius:11px;background:linear-gradient(135deg,#e9c75a,#d4af37);color:#17120a;font:800 12px/1 'JetBrains Mono',monospace;letter-spacing:.1em;text-transform:uppercase;text-decoration:none;cursor:pointer;box-shadow:0 12px 30px rgba(212,175,55,.2)}
+.pbepro__go:hover{filter:brightness(1.06);color:#17120a}
+.pbepro__btn{display:flex;align-items:center;justify-content:center;min-height:46px;padding:0 12px;border:1px solid rgba(255,245,220,.16);border-radius:11px;background:rgba(255,245,220,.03);color:#e8e1d4;font:700 10.5px/1.2 'JetBrains Mono',monospace;letter-spacing:.06em;text-transform:uppercase;text-decoration:none;cursor:pointer;text-align:center}
+.pbepro__btn:hover{border-color:rgba(233,199,90,.55);color:#e9c75a}
+.pbepro__go:focus-visible,.pbepro__btn:focus-visible,.pbepro__caps a:focus-visible{outline:2px solid #e9c75a;outline-offset:2px}
+.pbepro__expand .nhl-aa-hero{margin-top:2px}
+.pbepro__secure.is-member{color:#7fe0a4;text-align:left}
+.pbepro__protect{padding:12px 14px;border:1px solid rgba(233,199,90,.3);border-left:3px solid #d4af37;border-radius:10px;background:rgba(212,175,55,.06);color:#e8e1d4;font-size:13px;line-height:1.5}
+.pbepro__protect b{color:#fff}
+/* current-offer hero additions */
+.nhl-aa-secondary{margin:0;color:#c4bfb5;font:500 11.5px/1.4 Inter,sans-serif}
+.nhl-aa-groups{display:grid;gap:8px;padding:10px 0 2px}
+.nhl-aa-group-k{display:block;margin-bottom:5px;color:#8a857b;font:700 9px/1 'JetBrains Mono',monospace;letter-spacing:.14em}
+.nhl-aa-hero .nhl-aa-sports{margin:0;padding:0;list-style:none;display:flex;flex-wrap:wrap;gap:4px}
+.nhl-aa-hero .nhl-aa-sports li{padding:4px 7px;border:1px solid rgba(255,245,220,.16);border-radius:999px;color:#e8e1d4;font:700 10px/1 'JetBrains Mono',monospace}
+.nhl-aa-hero .nhl-aa-sports li.is-here{border-color:rgba(233,199,90,.6);color:#e9c75a}
+.nhl-aa-intel{padding-top:8px;border-top:1px solid rgba(255,245,220,.08)}
+.nhl-aa-intel b{display:block;color:#fff;font:700 12.5px/1.3 Inter,sans-serif}
+.nhl-aa-intel small{display:block;margin-top:2px;color:#a9a397;font-size:10.5px;line-height:1.4}
+/* Platinum presentation of the shared badge (backend state stays all_access) */
+.pbe-mbr-badge.is-all_access{color:#1a1712;border-color:rgba(239,233,220,.6);background:linear-gradient(135deg,#f3eee3,#cfc8b9 55%,#ece6d8)}
+.pbe-mbr-badge.is-all_access::before{background:#1a1712}
+@media(min-width:901px) and (max-width:1100px){.pbepro__dialog{grid-template-columns:minmax(0,.84fr) minmax(400px,1.16fr)}}
+@media(min-width:901px) and (max-height:820px){.pbepro__story{min-height:0}.pbepro__caps span{display:none}.pbepro__caps li>a,.pbepro__caps li>div{min-height:40px}}
+@media(max-width:900px){
+  .pbepro__story{order:-1;min-height:clamp(240px,34vh,360px);padding:96px 16px 20px;border-radius:0;background-image:url('/assets/nhl/hero-ice-960.webp');background-position:40% 46%}
+  .pbepro__chips{display:none}
+  .pbepro__story-caps,.pbepro__story .pbepro__truth{display:none}
+  .pbepro__purchase{order:0;padding-top:20px}
+  .pbepro__close{order:-3}
+}
+@media(max-width:620px){.pbepro__actions{grid-template-columns:1fr}.pbepro__member-head{font-size:29px}}

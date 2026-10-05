@@ -1,6 +1,7 @@
 import '../styles/pro.css';
 import { onAccount, refreshAccount, requestSignIn, signInAvailable, signOut } from './account.js';
-import { accountMembership, freeOfferHtml, isMember, memberPanelHtml, planCardsHtml, proButtonHtml, proButtonLabel } from './pro-membership-ui.js';
+import { accountMembership, capabilityGridHtml, checkPanelHtml, endedPanelHtml, freeOfferHtml, isMember, memberPanelHtml, planCardsHtml, proButtonHtml, proButtonLabel, storyCopy } from './pro-membership-ui.js';
+import { accountView, isMemberView } from './account-surface.js';
 
 /**
  * PropBetEdge NHL Pro — purchase + membership surface.
@@ -21,6 +22,13 @@ import { accountMembership, freeOfferHtml, isMember, memberPanelHtml, planCardsH
  * grants Pro access.
  *
  * Geometry rule (styles/pro.css): the dialog never scrolls internally.
+ *
+ * Network account standard (owner 2026-10-05, NFL benchmark): one premium
+ * shell, many views. The root carries data-view (loading | signed_out |
+ * ended | check | sport_pro | all_access | owner) from lib/account-surface.js;
+ * CSS shows the purchase controls only to readers without access, the
+ * access-check view sells nothing, and members see ownership (designation,
+ * verified card, unlocked grid, product actions), never a purchase pitch.
  */
 const OPEN_FOR_PURCHASE = true;
 const STORAGE_KEY = 'pbe_nhl_founding_plan_v1';
@@ -46,12 +54,6 @@ export const NHL_PRO_PLANS = Object.freeze({
   }
 });
 
-const FEATURES = [
-  ['PBE Cast', 'Follow the game with live hockey context instead of a generic scoreboard.'],
-  ['Best Line + market context', 'See the best available number, consensus and movement without pretending market price is model edge.'],
-  ['Goalies + lines', 'Starting-goalie state, deployment and line context connected to the same research workflow.'],
-  ['Shot Lab + track record', 'Research pressure and shot quality, then verify what PropBetEdge actually issued and graded.']
-];
 
 let selected = loadPlan();
 let previousFocus = null;
@@ -82,21 +84,24 @@ function checkoutUrl(plan, email) {
 }
 
 function markup() {
+  const story = storyCopy('signed_out');
   return `
-    <div class="pbepro" id="nhl-pro-modal" hidden>
+    <div class="pbepro" id="nhl-pro-modal" data-view="loading" hidden>
       <div class="pbepro__scrim" data-pro-close></div>
       <section class="pbepro__dialog" role="dialog" aria-modal="true" aria-labelledby="nhl-pro-title">
         <button class="pbepro__close" type="button" data-pro-close aria-label="Close NHL Pro">×</button>
-        <div class="pbepro__story">
-          <div class="pbepro__eyebrow">PROPBETEDGE · NHL PRO · LIVE NOW</div>
-          <h2 id="nhl-pro-title">See the market.<br><em>Own the ice.</em></h2>
-          <p class="pbepro__lede">The full PropBetEdge hockey intelligence layer at introductory pricing. Built for bettors who want to know what changed and why the number matters.</p>
-          <div class="pbepro__features">
-            ${FEATURES.map(([title, copy], i) => `<article class="pbepro__feature"><span>0${i + 1}</span><div><strong>${title}</strong><p>${copy}</p></div></article>`).join('')}
+        <div class="pbepro__story" id="nhl-pro-story">
+          <ul class="pbepro__chips" aria-hidden="true"><li>PICKS · LOCKED PRE-PUCK</li><li>GRADE · FINAL</li><li>RECORD · PERMANENT</li><li class="is-on" data-member-only>UNLOCKED</li></ul>
+          <div class="pbepro__story-copy">
+            <div class="pbepro__eyebrow" id="nhl-pro-story-eyebrow">${story.eyebrow}</div>
+            <h2 id="nhl-pro-title">${story.title}</h2>
+            <p class="pbepro__lede" id="nhl-pro-story-lede">${story.lede}</p>
           </div>
+          <div class="pbepro__story-caps" data-prospect-only>${capabilityGridHtml({ unlocked: false })}</div>
           <div class="pbepro__truth pbepro__purchase-only">No free trial. No fake urgency. Cancel anytime.</div>
         </div>
         <div class="pbepro__purchase">
+          <div class="pbepro__statepanel" id="nhl-pro-state" hidden></div>
           <div class="pbepro__offer pbepro__purchase-only" id="nhl-pro-all-access">${freeOfferHtml(accountMembership(null))}</div>
           <div class="pbepro__purchase-head pbepro__purchase-only">
             <span>FOUNDING SEASON PRICING</span>
@@ -189,13 +194,15 @@ function startCheckout() {
   window.location.assign(checkoutUrl(NHL_PRO_PLANS[selected], email));
 }
 
-// Paints the surface for the gateway-decided account. Members (any of
-// sport_pro / all_access / owner) see the shared membership panel and none of
-// the NHL purchase controls; FREE readers keep the All Access hero + NHL cards.
+// Paints the surface for the gateway-decided account, one view per verdict
+// (lib/account-surface.js accountView). Members see the ownership panel and
+// none of the NHL purchase controls; the access check sells nothing; readers
+// without access keep the All Access hero + NHL cards.
 function renderAccount(account) {
   const button = document.querySelector('[data-open-nhl-pro].pbepro__open');
   const pro = isMember(account);
   const m = accountMembership(account);
+  const view = accountView(account, m);
   if (button) {
     button.classList.toggle('is-pro', pro);
     const html = proButtonHtml(account);
@@ -203,24 +210,41 @@ function renderAccount(account) {
     button.setAttribute('aria-label', proButtonLabel(account, true));
   }
   const root = document.getElementById('nhl-pro-modal');
-  if (root) root.dataset.membership = m.state;
+  if (root) {
+    root.dataset.membership = m.state;
+    root.dataset.view = view;
+  }
+  const story = storyCopy(view);
+  const eyebrow = document.getElementById('nhl-pro-story-eyebrow');
+  if (eyebrow && eyebrow.textContent !== story.eyebrow) eyebrow.textContent = story.eyebrow;
+  const title = document.getElementById('nhl-pro-title');
+  if (title && title.innerHTML !== story.title) title.innerHTML = story.title;
+  const lede = document.getElementById('nhl-pro-story-lede');
+  if (lede && lede.textContent !== story.lede) lede.textContent = story.lede;
+  const state = document.getElementById('nhl-pro-state');
+  if (state) {
+    const html = view === 'check' ? checkPanelHtml() : view === 'ended' ? endedPanelHtml() : '';
+    state.hidden = !html;
+    if (state.innerHTML !== html) state.innerHTML = html;
+  }
   const panel = document.getElementById('nhl-pro-account');
   if (panel) {
-    panel.hidden = !pro;
-    panel.innerHTML = pro ? memberPanelHtml(m) : '';
+    const html = isMemberView(view) ? memberPanelHtml(m) : '';
+    panel.hidden = !html;
+    if (panel.innerHTML !== html) panel.innerHTML = html;
   }
   const offer = document.getElementById('nhl-pro-all-access');
-  if (offer) offer.innerHTML = freeOfferHtml(m);
-  const signin = document.getElementById('nhl-pro-signin');
-  if (signin && pro) signin.hidden = true;
-  const note = document.getElementById('nhl-pro-signin-unavailable');
-  if (note && pro) note.hidden = true;
+  if (offer) {
+    const html = freeOfferHtml(m);
+    if (offer.innerHTML !== html) offer.innerHTML = html;
+  }
 }
 
 async function wireAccount() {
   onAccount(renderAccount);
   document.addEventListener('click', event => {
     if (event.target.closest('[data-pro-signout]')) signOut();
+    if (event.target.closest('[data-pro-refresh]')) refreshAccount();
   });
   const available = await signInAvailable().catch(() => false);
   if (!available) {

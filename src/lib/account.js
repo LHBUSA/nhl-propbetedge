@@ -31,22 +31,31 @@ export async function signInAvailable() {
   return Boolean(auth && auth.store && auth.throttle_key && auth.entitlement && auth.email);
 }
 
-async function authCall(path, { method = 'GET', body } = {}) {
+// A gateway that does not answer within this window is an outage, not a
+// signed-out reader (the account surface shows the access check, never a sale).
+export const SESSION_TIMEOUT_MS = 8000;
+
+async function authCall(path, { method = 'GET', body, timeoutMs = 0 } = {}) {
   if (!/^\/(auth|pro)\//.test(path)) throw new Error('account.js only talks to /auth and /pro');
   let res;
+  const ctl = timeoutMs ? new AbortController() : null;
+  const timer = ctl ? setTimeout(() => ctl.abort(), timeoutMs) : null;
   try {
     res = await fetch(`${GATEWAY_URL}${path}`, {
       method,
       mode: 'cors',
       credentials: 'include',
       headers: { Accept: 'application/json', ...(body ? { 'Content-Type': 'application/json' } : {}) },
-      body: body ? JSON.stringify(body) : undefined
+      body: body ? JSON.stringify(body) : undefined,
+      ...(ctl ? { signal: ctl.signal } : {})
     });
   } catch {
     // The call never reached the gateway (offline, DNS, CORS refusal). Status 0
     // means "no answer": callers must report that as a failure, never let it
     // escape as an unhandled rejection that leaves the UI mid-action.
     return { status: 0, data: null };
+  } finally {
+    if (timer) clearTimeout(timer);
   }
   let data = null;
   try { data = await res.json(); } catch { /* handled by status */ }
@@ -70,7 +79,10 @@ export async function refreshAccount() {
   if (inflight) return inflight;
   inflight = (async () => {
     try {
-      const { status, data } = await authCall('/auth/session');
+      const { status, data } = await authCall('/auth/session', { timeoutMs: SESSION_TIMEOUT_MS });
+      // No answer (network, timeout) or a server error is an OUTAGE: the
+      // access-check state, never "signed out" and never FREE.
+      if (status === 0 || status >= 500) return publish({ state: 'unavailable' });
       if (status !== 200 || !data || typeof data.state !== 'string') return publish({ state: 'signed_out' });
       // membership is the shared PropBetEdge contract object the gateway derived
       // from the billing verdict. readMembership accepts only a well-formed
@@ -78,7 +90,7 @@ export async function refreshAccount() {
       const membership = readMembership(data.state === 'pro' ? data.membership : null, 'nhl');
       return publish({ state: data.state, email: data.email || null, subscription: data.subscription || null, membership });
     } catch {
-      return publish({ state: 'signed_out' });
+      return publish({ state: 'unavailable' });
     } finally {
       inflight = null;
     }

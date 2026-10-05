@@ -76,11 +76,13 @@ test('header control: neutral "NHL PRO" for unresolved and free (no flicker), th
   assert.equal(proButtonHtml({ state: 'unknown' }), neutral);
   assert.equal(proButtonHtml(account(gateway.free)), neutral);
   assert.equal(proButtonHtml({ state: 'not_entitled' }), neutral);
-  assert.match(proButtonHtml(account(gateway.sportMonthly)), /class="pbe-mbr-badge is-sport_pro"[^>]*>NHL PRO ACTIVE</);
-  assert.match(proButtonHtml(account(gateway.allAccess)), /class="pbe-mbr-badge is-all_access"[^>]*>ALL ACCESS ACTIVE</);
-  assert.match(proButtonHtml(account(gateway.owner)), /class="pbe-mbr-badge is-owner"[^>]*>OWNER</);
+  /* Presentation designations (owner 2026-10-05); the contract state is unchanged. */
+  assert.match(proButtonHtml(account(gateway.sportMonthly)), /class="pbe-mbr-badge is-sport_pro"[^>]*>NHL PRO MEMBER</);
+  assert.match(proButtonHtml(account(gateway.allAccess)), /class="pbe-mbr-badge is-all_access"[^>]*>◆ PLATINUM</);
+  assert.match(proButtonHtml(account(gateway.owner)), /class="pbe-mbr-badge is-owner"[^>]*>VERIFIED OWNER</);
+  assert.equal(proButtonHtml({ state: 'unavailable' }), neutral, 'an outage never paints FREE or a member badge');
   assert.doesNotMatch(proButtonHtml(account(gateway.sportMonthly)), /✓/, 'the old checkmark is gone');
-  assert.equal(proButtonLabel(account(gateway.allAccess)), 'ALL ACCESS ACTIVE — account and subscription');
+  assert.equal(proButtonLabel(account(gateway.allAccess)), '◆ PLATINUM — account and membership');
   assert.equal(proButtonLabel(null, false), 'See what NHL Pro includes');
   assert.match(shellSource, /button\.innerHTML = proButtonHtml\(account\)|const html = proButtonHtml\(account\)/, 'shell paints through the shared helper');
   assert.doesNotMatch(shellSource, /PRO ✓/);
@@ -102,7 +104,11 @@ test('free readers: the All Access hero FIRST, then ONLY WANT NHL?, then both NH
   assert.match(offer, /aria-label="\$29\/month"><strong>\$29<\/strong>\/month/);
   assert.match(offer, /<b class="nhl-aa-code">THEEDGE25<\/b>/);
   assert.match(offer, /BEST VALUE · MOST COMPLETE/);
-  assert.match(offer, /MLB · NFL · NBA · NHL · WNBA · UFC · Tennis · Soccer/);
+  assert.match(offer, /<p class="nhl-aa-tagline">10 sports \+ PropBetEdge Predictions\.<\/p>/);
+  assert.match(offer, /aria-label="MLB · NFL · NBA · WNBA · NHL · UFC · Tennis · Soccer · Golf · F1 Intelligence"/);
+  assert.match(offer, /◆ PropBetEdge Predictions/, 'Predictions as its own intelligence block');
+  assert.match(offer, /<a class="nhl-aa-learn" href="\/all-access" data-nhl-all-access-cta="learn">WHAT'S INCLUDED<\/a>/);
+  assert.doesNotMatch(offer, /propbetedge\.ai\/pro|every Pro sport|11 sports/i);
   assert.doesNotMatch(offer, /Labs/i, 'no Labs / future computational products are sold as included');
   assert.ok(offer.indexOf('data-nhl-all-access="hero"') < offer.indexOf('data-nhl-all-access="divider"'), 'hero, then the seam');
   assert.match(offer, /<span>ONLY WANT NHL\?<\/span>/);
@@ -129,59 +135,67 @@ test('copy rules: "Stripe" is never a state word and "Founding Season" is only t
   assert.doesNotMatch(verifySource, /No active NHL Pro subscription/);
 });
 
-test('member panel — sport_pro: badge, plan line, manage link, network row, UPGRADE TO ALL ACCESS hero, no NHL purchase', () => {
+test('member panel — sport_pro: NHL PRO MEMBER, verified card, unlocked grid, manage, local network link, the upgrade as a secondary block', () => {
   for (const [body, plan] of [[gateway.sportMonthly, 'monthly'], [gateway.sportWeekly, 'weekly']]) {
     const m = accountMembership(account(body));
     const html = memberPanelHtml(m);
-    assert.match(html, /class="pbe-mbr-panel" data-pbe-membership="sport_pro"/);
-    assert.match(html, /pbe-mbr-badge is-sport_pro[^>]*>NHL PRO ACTIVE</);
-    assert.match(html, new RegExp(`<p class="pbe-mbr-plan">NHL Pro · ${plan}</p>`), 'plan line via planText');
-    assert.match(html, /class="pbe-mbr-email">fa\*\*\*@example\.com</, 'the masked email the gateway exposes');
-    assert.match(html, new RegExp(`class="pbe-mbr-manage" href="${MANAGE_URL.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}"`), 'Manage link inside the panel (show_manage)');
-    assert.match(html, /class="pbe-mbr-network"[\s\S]*aria-current="page" class="is-current">NHL</, 'network row with NHL current');
-    assert.match(html, /href="https:\/\/propbetedge\.ai\/pro"[^>]*>PropBetEdge All Access</);
-    assert.match(html, /class="nhl-aa-hero is-upgrade"[^>]*data-nhl-all-access-state="sport_pro"/, 'sport_pro gets the upgrade hero');
+    assert.match(html, /class="pbepro__member" data-member="sport_pro"/);
+    assert.match(html, /NHL · PRO MEMBER/);
+    assert.match(html, /class="pbepro__badge is-pro">NHL PRO MEMBER</);
+    assert.match(html, new RegExp(`NHL Pro · ${plan}`), 'plan line via planText');
+    assert.match(html, /class="pbepro__verified-email">fa\*\*\*@example\.com</, 'the masked email the gateway exposes');
+    assert.match(html, new RegExp(`href="${MANAGE_URL.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}"[^>]*>Manage membership`), 'manage (show_manage)');
+    assert.match(html, /UNLOCKED ON THIS ACCOUNT/);
+    assert.match(html, /href="\/all-access">PropBetEdge All Access</, 'the network link stays on NHL');
+    assert.match(html, /class="nhl-aa-hero is-upgrade"[^>]*data-nhl-all-access-state="sport_pro"/, 'sport_pro gets the upgrade as a secondary block');
     assert.match(html, /<h3 class="nhl-aa-title">UPGRADE TO ALL ACCESS<\/h3>/);
-    assert.match(html, new RegExp(`href="${ALL_ACCESS_OFFER.checkoutUrl.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}"[^>]*data-nhl-all-access-cta="checkout">GET ALL ACCESS<`));
+    assert.match(html, new RegExp(`href="${ALL_ACCESS_OFFER.checkoutUrl.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}"[^>]*data-nhl-all-access-cta="checkout">UPGRADE TO ALL ACCESS<`));
     assert.doesNotMatch(html, /ONLY WANT NHL/, 'no seam for a member: there is no NHL purchase beneath it');
     assert.match(html, /data-pro-signout/);
-    assert.doesNotMatch(html, /class="pbepro__plan"|data-pro-plan|\$9\.99|\$3\.99/, 'no NHL plan cards inside the member panel');
+    assert.doesNotMatch(html, /class="pbepro__plan"|data-pro-plan|\$9\.99|\$3\.99|\bFREE\b|propbetedge\.ai\/pro/, 'no NHL plan cards, no FREE, no external network link');
     assert.equal(freeOfferHtml(m), '', 'the free offer block is empty for a member');
   }
   assert.equal(renewalText(accountMembership(account(gateway.sportMonthly))), 'Renews Oct 24, 2026');
   assert.equal(renewalText(accountMembership(account(gateway.sportWeekly))), 'Ends Oct 24, 2026');
 });
 
-test('member panel — all_access: ALL ACCESS ACTIVE, correct plan line (not blank), manage link, network, NO purchase CTA anywhere', () => {
+test('member panel — all_access: PLATINUM MEMBER beside the true product name, manage, NO purchase CTA anywhere', () => {
   const m = accountMembership(account(gateway.allAccess));
-  assert.deepEqual([m.state, m.label, m.plan, m.product_key], ['all_access', 'ALL ACCESS ACTIVE', 'monthly', 'pbe_all_access']);
+  assert.deepEqual([m.state, m.label, m.plan, m.product_key], ['all_access', 'ALL ACCESS ACTIVE', 'monthly', 'pbe_all_access'], 'the backend contract is unchanged');
   const html = memberPanelHtml(m);
-  assert.match(html, /pbe-mbr-badge is-all_access[^>]*>ALL ACCESS ACTIVE</);
-  assert.match(html, /<p class="pbe-mbr-plan">All Access · every PropBetEdge sport<\/p>/, 'the plan line that used to render blank');
-  assert.match(html, /class="pbe-mbr-manage"/, 'manage link');
-  assert.match(html, /href="https:\/\/propbetedge\.ai\/pro"[^>]*>Your network</);
-  assert.match(html, /class="pbe-mbr-network"/);
-  assert.doesNotMatch(html, /pbe-mbr-aa|nhl-aa-hero|GET ALL ACCESS|Get All Access|THEEDGE25|buy\.stripe\.com|pbepro__plan"|data-open-nhl-pro/i, 'no purchase CTA of any kind');
-  assert.equal(freeOfferHtml(m), '', 'no All Access hero for an All Access member');
+  assert.match(html, /NHL · PLATINUM MEMBER/);
+  assert.match(html, /class="pbepro__badge is-platinum">◆ PLATINUM</);
+  assert.match(html, /PLATINUM ACCESS ACTIVE/);
+  assert.match(html, /PropBetEdge All Access · 10 sports \+ Predictions/, 'the purchased product is named');
+  assert.match(html, /Your PropBetEdge All Access membership unlocks the full network — 10 sports plus PropBetEdge Predictions\./);
+  assert.match(html, /Manage membership/);
+  assert.match(html, /href="\/all-access">Your network →</);
+  assert.doesNotMatch(html, /Platinum plan|PLATINUM PLAN/i, 'there is no Platinum SKU');
+  assert.doesNotMatch(html, /pbe-mbr-aa|nhl-aa-hero|GET ALL ACCESS|Get All Access|THEEDGE25|buy\.stripe\.com|pbepro__plan"|data-open-nhl-pro|\bFREE\b/i, 'no purchase CTA of any kind');
+  assert.equal(freeOfferHtml(m), '', 'no All Access hero for a Platinum member');
   assert.equal(renewalText(m), 'Renews Oct 24, 2026');
-  assert.doesNotMatch(html, /NHL Pro ·|NHL PRO ACTIVE/, 'no sport-only language for All Access');
+  assert.doesNotMatch(html, /NHL Pro ·|NHL PRO MEMBER/, 'no sport-only language for All Access');
 });
 
-test('member panel — owner: OWNER, "Owner access", no manage link, no purchase CTA', () => {
+test('member panel — owner: VERIFIED OWNER, no manage link, no purchase CTA', () => {
   const m = accountMembership(account(gateway.owner));
   const html = memberPanelHtml(m);
-  assert.match(html, /pbe-mbr-badge is-owner[^>]*>OWNER</);
-  assert.match(html, /<p class="pbe-mbr-plan">Owner access<\/p>/);
-  assert.doesNotMatch(html, /pbe-mbr-manage|billing\.stripe\.com/, 'owner has nothing to manage');
-  assert.doesNotMatch(html, /pbe-mbr-aa|nhl-aa-hero|GET ALL ACCESS|Get All Access|THEEDGE25|buy\.stripe\.com|data-open-nhl-pro/i);
+  assert.match(html, /NHL · VERIFIED OWNER/);
+  assert.match(html, /class="pbepro__badge is-owner">VERIFIED OWNER</);
+  assert.match(html, /Owner access · no subscription required/);
+  assert.doesNotMatch(html, /Manage membership|billing\.stripe\.com/, 'owner has nothing to manage');
+  assert.doesNotMatch(html, /pbe-mbr-aa|nhl-aa-hero|GET ALL ACCESS|Get All Access|THEEDGE25|buy\.stripe\.com|data-open-nhl-pro|\bFREE\b/i);
   assert.equal(freeOfferHtml(m), '');
   assert.equal(renewalText(m), '');
 });
 
 test('members never see the NHL purchase controls; free readers do', () => {
   assert.equal(memberPanelHtml(accountMembership(account(gateway.free))), '', 'no panel for free');
-  assert.match(proSource, /panel\.innerHTML = pro \? memberPanelHtml\(m\) : ''/);
-  assert.match(proSource, /root\.dataset\.membership = m\.state/);
+  assert.match(proSource, /const html = isMemberView\(view\) \? memberPanelHtml\(m\) : '';/);
+  assert.match(proSource, /root\.dataset\.membership = m\.state;/);
+  assert.match(proSource, /root\.dataset\.view = view;/);
+  const viewCss = read('src/styles/pro.css');
+  assert.match(viewCss, /\.pbepro\[data-view='check'\] \.pbepro__purchase-only,\.pbepro\[data-view='check'\] \.pbepro__signin,\.pbepro\[data-view='check'\] \.pbepro__note\{display:none!important\}/, 'the access check sells nothing');
   const css = read('src/styles/pro.css');
   assert.match(css, /\.pbepro\[data-membership\]:not\(\[data-membership='free'\]\) \.pbepro__purchase-only\{display:none!important\}/);
   for (const hook of ['pbepro__purchase-head pbepro__purchase-only', 'pbepro__plans pbepro__purchase-only', 'pbepro__cta pbepro__purchase-only', 'pbepro__offer pbepro__purchase-only']) {
@@ -198,16 +212,16 @@ test('PBE Picks Pro block: heading and badge from the membership label; free kee
 
   const sport = proBlock({ account: account(gateway.sportMonthly) });
   assert.match(sport, /<h2 id="pks-pro-h">NHL Pro is active on this account<\/h2>/);
-  assert.match(sport, /pbe-mbr-badge is-sport_pro[^>]*>NHL PRO ACTIVE</);
+  assert.match(sport, /pbe-mbr-badge is-sport_pro[^>]*>NHL PRO MEMBER</);
   assert.doesNotMatch(sport, /data-open-nhl-pro/);
 
   const aa = proBlock({ account: account(gateway.allAccess) });
-  assert.match(aa, /<h2 id="pks-pro-h">All Access is active on this account<\/h2>/);
-  assert.match(aa, /pbe-mbr-badge is-all_access[^>]*>ALL ACCESS ACTIVE</);
+  assert.match(aa, /<h2 id="pks-pro-h">Platinum access is active on this account<\/h2>/);
+  assert.match(aa, /pbe-mbr-badge is-all_access[^>]*>◆ PLATINUM</);
   assert.doesNotMatch(aa, /data-open-nhl-pro|buy\.stripe\.com/);
 
   const owner = proBlock({ account: account(gateway.owner) });
   assert.match(owner, /Owner access is active on this account/);
-  assert.match(owner, /pbe-mbr-badge is-owner[^>]*>OWNER</);
+  assert.match(owner, /pbe-mbr-badge is-owner[^>]*>VERIFIED OWNER</);
   assert.equal(picksProHeading(accountMembership({ state: 'pro' })), 'NHL Pro is active on this account');
 });

@@ -1,5 +1,5 @@
 import { PBE_NETWORK } from '../lib/network.js';
-import { ALL_ACCESS_URL } from '../lib/pbe-membership.js';
+import { LOCAL_ALL_ACCESS_PATH } from '../lib/account-surface.js';
 import { renderPreferredSource } from './preferred-source.js';
 
 const currentYear = new Date().getFullYear();
@@ -93,8 +93,8 @@ function premiumFooter() {
         <section>
           <span class="footer-premium__label">EXPLORE PBE</span>
           <div class="footer-premium__links">
-            <a class="footer-premium__aa" href="${ALL_ACCESS_URL}" rel="noopener" data-pbe-footer-all-access>ALL ACCESS <span>↗</span></a>
-            <a class="footer-premium__aa" href="${ALL_ACCESS_URL}" rel="noopener" data-pbe-footer-all-access-included>WHAT'S INCLUDED <span>↗</span></a>
+            <a class="footer-premium__aa" href="${LOCAL_ALL_ACCESS_PATH}" data-pbe-footer-all-access>ALL ACCESS <span>→</span></a>
+            <a class="footer-premium__aa" href="${LOCAL_ALL_ACCESS_PATH}" data-pbe-footer-all-access-included>WHAT'S INCLUDED <span>→</span></a>
             <a href="${PBE_NETWORK.news}">NHL News <span>↗</span></a>
             <a href="${PBE_NETWORK.learn}">Learn PropBetEdge <span>↗</span></a>
             <a href="https://propbetedge.ai/about">About PropBetEdge <span>↗</span></a>

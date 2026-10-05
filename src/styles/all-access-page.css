@@ -1,0 +1,104 @@
+/* PropBetEdge NHL — native /all-access page (src/all-access-main.js).
+   Same premium composition as the NHL Pro account surface: story column with
+   the approved Pexels rink photograph (Tony Schnagl 6468935, docs/IMAGE_SOURCES.md
+   section 1), warmed into the brand palette; panel per gateway verdict. Every
+   selector is scoped under .aap / .aap-* so nothing reaches the app shell. */
+.aap-static{max-width:760px;margin:48px auto;padding:0 16px;color:#f5f1eb}
+.aap{padding-top:24px;padding-bottom:40px}
+.aap *{box-sizing:border-box}
+.aap-shell{display:grid;grid-template-columns:46fr 54fr;min-height:600px;border:1px solid rgba(233,199,90,.22);border-radius:20px;overflow:hidden;background:linear-gradient(180deg,#1d1914,#14110d);box-shadow:0 40px 120px rgba(0,0,0,.45),inset 0 1px 0 rgba(255,236,180,.06)}
+.aap-story{position:relative;display:flex;flex-direction:column;justify-content:flex-end;padding:30px 34px 32px;isolation:isolate;background:#0e0b08 url('/assets/nhl/hero-ice-m-900.webp') 46% 38%/cover}
+.aap-story::before{content:'';position:absolute;inset:0;z-index:-1;background:linear-gradient(180deg,rgba(14,11,8,.80),rgba(14,11,8,.26) 22%,rgba(14,11,8,.2) 32%,rgba(14,11,8,.72) 50%,rgba(14,11,8,.94) 66%,#0e0b08),radial-gradient(120% 60% at 30% 0%,rgba(212,175,55,.16),transparent 60%)}
+.aap-story::after{content:'';position:absolute;inset:0;z-index:-2;background:rgba(120,82,28,.42);mix-blend-mode:color;pointer-events:none}
+.aap-chips{position:absolute;top:26px;right:26px;margin:0;padding:0;list-style:none;display:flex;flex-direction:column;align-items:flex-end;gap:6px}
+.aap-chips li{display:inline-flex;align-items:center;gap:7px;padding:6px 9px;border:1px solid rgba(255,245,220,.12);border-radius:999px;background:rgba(14,11,8,.55);color:#b8b3a8;font:700 9px/1 'JetBrains Mono',monospace;letter-spacing:.12em}
+.aap-chips li::before{content:'';width:6px;height:6px;border-radius:50%;background:#e9c75a}
+.aap-story-copy{max-width:520px}
+.aap-eyebrow{display:block;color:#e9c75a;font:700 10px/1.45 'JetBrains Mono',monospace;letter-spacing:.17em;text-transform:uppercase}
+.aap-eyebrow.is-member,.aap-story[data-view='sport_pro'] .aap-eyebrow,.aap-story[data-view='owner'] .aap-eyebrow{color:#7fe0a4}
+.aap-story[data-view='all_access'] .aap-eyebrow{color:#e4ded2}
+.aap-title{margin:10px 0 0;color:#f5f1eb;font:900 clamp(32px,3.2vw,46px)/1.02 'Playfair Display',Georgia,serif;letter-spacing:-.02em}
+.aap-title em{color:#d4af37;font-style:italic}
+.aap-story[data-view='sport_pro'] .aap-title em,.aap-story[data-view='owner'] .aap-title em{color:#7fe0a4}
+.aap-story[data-view='all_access'] .aap-title em{color:#efe9dc}
+.aap-story-copy p{margin:12px 0 0;color:#e8e1d4;font-size:14px;line-height:1.55;opacity:.9}
+.aap-panel{padding:34px 36px 28px;min-width:0}
+.aap-panel-body{display:flex;flex-direction:column;gap:14px;min-width:0}
+.aap-head{margin:0;color:#f5f1eb;font:900 clamp(28px,2.5vw,36px)/1.06 'Playfair Display',Georgia,serif}
+.aap-head.is-member{font-size:clamp(32px,3vw,44px)}
+.aap-lede{margin:0;color:#e8e1d4;font-size:13.5px;line-height:1.55;opacity:.86}
+.aap-price{display:flex;flex-wrap:wrap;align-items:baseline;gap:4px 8px}
+.aap-price b{color:#f5f1eb;font:900 44px/1 Inter,sans-serif;letter-spacing:-.02em}
+.aap-price span{color:#b8b3a8;font:700 14px/1 'JetBrains Mono',monospace}
+.aap-price small{flex-basis:100%;color:#e9c75a;font:700 11px/1.4 'JetBrains Mono',monospace}
+.aap-price small b,.aap-secure b{font:inherit;font-size:inherit;color:#fff;letter-spacing:.08em}
+.aap-incl{display:grid;gap:10px;padding:14px;border:1px solid rgba(233,199,90,.3);border-radius:14px;background:linear-gradient(180deg,rgba(212,175,55,.06),rgba(255,245,220,.015))}
+.aap-incl span{display:block;margin-bottom:7px;color:#8a857b;font:700 9.5px/1 'JetBrains Mono',monospace;letter-spacing:.14em}
+.aap-incl ul{margin:0;padding:0;list-style:none;display:flex;flex-wrap:wrap;gap:5px}
+.aap-incl li{padding:6px 9px;border:1px solid rgba(255,245,220,.18);border-radius:999px;color:#e8e1d4;font:700 11px/1 'JetBrains Mono',monospace}
+.aap-incl li.is-here{border-color:rgba(233,199,90,.6);color:#e9c75a}
+.aap-incl .is-intel{padding-top:10px;border-top:1px solid rgba(255,245,220,.08)}
+.aap-incl .is-intel b{color:#f5f1eb;font:700 13px/1.2 Inter,sans-serif}
+.aap-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.aap-actions>.aap-cta{grid-column:1/-1}
+.aap-cta{display:flex;align-items:center;justify-content:center;min-height:50px;padding:0 18px;border:0;border-radius:11px;background:linear-gradient(135deg,#e9c75a,#d4af37);color:#17120a;font:800 12px/1 'JetBrains Mono',monospace;letter-spacing:.1em;text-transform:uppercase;text-decoration:none;cursor:pointer;box-shadow:0 12px 30px rgba(212,175,55,.2)}
+.aap-cta:hover{filter:brightness(1.06);color:#17120a}
+.aap-btn{display:flex;align-items:center;justify-content:center;width:100%;min-height:46px;padding:0 12px;border:1px solid rgba(255,245,220,.18);border-radius:11px;background:rgba(255,245,220,.03);color:#e8e1d4;font:700 11px/1.2 'JetBrains Mono',monospace;letter-spacing:.08em;text-transform:uppercase;text-decoration:none;cursor:pointer;text-align:center}
+.aap-btn:hover{border-color:rgba(233,199,90,.55);color:#e9c75a}
+.aap-cta:focus-visible,.aap-btn:focus-visible,.aap a:focus-visible{outline:2px solid #e9c75a;outline-offset:2px}
+.aap-secure{margin:0;color:#8a857b;font:600 10px/1.45 'JetBrains Mono',monospace}
+.aap-secure.is-member{color:#7fe0a4}
+.aap-protect{padding:12px 14px;border:1px solid rgba(233,199,90,.3);border-left:3px solid #d4af37;border-radius:10px;background:rgba(212,175,55,.06);color:#e8e1d4;font-size:13px;line-height:1.5}
+.aap-protect b{color:#fff}
+.aap-adds{margin:0;padding:0;list-style:none;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px}
+.aap-adds li{padding:9px 11px;border:1px solid rgba(228,222,210,.24);border-radius:9px;color:#f5f1eb;font:700 12px/1.2 Inter,sans-serif}
+.aap-adds li.is-intel{grid-column:1/-1;border-color:rgba(233,199,90,.45);background:rgba(212,175,55,.06)}
+.aap-launch h2{margin:0 0 8px;color:#8a857b;font:700 10px/1 'JetBrains Mono',monospace;letter-spacing:.16em}
+.aap-launch ul{margin:0;padding:0;list-style:none;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+.aap-launch li>a,.aap-launch li>span{display:flex;justify-content:space-between;align-items:center;gap:8px;min-height:44px;padding:0 12px;border:1px solid rgba(127,224,164,.22);border-radius:10px;background:rgba(127,224,164,.035);text-decoration:none}
+.aap-launch b{color:#f5f1eb;font:700 12px/1 Inter,sans-serif}
+.aap-launch em{color:#7fe0a4;font:800 9.5px/1 'JetBrains Mono',monospace;font-style:normal;letter-spacing:.1em}
+.aap-launch .is-here{border-color:rgba(233,199,90,.5);background:rgba(212,175,55,.08)}
+.aap-launch .is-here em{color:#e9c75a}
+.aap-pred{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:10px;margin-top:8px;min-height:48px;padding:0 14px;border:1px solid rgba(233,199,90,.4);border-radius:10px;background:rgba(212,175,55,.06);text-decoration:none}
+.aap-pred span{color:#8a857b;font:700 9px/1 'JetBrains Mono',monospace;letter-spacing:.14em}
+.aap-pred b{color:#f5f1eb;font:700 13px/1.2 Inter,sans-serif}
+.aap-pred em{color:#7fe0a4;font:800 9.5px/1 'JetBrains Mono',monospace;font-style:normal;letter-spacing:.1em}
+.aap-verified{display:none}
+.aap .pbepro__verified{padding:15px 17px;border:1px solid rgba(127,224,164,.26);border-radius:14px;background:radial-gradient(260px 140px at 100% 0%,rgba(127,224,164,.10),transparent 70%),rgba(255,245,220,.025)}
+.aap .pbepro__verified.is-platinum{border-color:rgba(228,222,210,.42);background:radial-gradient(300px 160px at 100% 0%,rgba(239,233,220,.14),transparent 70%),linear-gradient(135deg,rgba(255,245,220,.05),rgba(255,245,220,.015))}
+.aap .pbepro__verified.is-owner{border-color:rgba(233,199,90,.45)}
+.aap .pbepro__verified-top{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.aap .pbepro__verified-top span{color:#7fe0a4;font:700 10px/1 'JetBrains Mono',monospace;letter-spacing:.14em}
+.aap .pbepro__badge{padding:6px 10px;border-radius:999px;font:800 10px/1 'JetBrains Mono',monospace;letter-spacing:.12em;white-space:nowrap}
+.aap .pbepro__badge.is-pro{border:1px solid rgba(127,224,164,.45);color:#c9f2d8;background:rgba(127,224,164,.08)}
+.aap .pbepro__badge.is-platinum{border:1px solid rgba(239,233,220,.6);color:#1a1712;background:linear-gradient(135deg,#f3eee3,#cfc8b9 55%,#ece6d8)}
+.aap .pbepro__badge.is-owner{border:1px solid rgba(233,199,90,.7);color:#17120a;background:linear-gradient(135deg,#e9c75a,#d4af37)}
+.aap .pbepro__verified-email{margin-top:10px;color:#fff;font:700 17px/1.2 Inter,sans-serif;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.aap .pbepro__verified-meta{display:flex;flex-wrap:wrap;gap:4px 14px;margin-top:8px;color:#b8b3a8;font:600 11px/1.4 'JetBrains Mono',monospace}
+.aap-section{margin-top:44px}
+.aap-section h2{margin:8px 0 0;color:#f5f1eb;font:900 clamp(26px,3vw,36px)/1.1 'Playfair Display',Georgia,serif}
+.aap-sub{max-width:72ch;margin:10px 0 0;color:#b8b3a8;font-size:14px;line-height:1.55}
+.aap-grid{margin:20px 0 0;padding:0;list-style:none;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px}
+.aap-grid li>a,.aap-grid li>span{display:flex;flex-direction:column;gap:6px;height:100%;padding:14px;border:1px solid rgba(255,245,220,.10);border-radius:12px;background:rgba(255,245,220,.025);text-decoration:none}
+.aap-grid b{color:#f5f1eb;font:800 16px/1.1 Inter,sans-serif}
+.aap-grid em{color:#d4af37;font:700 9.5px/1.3 'JetBrains Mono',monospace;font-style:normal;letter-spacing:.06em}
+.aap-grid li.is-here>span{border-color:rgba(233,199,90,.55);background:rgba(212,175,55,.07)}
+.aap-grid li>a:hover{border-color:rgba(233,199,90,.5)}
+.aap-intel{display:grid;gap:5px;margin-top:12px;padding:16px 18px;border:1px solid rgba(233,199,90,.45);border-radius:12px;background:linear-gradient(135deg,rgba(212,175,55,.08),rgba(255,245,220,.02));text-decoration:none}
+.aap-intel span{color:#8a857b;font:700 9.5px/1 'JetBrains Mono',monospace;letter-spacing:.14em}
+.aap-intel b{color:#f5f1eb;font:800 18px/1.2 Inter,sans-serif}
+.aap-intel small{color:#b8b3a8;font-size:13px}
+.aap #aap-caps{margin-top:18px}
+.aap .pbepro__caps h3{margin:0 0 8px;color:#8a857b;font:700 10px/1 'JetBrains Mono',monospace;letter-spacing:.16em}
+.aap .pbepro__caps ul{margin:0;padding:0;list-style:none;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}
+.aap .pbepro__caps li>a,.aap .pbepro__caps li>div{display:grid;grid-template-columns:auto minmax(0,1fr);grid-template-rows:auto auto;column-gap:10px;align-items:center;min-height:50px;padding:9px 12px;border:1px solid rgba(255,245,220,.10);border-radius:10px;background:rgba(255,245,220,.02);text-decoration:none}
+.aap .pbepro__caps i{grid-row:span 2;width:7px;height:7px;border-radius:50%;background:#e9c75a;box-shadow:0 0 0 3px rgba(233,199,90,.12)}
+.aap .pbepro__caps.is-unlocked i{background:#7fe0a4;box-shadow:0 0 0 3px rgba(127,224,164,.12),0 0 10px rgba(127,224,164,.5)}
+.aap .pbepro__caps b{color:#f5f1eb;font:700 12px/1.2 Inter,sans-serif;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.aap .pbepro__caps span{color:#b8b3a8;font:500 10.5px/1.3 Inter,sans-serif;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.aap .pbepro__free{display:none}
+@media(max-width:1100px){.aap-grid{grid-template-columns:repeat(3,minmax(0,1fr))}.aap .pbepro__caps ul{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:900px){.aap-shell{grid-template-columns:1fr;min-height:0;border-radius:16px}.aap-story{min-height:clamp(260px,34vh,380px);padding:96px 20px 22px;background-image:url('/assets/nhl/hero-ice-960.webp');background-position:40% 46%}.aap-chips{display:none}.aap-panel{padding:24px 18px 28px}}
+@media(max-width:620px){.aap-grid{grid-template-columns:1fr 1fr}.aap-adds{grid-template-columns:1fr 1fr}.aap-actions{grid-template-columns:1fr}.aap-price b{font-size:38px}.aap-head{font-size:29px}.aap-head.is-member{font-size:32px}.aap-launch ul{grid-template-columns:1fr 1fr}}
+@media(max-width:360px){.aap .pbepro__caps ul{grid-template-columns:1fr}}

@@ -15,13 +15,17 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { ALL_ACCESS_OFFER, ALL_ACCESS_URL, deriveMembership } from '../src/lib/pbe-membership.js';
-import { SPORTS_LINE, SPORTS_NEXT, dividerHtml, heroHtml, shouldRenderHero } from '../src/lib/all-access-hero.js';
+import { SPORTS_LINE, dividerHtml, heroHtml, shouldRenderHero } from '../src/lib/all-access-hero.js';
+import { ALL_ACCESS_CHECKOUT_URL, LOCAL_ALL_ACCESS_PATH, NETWORK_ALL_ACCESS_URL } from '../src/lib/account-surface.js';
+import { PBE_NETWORK } from '../src/lib/network.js';
 import { freeOfferHtml, memberPanelHtml, proButtonHtml, shortBadgeLabel } from '../src/lib/pro-membership-ui.js';
 import { ALL_ACCESS_NAV } from '../src/components/shell.js';
 
 const read = p => fs.readFileSync(new URL(`../${p}`, import.meta.url), 'utf8');
 const STRIPE = 'https://buy.stripe.com/8x2eVdgmOaqy4pv8Ez7wA0N';
-const LEARN = 'https://propbetedge.ai/pro';
+const NETWORK_REF = 'https://propbetedge.ai/pro';
+/* Owner 2026-10-05: WHAT'S INCLUDED and every informational All Access link stay on NHL. */
+const LEARN = '/all-access';
 const rx = s => new RegExp(s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
 
 const m = {
@@ -33,20 +37,29 @@ const m = {
 
 test('the hero carries the approved copy and the exact commercial facts from the shared contract', () => {
   assert.equal(ALL_ACCESS_OFFER.checkoutUrl, STRIPE, 'the live Stripe Payment Link (shared contract, never edited here)');
-  assert.equal(ALL_ACCESS_URL, LEARN);
+  assert.equal(ALL_ACCESS_URL, NETWORK_REF, 'the vendored contract is unchanged');
+  assert.equal(NETWORK_ALL_ACCESS_URL, NETWORK_REF, 'reference only');
+  assert.equal(LOCAL_ALL_ACCESS_PATH, LEARN);
+  assert.equal(ALL_ACCESS_CHECKOUT_URL, STRIPE, 'three jobs, three constants');
   const html = heroHtml(m.free);
   assert.match(html, /^<aside class="nhl-aa-hero" data-nhl-all-access="hero" data-nhl-all-access-state="free" aria-label="PropBetEdge All Access">/);
   assert.match(html, /<span class="nhl-aa-eyebrow">PROPBETEDGE NETWORK<\/span>/);
   assert.match(html, /<span class="nhl-aa-badge">BEST VALUE · MOST COMPLETE<\/span>/);
   assert.match(html, /<h3 class="nhl-aa-title">ALL ACCESS<\/h3>/);
   assert.match(html, /<span class="nhl-aa-price" aria-label="\$29\/month"><strong>\$29<\/strong>\/month<\/span>/);
-  assert.match(html, /<p class="nhl-aa-tagline">Every current and future PropBetEdge Pro sport\.<\/p>/);
-  assert.equal(SPORTS_LINE, 'MLB · NFL · NBA · NHL · WNBA · UFC · Tennis · Soccer');
-  assert.equal(SPORTS_NEXT, 'plus every Pro sport added next.');
-  assert.match(html, /<p class="nhl-aa-sports"><b>MLB · NFL · NBA · NHL · WNBA · UFC · Tennis · Soccer<\/b> <span>plus every Pro sport added next\.<\/span><\/p>/);
+  /* The CURRENT offer, derived from the registry (PBE_NETWORK, parity-tested to family.json). */
+  assert.match(html, /<p class="nhl-aa-tagline">10 sports \+ PropBetEdge Predictions\.<\/p>/);
+  assert.match(html, /<p class="nhl-aa-secondary">One membership across the PropBetEdge intelligence network\.<\/p>/);
+  assert.equal(SPORTS_LINE, 'MLB · NFL · NBA · WNBA · NHL · UFC · Tennis · Soccer · Golf · F1 Intelligence');
+  assert.equal(PBE_NETWORK.sports.length, 10, 'exactly 10 sports');
+  assert.match(html, /SPORTS · 10/);
+  for (const name of ['Golf', 'F1 Intelligence']) assert.match(html, new RegExp(`>${name}</li>`), name);
+  assert.equal((html.match(/<li data-sport=/g) || []).length, PBE_NETWORK.sports.length, 'the card lists every registry sport and nothing else');
+  assert.match(html, /<span class="nhl-aa-group-k">INTELLIGENCE<\/span><b>◆ PropBetEdge Predictions<\/b>/, 'Predictions is a separate intelligence product');
+  assert.doesNotMatch(html, /data-sport="predictions"|11 sports|Soccer · Soccer|every current and future|MLB · NFL · NBA · NHL · WNBA · UFC · Tennis · Soccer</i, 'never the 11th sport, never the stale list');
   assert.match(html, /<p class="nhl-aa-promo">Launch offer: 25% off while active with code <b class="nhl-aa-code">THEEDGE25<\/b><\/p>/);
   assert.match(html, new RegExp(`<a class="nhl-aa-cta" href="${rx(STRIPE).source}" rel="noopener" data-pbe-placement="all_access_checkout" data-nhl-all-access-cta="checkout">GET ALL ACCESS</a>`), 'GET ALL ACCESS -> exactly the Stripe link');
-  assert.match(html, new RegExp(`<a class="nhl-aa-learn" href="${rx(LEARN).source}" rel="noopener" data-nhl-all-access-cta="learn">WHAT'S INCLUDED</a>`));
+  assert.match(html, new RegExp(`<a class="nhl-aa-learn" href="${rx(LEARN).source}" data-nhl-all-access-cta="learn">WHAT'S INCLUDED</a>`), "WHAT'S INCLUDED stays on NHL");
   assert.equal((html.match(/buy\.stripe\.com/g) || []).length, 1, 'one checkout link, the All Access one');
   assert.doesNotMatch(html, /Labs|computational/i, 'no Labs / future computational products');
   assert.equal(dividerHtml(), '<div class="nhl-aa-divider" role="separator" aria-label="ONLY WANT NHL?" data-nhl-all-access="divider"><span>ONLY WANT NHL?</span></div>');
@@ -70,7 +83,7 @@ test('states: free -> hero + seam; sport_pro -> UPGRADE hero, no seam; all_acces
   assert.equal(freeOfferHtml(m.sport_pro), '', 'no free offer block for a member');
   const panel = memberPanelHtml(m.sport_pro);
   assert.match(panel, /UPGRADE TO ALL ACCESS/);
-  assert.doesNotMatch(panel, /ONLY WANT NHL|data-pro-plan|\$9\.99|\$3\.99/, 'no NHL purchase for NHL PRO ACTIVE');
+  assert.doesNotMatch(panel, /ONLY WANT NHL|data-pro-plan|\$9\.99|\$3\.99/, 'no NHL purchase for an NHL Pro member');
 
   for (const state of ['all_access', 'owner']) {
     assert.equal(heroHtml(m[state]), '', `${state}: no hero`);
@@ -82,11 +95,11 @@ test('states: free -> hero + seam; sport_pro -> UPGRADE hero, no seam; all_acces
 
 test('legacy tiers stay visible where the contract exposes them (founding / season pass are sport_pro)', () => {
   const founding = deriveMembership({ sport: 'nhl', entitled: true, accessSource: 'sport', legacyTier: 'founding', email: 'f@x.y' });
-  assert.equal(founding.label, 'FOUNDING MEMBER');
+  assert.equal(founding.label, 'FOUNDING MEMBER', 'contract label unchanged');
   const panel = memberPanelHtml(founding);
   assert.match(panel, /FOUNDING MEMBER/);
   assert.match(panel, /UPGRADE TO ALL ACCESS/, 'a founding member is still offered the umbrella');
-  assert.doesNotMatch(panel, /pbe-mbr-manage/, 'nothing to manage without billing');
+  assert.doesNotMatch(panel, /Manage membership/, 'nothing to manage without billing');
   const season = deriveMembership({ sport: 'nhl', entitled: true, accessSource: 'sport', legacyTier: 'season_pass', currentPeriodEnd: '2027-04-30T12:00:00.000Z' });
   assert.match(memberPanelHtml(season), /NHL SEASON PASS/);
 });
@@ -133,7 +146,7 @@ test('HARD RULE: no stylesheet leaves .pbepro__dialog with an internal scrollbar
   assert.match(pro, /@media\(min-width:901px\) and \(max-height:820px\)/, 'short desktop viewports get the compact geometry');
 });
 
-test('chrome: gold ALL ACCESS link in the header tools, bottom tab + sheet row on phones, two footer links (shell AND the premium footer)', () => {
+test('chrome: gold ALL ACCESS link in the header tools, bottom tab + sheet row on phones, two footer links (shell AND the premium footer) — all to the local /all-access page', () => {
   assert.deepEqual(ALL_ACCESS_NAV, { id: 'all-access', href: LEARN, label: 'All Access', short: 'All Access' });
   const shell = read('src/components/shell.js');
   const upgrade = read('src/components/chrome-upgrade.js');
@@ -142,11 +155,12 @@ test('chrome: gold ALL ACCESS link in the header tools, bottom tab + sheet row o
   assert.match(shell, /id="nhl-sheet-all-access" href="\$\{ALL_ACCESS_NAV\.href\}"[^>]*data-all-access="sheet"/);
   assert.match(shell, /data-pbe-footer-all-access>ALL ACCESS<\/a>/);
   assert.match(shell, /data-pbe-footer-all-access-included>WHAT'S INCLUDED<\/a>/);
+  assert.match(shell, /10 sports \+ PropBetEdge Predictions/);
   // chrome-upgrade.js replaces the shell footer at runtime, so it carries the same two links.
-  assert.match(upgrade, /import \{ ALL_ACCESS_URL \} from '\.\.\/lib\/pbe-membership\.js'/);
-  assert.match(upgrade, /<a class="footer-premium__aa" href="\$\{ALL_ACCESS_URL\}" rel="noopener" data-pbe-footer-all-access>ALL ACCESS <span>/);
-  assert.match(upgrade, /<a class="footer-premium__aa" href="\$\{ALL_ACCESS_URL\}" rel="noopener" data-pbe-footer-all-access-included>WHAT'S INCLUDED <span>/);
-  assert.doesNotMatch(shell + upgrade, /buy\.stripe\.com/, 'chrome links to the network page, never to checkout');
+  assert.match(upgrade, /import \{ LOCAL_ALL_ACCESS_PATH \} from '\.\.\/lib\/account-surface\.js'/);
+  assert.match(upgrade, /<a class="footer-premium__aa" href="\$\{LOCAL_ALL_ACCESS_PATH\}" data-pbe-footer-all-access>ALL ACCESS <span>/);
+  assert.match(upgrade, /<a class="footer-premium__aa" href="\$\{LOCAL_ALL_ACCESS_PATH\}" data-pbe-footer-all-access-included>WHAT'S INCLUDED <span>/);
+  assert.doesNotMatch(shell + upgrade, /buy\.stripe\.com|ALL_ACCESS_URL|propbetedge\.ai\/pro|every Pro sport|Every PropBetEdge Pro sport/, 'chrome links to the local page, never to checkout or the network site');
   const shellCss = read('src/styles/shell.css');
   assert.match(shellCss, /\.topbar__aa \{[\s\S]*?background: linear-gradient\(135deg, var\(--pbe-gold-bright\), var\(--pbe-gold\)\)/, 'gold');
   assert.match(shellCss, /\.sheet__aa \{[\s\S]*?min-height: 56px/, 'a real target in the sheet');
@@ -155,13 +169,13 @@ test('chrome: gold ALL ACCESS link in the header tools, bottom tab + sheet row o
 
 test('phone topbar: the header badge carries a short label and the chrome can shrink, so the page never overflows horizontally', () => {
   const acct = state => ({ state: 'pro', email: 'x@y.z', membership: m[state] });
-  assert.equal(shortBadgeLabel(m.all_access), 'ALL ACCESS');
+  assert.equal(shortBadgeLabel(m.all_access), 'PLATINUM');
   assert.equal(shortBadgeLabel(m.sport_pro), 'NHL PRO');
   assert.equal(shortBadgeLabel(m.owner), 'OWNER');
   assert.equal(shortBadgeLabel(m.free), '');
-  assert.match(proButtonHtml(acct('all_access')), /^<span class="pbe-mbr-badge is-all_access" data-pbe-membership="all_access">ALL ACCESS ACTIVE<b class="pbe-mbr-badge-short" aria-hidden="true">ALL ACCESS<\/b><\/span>$/);
-  assert.match(proButtonHtml(acct('sport_pro')), /NHL PRO ACTIVE<b class="pbe-mbr-badge-short" aria-hidden="true">NHL PRO<\/b><\/span>$/);
-  assert.match(proButtonHtml(acct('owner')), /OWNER<b class="pbe-mbr-badge-short" aria-hidden="true">OWNER<\/b><\/span>$/);
+  assert.match(proButtonHtml(acct('all_access')), /^<span class="pbe-mbr-badge is-all_access" data-pbe-membership="all_access">◆ PLATINUM<b class="pbe-mbr-badge-short" aria-hidden="true">PLATINUM<\/b><\/span>$/);
+  assert.match(proButtonHtml(acct('sport_pro')), /NHL PRO MEMBER<b class="pbe-mbr-badge-short" aria-hidden="true">NHL PRO<\/b><\/span>$/);
+  assert.match(proButtonHtml(acct('owner')), /VERIFIED OWNER<b class="pbe-mbr-badge-short" aria-hidden="true">OWNER<\/b><\/span>$/);
   assert.equal(proButtonHtml({ state: 'signed_out', membership: m.free }), '<span>NHL</span> PRO', 'free stays the neutral control');
   const pro = read('src/styles/pro.css');
   assert.match(pro, /\.pbe-mbr-badge-short\{display:none\}/, 'the short label is invisible above phone widths');
