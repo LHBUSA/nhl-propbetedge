@@ -33,9 +33,10 @@ export const PBE_NETWORK = {
     { id: 'golf', label: 'Golf', icon: '⛳', href: 'https://golf.propbetedge.ai/', status: 'LIVE' },
     { id: 'f1', label: 'F1', icon: '🏎️', href: 'https://f1.propbetedge.ai/', status: 'LIVE' }
   ],
-  // Non-sport PropBetEdge intelligence products. Kept OUT of `sports` so nothing
-  // that iterates sports (grids, counts) picks them up; rendered as their own row.
+  // Non-sport All Access products. Kept OUT of `sports` so nothing that iterates sports picks them up.
   products: [
-    { id: 'predictions', kind: 'product', label: 'PropBetEdge Predictions', href: 'https://predictions.propbetedge.ai/' }
+    { id: 'members', kind: 'product', label: 'Command Center', href: 'https://members.propbetedge.ai/' },
+    { id: 'compare', kind: 'product', label: 'Compare', href: 'https://compare.propbetedge.ai/' },
+    { id: 'predictions', kind: 'product', label: 'Predictions', href: 'https://predictions.propbetedge.ai/' }
   ]
 };
