@@ -15,16 +15,16 @@ test('sports: same set, order and canonical URLs as the family registry', () => 
   assert.deepEqual(PBE_NETWORK.sports.map((s) => s.href), FAMILY.sports.map((s) => s.url));
 });
 
-test('Predictions is a separate non-sport product with the canonical URL', () => {
+test('All Access products are separate non-sport products with canonical URLs', () => {
   assert.deepEqual(PBE_NETWORK.products.map((p) => [p.id, p.href]), FAMILY.products.map((p) => [p.key, p.url]));
   assert.ok(PBE_NETWORK.products.every((p) => p.kind === 'product'));
-  assert.ok(!PBE_NETWORK.sports.some((s) => s.id === 'predictions' || /predictions\./.test(s.href)));
+  for (const p of PBE_NETWORK.products) assert.ok(!PBE_NETWORK.sports.some((s) => s.id === p.id || s.href === p.href), p.id);
 });
 
 test('network URLs: PropBetEdge home, All Access, Learn', () => {
   const want = Object.fromEntries(FAMILY.network.map((n) => [n.key, n.url]));
   assert.equal(PBE_NETWORK.hub, want.hub);
-  assert.equal(ALL_ACCESS_URL, want.all_access);
+  assert.equal(ALL_ACCESS_URL, FAMILY.all_access.find((n) => n.key === 'all_access').url);
   assert.equal(PBE_NETWORK.learn, want.learn);
 });
 
@@ -39,12 +39,12 @@ for (const file of FOOTERS) {
   });
 }
 
-test('premium footer renders Predictions exactly once, in its own Intelligence row', () => {
+test('premium footer renders All Access products once in their own row', () => {
   const src = fs.readFileSync('src/components/chrome-upgrade.js', 'utf8');
   const footer = src.slice(src.indexOf('function premiumFooter'), src.indexOf('export function upgradeChrome'));
   assert.equal((footer.match(/PBE_NETWORK\.products\.map/g) || []).length, 1);
   assert.equal((footer.match(/PBE_NETWORK\.sports\.map/g) || []).length, 1);
-  assert.match(footer, /footer-premium__intel[\s\S]*PBE_NETWORK\.products\.map/);
+  assert.match(footer, /aria-label="PropBetEdge All Access"[\s\S]*PBE_NETWORK\.products\.map/);
   const shell = fs.readFileSync('src/components/shell.js', 'utf8');
   const basic = shell.slice(shell.indexOf('<footer'), shell.indexOf('</footer>'));
   assert.equal((basic.match(/PBE_NETWORK\.products\.map/g) || []).length, 1);
