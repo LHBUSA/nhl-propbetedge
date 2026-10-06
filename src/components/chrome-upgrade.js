@@ -76,9 +76,10 @@ function premiumFooter() {
           <div class="footer-premium__sports">
             ${PBE_NETWORK.sports.map(sport => sportLink(sport)).join('')}
           </div>
-          <div class="footer-premium__intel" aria-label="PropBetEdge Intelligence">
-            <span class="micro">INTELLIGENCE</span>
-            ${PBE_NETWORK.products.map(p => `<a href="${p.href}">${p.label} <span aria-hidden="true">↗</span></a>`).join('')}
+          <div class="footer-premium__intel" aria-label="PropBetEdge All Access">
+            <span class="micro">ALL ACCESS</span>
+            <a href="https://propbetedge.ai/pro">All Access</a>
+            ${PBE_NETWORK.products.map(p => `<a href="${p.href}">${p.label}</a>`).join('')}
           </div>
         </aside>
       </div>
