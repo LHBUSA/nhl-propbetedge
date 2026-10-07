@@ -55,7 +55,10 @@ export function workloadTimeline(g, gameDate) {
 
 export function seasonVsRecent(g) {
   const season = g?.season_line?.save_pct ?? (g?.baseline_line?.shots_against ? g.baseline_line.saves / g.baseline_line.shots_against : null);
-  const seasonLabel = g?.season_line ? 'Season' : g?.baseline_line ? `Baseline ${g.baseline_line.season ? `${String(g.baseline_line.season).slice(0, 4)}-${String(g.baseline_line.season).slice(6, 8)}` : ''}` : 'Season';
+  const bs = g?.baseline_line?.season ? `${String(g.baseline_line.season).slice(0, 4)}–${String(g.baseline_line.season).slice(6, 8)}` : '';
+  // A baseline from a season before the current one is labelled as a prior-season baseline.
+  const prior = g?.baseline_line && g?.current_season && Number(g.baseline_line.season) < Number(g.current_season);
+  const seasonLabel = g?.season_line ? 'Season' : g?.baseline_line ? (prior ? `${bs} prior-season baseline` : `Baseline ${bs}`) : 'Season';
   const r = recentOf(g);
   const leagueAll = (g?.edge?.locations || []).find(l => l.location === 'all')?.league_save_pct ?? null;
   const league = formOf(g)?.league_save_pct ?? leagueAll;
@@ -75,11 +78,11 @@ export function edgeSplits(g) {
     <tbody>${e.locations.filter(l => LOC[l.location]).map(l => `<tr><td>${esc(LOC[l.location])}</td><td class="mono">${pct3(l.save_pct)}</td><td class="mono faint">${pct3(l.league_save_pct)}</td><td class="mono">${Number.isFinite(l.percentile) ? `${Math.round(l.percentile * 100)}` : DASH}</td><td class="mono">${l.saves ?? DASH}</td></tr>`).join('')}</tbody></table></div>`;
 }
 
-export function goalieCard(g, { team, gameDate, pro }) {
+export function goalieCard(g, { team, gameDate, pro, headshot = null }) {
   const f = formOf(g);
   const w = workloadOf(g);
   return `<div class="gi-card">
-    <div class="gi-card__head">${playerIdentity({ id: g.id, name: g.name, team, size: 'sm' })}<div><a href="#/player/${esc(g.id)}"><b>${esc(g.name || 'Unnamed')}</b></a>${g.is_starter ? ' <span class="pbe-badge pbe-badge--confirmed">Starter</span>' : ''}<div class="micro faint">${w ? `${w.starts_7d} GS / ${w.appearances_7d} GP in 7d · ${w.starts_14d} GS in 14d · ${w.shots_against_14d} SA in 14d` : 'Workload unavailable'}</div></div>
+    <div class="gi-card__head">${playerIdentity({ id: g.id, name: g.name, team, size: 'sm', headshot })}<div><a href="#/player/${esc(g.id)}"><b>${esc(g.name || 'Unnamed')}</b></a>${g.is_starter ? ' <span class="pbe-badge pbe-badge--confirmed">Starter</span>' : ''}<div class="micro faint">${w ? `${w.starts_7d} GS / ${w.appearances_7d} GP in 7d · ${w.starts_14d} GS in 14d · ${w.shots_against_14d} SA in 14d${w.as_of ? ` · completed games through ${esc(w.as_of)}` : ''}` : 'Workload unavailable'}</div></div>
       ${f ? scoreRing(f.score, { label: `${g.name} PBE Goalie Form`, size: 64, caption: 'Goalie Form' }) : ''}</div>
     ${goalieWarnings(g)}
     ${workloadTimeline(g, gameDate)}

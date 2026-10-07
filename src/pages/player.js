@@ -11,6 +11,7 @@ import { defaultFightScope, fightRecordFor, fightSeasons, recordText } from '../
 import { fetchSkaterDna, renderDnaPanel } from '../lib/player-dna-mount.js';
 import { buildBioFacts } from '../lib/player-bio.js';
 import { renderCareerJourney, renderPlayerBio } from '../components/player-bio.js';
+import { clubGameContext, heroGameParts, withLiveStatus } from '../lib/player-game.js';
 
 // ---- private helpers (lane-local by contract)
 const seasonLabel = s => {
@@ -375,7 +376,7 @@ function newsSection(p, s) {
 
 export function mount(root, params) {
   const id = params.playerId;
-  const st = { player: {}, log: {}, fightScope: null, news: {}, next: null, gameType: 2, season: null, hasPlayoffs: false, totals: null, pi: { tier: null, winhl: null, fatigue: null, goalie: null, fightLedger: null } };
+  const st = { player: {}, log: {}, fightScope: null, news: {}, next: null, gameType: 2, season: null, hasPlayoffs: false, totals: null, pi: { tier: null, winhl: null, fatigue: null, goalie: null, fightLedger: null, ctx: null, gameGoalies: null } };
   // Hierarchy: hero · About + career at a glance · DNA/intelligence · current
   // season · recent form + game log · career history · current editorial
   // context (editorial-depth inserts after the anchor) · headlines · fights.
@@ -405,6 +406,30 @@ export function mount(root, params) {
   const controller = new AbortController();
   const signal = controller.signal;
   let logCtl = null;
+
+  // Hero chip from the club game context; live period/clock from the game goalies lane.
+  const renderGame = () => {
+    const ctx = st.pi.ctx;
+    const h = heroGameParts(ctx);
+    st.next = h ? `<a class="rs-next${h.live ? ' is-live' : ''}" href="#/matchup/${esc(ctx.game.id)}" data-game-state="${esc(ctx.state)}"><span class="micro">${h.live ? '<i class="rs-next__dot" aria-hidden="true"></i>' : ''}${esc(h.kicker)}</span>${h.when ? `<span>${esc(h.when)}</span>` : ''}<span>${esc(ctx.venueWord)} <b>${esc(ctx.opponent || '')}</b></span>${h.time ? `<span class="mono">${esc(h.time)}</span>` : ''}${h.preseason ? '<span class="faint">preseason</span>' : ''}</a>` : null;
+    renderHead();
+    renderBody();
+  };
+  let statusTimer = null;
+  // Game status + starters for a LIVE or TODAY club game (re-read every 60 s while it matters).
+  const loadGameStatus = () => {
+    clearTimeout(statusTimer);
+    const ctx = st.pi.ctx;
+    if (signal.aborted || !ctx?.game || !['LIVE', 'TODAY'].includes(ctx.state)) return;
+    nhl(`/nhl/game/${ctx.game.id}/goalies`, {}, { signal, timeout: 15000 })
+      .then(res => {
+        st.pi.gameGoalies = res.data;
+        st.pi.ctx = withLiveStatus(st.pi.ctx, res.data?.game?.status);
+        renderGame();
+      })
+      .catch(() => {})
+      .finally(() => { if (!signal.aborted && ['LIVE', 'TODAY'].includes(st.pi.ctx?.state)) statusTimer = setTimeout(loadGameStatus, 60e3); });
+  };
 
   const renderHead = () => {
     const p = st.player.data?.player;
@@ -489,17 +514,14 @@ export function mount(root, params) {
           renderBody();
         });
       }
-      // Next game for the player's club (context for tonight), from the club schedule.
+      // The club's current/today/next game (context for tonight), from the club schedule.
+      // A game in progress is LIVE, never "Next" (lib/player-game.js).
       if (TEAM_BY_ABBREV.has(p.current_team_abbrev)) {
         nhl(`/nhl/team/${p.current_team_abbrev}/schedule`, {}, { signal })
           .then(r => {
-            const g = (r.data.games || []).filter(x => ['SCHEDULED', 'PREGAME', 'LIVE'].includes(x.status?.semantics) && Date.parse(x.start_time_utc) > Date.now() - 6 * 3600 * 1000)
-              .sort((a, b) => Date.parse(a.start_time_utc) - Date.parse(b.start_time_utc))[0];
-            if (!g) return;
-            const home = g.teams.home.abbrev === p.current_team_abbrev;
-            const o = home ? g.teams.away : g.teams.home;
-            st.next = `<a class="rs-next" href="#/matchup/${esc(g.id)}"><span class="micro">Next</span><span>${esc(dayET(g.start_time_utc))}</span><span>${home ? 'vs' : '@'} <b>${esc(o.abbrev)}</b></span><span class="mono">${esc(timeET(g.start_time_utc))}</span>${g.game_type === 1 ? '<span class="faint">preseason</span>' : ''}</a>`;
-            renderHead();
+            st.pi.ctx = clubGameContext(r.data.games || [], p.current_team_abbrev);
+            renderGame();
+            loadGameStatus();
           })
           .catch(() => {});
       }
@@ -540,6 +562,7 @@ export function mount(root, params) {
   ];
   return () => {
     controller.abort();
+    clearTimeout(statusTimer);
     logCtl?.abort();
     disposers.forEach(d => d());
   };

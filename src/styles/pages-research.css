@@ -223,6 +223,11 @@ a.rs-team:hover b, a.rs-team:hover .rs-tname { color: var(--pbe-gold-bright); }
 .rs-next { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 2px 8px; min-height: 32px; padding: 0 10px; border: 1px solid var(--pbe-line-strong); border-radius: var(--r-sm); color: var(--pbe-dim); font-size: var(--fs-sm); }
 .rs-next:hover { border-color: var(--pbe-gold); color: var(--pbe-paper); }
 .rs-next .micro { color: var(--pbe-gold); }
+.rs-next.is-live { border-color: rgba(255, 92, 92, .55); }
+.rs-next.is-live .micro { display: inline-flex; align-items: center; gap: 5px; color: #ff6b6b; font-weight: 700; text-transform: uppercase; }
+.rs-next__dot { width: 7px; height: 7px; border-radius: 50%; background: #ff5c5c; }
+.gi-start { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; margin: 12px 0 10px; }
+.gi-sample { margin: 8px 0 0; }
 .rs-phead__stamp { grid-column: 3; grid-row: 1; align-self: start; justify-self: end; }
 .rs-phead__kv { grid-column: 1 / -1; grid-template-columns: repeat(4, minmax(0, 1fr)) minmax(0, 2.2fr); }
 .rs-born { font-family: var(--pbe-font-ui) !important; font-size: var(--fs-sm) !important; }

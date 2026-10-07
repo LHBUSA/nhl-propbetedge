@@ -1,0 +1,590 @@
+{
+ "captured_at": "2026-10-07T01:48:46.889Z",
+ "note": "Real production reads during NYI @ NYR (2026020048, live P3): nhl-gateway /nhl/intel/goalie/<id>, /nhl/player/<id> (trimmed), /nhl/team/NYI/schedule (trimmed), /nhl/game/2026020048/goalies (game + starters).",
+ "varlamov": {
+  "intel": {
+   "data_source": "PropSports",
+   "ok": true,
+   "goalie_id": 8473575,
+   "name": null,
+   "team": null,
+   "season_line": null,
+   "baseline_line": null,
+   "form": {
+    "version": "pbe-goalie-form-v1.0",
+    "locked": true,
+    "tier_required": "pro"
+   },
+   "edge": {
+    "source": "NHL Edge",
+    "source_url": "https://api-web.nhle.com/v1/edge/goalie-detail/8473575/now",
+    "season": "20242025",
+    "locations": [
+     {
+      "location": "all",
+      "save_pct": 0.889313,
+      "league_save_pct": 0.900138,
+      "percentile": 0.1176,
+      "saves": 233,
+      "goals_against": 29
+     },
+     {
+      "location": "high",
+      "save_pct": 0.847222,
+      "league_save_pct": 0.804743,
+      "percentile": 0.9216,
+      "saves": 61,
+      "goals_against": 11
+     },
+     {
+      "location": "long",
+      "save_pct": 1,
+      "league_save_pct": 0.96946,
+      "percentile": 1,
+      "saves": 42,
+      "goals_against": 0
+     },
+     {
+      "location": "mid",
+      "save_pct": 0.82716,
+      "league_save_pct": 0.887768,
+      "percentile": 0,
+      "saves": 67,
+      "goals_against": 14
+     }
+    ]
+   },
+   "partial": {},
+   "workload": {
+    "as_of": "2026-10-06",
+    "last_appearance": null,
+    "starts_unknown_14d": 0,
+    "days_rest": null,
+    "back_to_back": null,
+    "starts_7d": 0,
+    "starts_14d": 0,
+    "appearances_7d": 0,
+    "appearances_14d": 0,
+    "shots_against_7d": 0,
+    "shots_against_14d": 0,
+    "toi_7d_s": 0,
+    "toi_14d_s": 0,
+    "consecutive_team_starts": null,
+    "timeline": []
+   },
+   "recent_window": {
+    "appearances": 0,
+    "shots": 0,
+    "saves": 0,
+    "save_pct": null,
+    "first_date": null,
+    "last_date": null
+   },
+   "schema": "nhl-metrics-goalie-v1",
+   "tier": "free",
+   "captured_at": "2026-10-07T01:45:35.678Z",
+   "ttl_s": 900,
+   "stale_after_s": 10800,
+   "deprecated_fields": [
+    "source",
+    "source_url"
+   ],
+   "deprecation_note": "Upstream-provider fields are compatibility-only and will be removed in the next versioned PropSports contract. Use data_source and PropSports ids."
+  },
+  "profile": {
+   "id": 8473575,
+   "first_name": "Semyon",
+   "last_name": "Varlamov",
+   "full_name": "Semyon Varlamov",
+   "position": "G",
+   "current_team_abbrev": "NYI",
+   "headshot": "https://assets.nhle.com/mugs/nhl/20262027/NYI/8473575.png",
+   "season_totals": [
+    {
+     "season": 20222023,
+     "gameTypeId": 2,
+     "leagueAbbrev": "NHL",
+     "sequence": 1,
+     "gamesPlayed": 23,
+     "gamesStarted": 22,
+     "shotsAgainst": 689,
+     "goalsAgainst": 60,
+     "savePctg": 0.912917
+    },
+    {
+     "season": 20232024,
+     "gameTypeId": 2,
+     "leagueAbbrev": "NHL",
+     "sequence": 1,
+     "gamesPlayed": 28,
+     "gamesStarted": 27,
+     "shotsAgainst": 837,
+     "goalsAgainst": 69,
+     "savePctg": 0.917563
+    },
+    {
+     "season": 20232024,
+     "gameTypeId": 3,
+     "leagueAbbrev": "NHL",
+     "sequence": 1,
+     "gamesPlayed": 5,
+     "gamesStarted": 4,
+     "shotsAgainst": 152,
+     "goalsAgainst": 13,
+     "savePctg": 0.914474
+    },
+    {
+     "season": 20242025,
+     "gameTypeId": 2,
+     "leagueAbbrev": "NHL",
+     "sequence": 1,
+     "gamesPlayed": 10,
+     "gamesStarted": 10,
+     "shotsAgainst": 262,
+     "goalsAgainst": 29,
+     "savePctg": 0.889313
+    },
+    {
+     "season": 20252026,
+     "gameTypeId": 2,
+     "leagueAbbrev": "AHL",
+     "sequence": 827,
+     "gamesPlayed": 2,
+     "shotsAgainst": 49,
+     "goalsAgainst": 3,
+     "savePctg": 0.939
+    }
+   ]
+  }
+ },
+ "shesterkin": {
+  "intel": {
+   "data_source": "PropSports",
+   "ok": true,
+   "goalie_id": 8478048,
+   "name": "Igor Shesterkin",
+   "team": "NYR",
+   "season_line": {
+    "season": "20262027",
+    "name": "Igor Shesterkin",
+    "team": "NYR",
+    "gp": 3,
+    "gs": 3,
+    "shots_against": 76,
+    "saves": 71,
+    "save_pct": 0.93421,
+    "wins": 2,
+    "losses": 1,
+    "ot_losses": 0,
+    "goals_against": 5,
+    "gaa": 1.6727,
+    "shutouts": 0,
+    "toi_s": 10761
+   },
+   "baseline_line": {
+    "season": "20252026",
+    "source": "previous",
+    "shots_against": 1425,
+    "saves": 1299
+   },
+   "form": {
+    "version": "pbe-goalie-form-v1.0",
+    "locked": true,
+    "tier_required": "pro"
+   },
+   "edge": {
+    "source": "NHL Edge",
+    "source_url": "https://api-web.nhle.com/v1/edge/goalie-detail/8478048/now",
+    "season": "20262027",
+    "locations": [
+     {
+      "location": "all",
+      "save_pct": 0.934211,
+      "league_save_pct": 0.89295,
+      "percentile": 0.7736,
+      "saves": 71,
+      "goals_against": 5
+     },
+     {
+      "location": "high",
+      "save_pct": 0.916667,
+      "league_save_pct": 0.807396,
+      "percentile": 0.8269,
+      "saves": 22,
+      "goals_against": 2
+     },
+     {
+      "location": "long",
+      "save_pct": 1,
+      "league_save_pct": 0.967742,
+      "percentile": 1,
+      "saves": 12,
+      "goals_against": 0
+     },
+     {
+      "location": "mid",
+      "save_pct": 0.9,
+      "league_save_pct": 0.881832,
+      "percentile": 0.5283,
+      "saves": 18,
+      "goals_against": 2
+     }
+    ]
+   },
+   "partial": {},
+   "workload": {
+    "as_of": "2026-10-06",
+    "last_appearance": {
+     "game_id": "2026020036",
+     "date": "2026-10-04",
+     "started": true,
+     "game_type": 2
+    },
+    "starts_unknown_14d": 1,
+    "days_rest": 1,
+    "back_to_back": false,
+    "starts_7d": 3,
+    "starts_14d": 4,
+    "appearances_7d": 3,
+    "appearances_14d": 5,
+    "shots_against_7d": 76,
+    "shots_against_14d": 112,
+    "toi_7d_s": 10761,
+    "toi_14d_s": 16731,
+    "consecutive_team_starts": 1,
+    "timeline": [
+     {
+      "game_id": "2026020036",
+      "date": "2026-10-04",
+      "game_type": 2,
+      "started": true,
+      "shots_against": 30,
+      "saves": 28,
+      "goals_against": 2,
+      "toi_s": 3598,
+      "decision": "W",
+      "opponent": "UTA",
+      "home_road": "H"
+     },
+     {
+      "game_id": "2026020010",
+      "date": "2026-10-01",
+      "game_type": 2,
+      "started": true,
+      "shots_against": 24,
+      "saves": 23,
+      "goals_against": 1,
+      "toi_s": 3600,
+      "decision": "W",
+      "opponent": "TBL",
+      "home_road": "H"
+     },
+     {
+      "game_id": "2026020003",
+      "date": "2026-09-29",
+      "game_type": 2,
+      "started": true,
+      "shots_against": 22,
+      "saves": 20,
+      "goals_against": 2,
+      "toi_s": 3563,
+      "decision": "L",
+      "opponent": "BOS",
+      "home_road": "R"
+     },
+     {
+      "game_id": "2026010051",
+      "date": "2026-09-25",
+      "game_type": 1,
+      "started": true,
+      "shots_against": 16,
+      "saves": 15,
+      "goals_against": 1,
+      "toi_s": 3594,
+      "decision": "W",
+      "opponent": null,
+      "home_road": null
+     },
+     {
+      "game_id": "2026010027",
+      "date": "2026-09-22",
+      "game_type": 1,
+      "started": null,
+      "shots_against": 20,
+      "saves": 18,
+      "goals_against": 2,
+      "toi_s": 2376,
+      "decision": null,
+      "opponent": null,
+      "home_road": null
+     }
+    ]
+   },
+   "recent_window": {
+    "appearances": 3,
+    "shots": 76,
+    "saves": 71,
+    "save_pct": 0.9342105263157895,
+    "first_date": "2026-09-29",
+    "last_date": "2026-10-04"
+   },
+   "schema": "nhl-metrics-goalie-v1",
+   "tier": "free",
+   "captured_at": "2026-10-07T01:48:25.642Z",
+   "ttl_s": 900,
+   "stale_after_s": 10800,
+   "deprecated_fields": [
+    "source",
+    "source_url"
+   ],
+   "deprecation_note": "Upstream-provider fields are compatibility-only and will be removed in the next versioned PropSports contract. Use data_source and PropSports ids."
+  },
+  "profile": {
+   "id": 8478048,
+   "first_name": "Igor",
+   "last_name": "Shesterkin",
+   "full_name": "Igor Shesterkin",
+   "position": "G",
+   "current_team_abbrev": "NYR",
+   "headshot": "https://assets.nhle.com/mugs/nhl/20262027/NYR/8478048.png",
+   "season_totals": [
+    {
+     "season": 20222023,
+     "gameTypeId": 2,
+     "leagueAbbrev": "NHL",
+     "sequence": 1,
+     "gamesPlayed": 58,
+     "gamesStarted": 58,
+     "shotsAgainst": 1719,
+     "goalsAgainst": 144,
+     "savePctg": 0.91623
+    },
+    {
+     "season": 20222023,
+     "gameTypeId": 3,
+     "leagueAbbrev": "NHL",
+     "sequence": 1,
+     "gamesPlayed": 7,
+     "gamesStarted": 7,
+     "shotsAgainst": 203,
+     "goalsAgainst": 14,
+     "savePctg": 0.931034
+    },
+    {
+     "season": 20232024,
+     "gameTypeId": 2,
+     "leagueAbbrev": "NHL",
+     "sequence": 1,
+     "gamesPlayed": 55,
+     "gamesStarted": 55,
+     "shotsAgainst": 1606,
+     "goalsAgainst": 141,
+     "savePctg": 0.912827
+    },
+    {
+     "season": 20232024,
+     "gameTypeId": 3,
+     "leagueAbbrev": "NHL",
+     "sequence": 1,
+     "gamesPlayed": 16,
+     "gamesStarted": 16,
+     "shotsAgainst": 524,
+     "goalsAgainst": 39,
+     "savePctg": 0.927481
+    },
+    {
+     "season": 20242025,
+     "gameTypeId": 2,
+     "leagueAbbrev": "NHL",
+     "sequence": 1,
+     "gamesPlayed": 61,
+     "gamesStarted": 61,
+     "shotsAgainst": 1751,
+     "goalsAgainst": 167,
+     "savePctg": 0.904626
+    },
+    {
+     "season": 20252026,
+     "gameTypeId": 2,
+     "leagueAbbrev": "NHL",
+     "sequence": 1,
+     "gamesPlayed": 51,
+     "gamesStarted": 51,
+     "shotsAgainst": 1425,
+     "goalsAgainst": 126,
+     "savePctg": 0.911579
+    },
+    {
+     "season": 20262027,
+     "gameTypeId": 2,
+     "leagueAbbrev": "NHL",
+     "sequence": 1,
+     "gamesPlayed": 3,
+     "gamesStarted": 3,
+     "shotsAgainst": 76,
+     "goalsAgainst": 5,
+     "savePctg": 0.934211
+    }
+   ]
+  }
+ },
+ "nyi_schedule": [
+  {
+   "id": "2026020029",
+   "game_type": 2,
+   "start_time_utc": "2026-10-03T23:30:00Z",
+   "status": {
+    "state": "OFF",
+    "schedule_state": "OK",
+    "semantics": "FINAL",
+    "period": 3,
+    "period_type": "REG",
+    "clock": null,
+    "seconds_remaining": null,
+    "clock_running": null,
+    "in_intermission": null,
+    "last_period_type": "REG"
+   },
+   "teams": {
+    "home": {
+     "abbrev": "NYI"
+    },
+    "away": {
+     "abbrev": "NJD"
+    }
+   }
+  },
+  {
+   "id": "2026020048",
+   "game_type": 2,
+   "start_time_utc": "2026-10-06T23:30:00Z",
+   "status": {
+    "state": "LIVE",
+    "schedule_state": "OK",
+    "semantics": "LIVE",
+    "period": 3,
+    "period_type": "REG",
+    "clock": null,
+    "seconds_remaining": null,
+    "clock_running": null,
+    "in_intermission": null,
+    "last_period_type": null
+   },
+   "teams": {
+    "home": {
+     "abbrev": "NYR"
+    },
+    "away": {
+     "abbrev": "NYI"
+    }
+   }
+  },
+  {
+   "id": "2026020062",
+   "game_type": 2,
+   "start_time_utc": "2026-10-08T23:30:00Z",
+   "status": {
+    "state": "FUT",
+    "schedule_state": "OK",
+    "semantics": "SCHEDULED",
+    "period": 1,
+    "period_type": "REG",
+    "clock": null,
+    "seconds_remaining": null,
+    "clock_running": null,
+    "in_intermission": null,
+    "last_period_type": null
+   },
+   "teams": {
+    "home": {
+     "abbrev": "NYI"
+    },
+    "away": {
+     "abbrev": "CHI"
+    }
+   }
+  },
+  {
+   "id": "2026020081",
+   "game_type": 2,
+   "start_time_utc": "2026-10-10T23:30:00Z",
+   "status": {
+    "state": "FUT",
+    "schedule_state": "OK",
+    "semantics": "SCHEDULED",
+    "period": 1,
+    "period_type": "REG",
+    "clock": null,
+    "seconds_remaining": null,
+    "clock_running": null,
+    "in_intermission": null,
+    "last_period_type": null
+   },
+   "teams": {
+    "home": {
+     "abbrev": "NYI"
+    },
+    "away": {
+     "abbrev": "TBL"
+    }
+   }
+  }
+ ],
+ "game_goalies": {
+  "game": {
+   "id": "2026020048",
+   "date": "2026-10-06",
+   "start_time_utc": "2026-10-06T23:30:00Z",
+   "status": {
+    "state": "LIVE",
+    "schedule_state": "OK",
+    "semantics": "LIVE",
+    "period": 3,
+    "period_type": "REG",
+    "clock": "15:46",
+    "seconds_remaining": 946,
+    "clock_running": true,
+    "in_intermission": false,
+    "last_period_type": null
+   },
+   "teams": {
+    "away": {
+     "abbrev": "NYI"
+    },
+    "home": {
+     "abbrev": "NYR"
+    }
+   }
+  },
+  "teams": {
+   "away": {
+    "team": "NYI",
+    "starter": {
+     "status": "CONFIRMED",
+     "source": "NHL",
+     "source_url": "https://api-web.nhle.com/v1/gamecenter/2026020048/boxscore",
+     "captured_at": "2026-10-07T01:45:57.963Z",
+     "goalie_id": 8473575,
+     "name": "S. Varlamov",
+     "basis_code": "BOXSCORE_ONLY_GOALIE_WITH_TOI",
+     "starter_basis": "DERIVED_ONLY_GOALIE_WITH_TOI",
+     "basis": "Official NHL boxscore: the only goalie with ice time (the boxscore starter flag is not published during live games)."
+    }
+   },
+   "home": {
+    "team": "NYR",
+    "starter": {
+     "status": "CONFIRMED",
+     "source": "NHL",
+     "source_url": "https://api-web.nhle.com/v1/gamecenter/2026020048/boxscore",
+     "captured_at": "2026-10-07T01:45:57.963Z",
+     "goalie_id": 8478048,
+     "name": "I. Shesterkin",
+     "basis_code": "BOXSCORE_ONLY_GOALIE_WITH_TOI",
+     "starter_basis": "DERIVED_ONLY_GOALIE_WITH_TOI",
+     "basis": "Official NHL boxscore: the only goalie with ice time (the boxscore starter flag is not published during live games)."
+    }
+   }
+  }
+ }
+}

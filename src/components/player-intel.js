@@ -4,6 +4,7 @@ import { esc } from '../lib/dom.js';
 import { ageText } from '../lib/format.js';
 import { describeError } from '../lib/api.js';
 import { goalieCard } from './goalie-intel.js';
+import { goalieStartStatus, hydrateGoalie, opponentCaption, sampleNotes } from '../lib/player-game.js';
 import { DASH, fmtScore, lockPanel, mmss, pointComponents, scoreRing, versionTag, weightedComponents } from './intel-ui.js';
 
 const err = e => `<p class="micro faint">${esc(describeError(e).title)}.</p>`;
@@ -77,11 +78,18 @@ export function playerIntelSection(p, st, fights = null) {
   const tier = st.tier;
   if (goalie) {
     const g = st.goalie;
-    const body = !g ? '<div class="pbe-skeleton" style="height:160px"></div>' : g.error ? err(g.error) : goalieCard({
-      id: g.data.goalie_id, name: g.data.name, is_starter: false, season_line: g.data.season_line, baseline_line: g.data.baseline_line,
-      form: g.data.form, workload: g.data.workload, recent_window: g.data.recent_window, edge: g.data.edge
-    }, { team: g.data.team, gameDate: new Date().toISOString().slice(0, 10), pro: tier === 'pro' });
-    return `<div class="panel-head"><h3>PBE goalie intelligence</h3><span class="micro">as of today · no opponent</span></div>
+    // The goalie payload can omit identity and season lines: hydrate from the profile (lib/player-game.js).
+    const ctx = st.ctx || null;
+    const gv = g && !g.error ? hydrateGoalie(g.data, p) : null;
+    const start = gv ? goalieStartStatus(st.gameGoalies, gv.id, ctx?.state) : null;
+    const startBadge = start ? `<div class="gi-start${start.live ? ' is-live' : ''}" data-start-state="${esc(start.label)}"${start.basis ? ` title="${esc(start.basis)}"` : ''}><span class="pbe-badge pbe-badge--${start.level === 'CONFIRMED' ? 'confirmed' : 'sched'}">${esc(start.label)}</span><span class="micro">${esc(start.detail)}${start.live ? ' · in this game now; workload below counts completed games only' : ''}</span></div>` : '';
+    const notes = gv ? sampleNotes(gv) : [];
+    const body = !g ? '<div class="pbe-skeleton" style="height:160px"></div>' : g.error ? err(g.error) : `${startBadge}${goalieCard({
+      id: gv.id, name: gv.name, is_starter: start?.level === 'CONFIRMED', season_line: gv.season_line, baseline_line: gv.baseline_line, current_season: gv.current_season,
+      form: gv.form, workload: gv.workload, recent_window: gv.recent_window, edge: gv.edge
+    }, { team: gv.team, gameDate: gv.workload?.as_of || new Date().toISOString().slice(0, 10), pro: tier === 'pro', headshot: gv.headshot })}${notes.length ? `<p class="micro faint gi-sample">${notes.map(esc).join(' · ')}</p>` : ''}`;
+    const caption = ctx ? opponentCaption(ctx) : 'Checking schedule';
+    return `<div class="panel-head"><h3>PBE goalie intelligence</h3><span class="micro" data-goalie-context="${esc(ctx?.state || 'PENDING')}">${esc(caption)}</span></div>
       ${tier !== 'pro' ? lockPanel('PBE Goalie Form', 'The 0–100 reading and every component, for every goalie.', { compact: true }) : ''}${body}`;
   }
   return `<div class="panel-head"><h3>PBE intelligence</h3><a class="micro gold" href="#/winhl">WinHL leaderboard ›</a></div>
