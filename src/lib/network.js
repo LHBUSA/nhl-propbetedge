@@ -6,10 +6,6 @@
 // registry src/lib/family.json (LHBUSA/propbetedge-workers shared/network/family.json);
 // guarded by tests/network-family-parity.test.mjs.
 //
-// PROPBETEDGE_DISCORD_URL is the canonical non-expiring community invite.
-// The store currently lives on the UFC product until the shared storefront
-// ships at the network level.
-export const PROPBETEDGE_DISCORD_URL = 'https://discord.gg/kb5zCTHbME';
 
 export const PBE_NETWORK = {
   hub: 'https://propbetedge.ai/',
@@ -17,7 +13,6 @@ export const PBE_NETWORK = {
   news: 'https://propbetedge.ai/news/nhl',
   learn: 'https://learn.propbetedge.ai/',
   store: 'https://ufc.propbetedge.ai/store',
-  discord: PROPBETEDGE_DISCORD_URL,
   // PropBetEdge's own X account (external: new tab, noopener noreferrer).
   x: 'https://x.com/PROPBETEDGE',
   xHandle: '@PROPBETEDGE',
