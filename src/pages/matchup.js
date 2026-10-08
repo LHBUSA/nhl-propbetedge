@@ -1,5 +1,5 @@
 import { $, esc, on, safeUrl } from '../lib/dom.js';
-import { describeError, nhl, odds } from '../lib/api.js';
+import { describeError, nhl, odds, news } from '../lib/api.js';
 import { intel } from '../lib/intel.js';
 import { gameIntelPanel } from '../components/game-intel.js';
 import { freshStamp } from '../lib/freshness.js';
@@ -240,7 +240,7 @@ function scorersPanel(game, stats, sort) {
 
 export function mount(root, params, ctx) {
   const gameId = params.gameId || null;
-  const st = { g: {}, standings: {}, stats: {}, sched: {}, sort: 'points', slate: null, slateLabel: '', slateError: null, started: false, intel: null, props: null, propsError: null };
+  const st = { g: {}, standings: {}, stats: {}, sched: {}, sort: 'points', slate: null, slateLabel: '', slateError: null, started: false, intel: null, props: null, propsError: null, injuries: null };
   root.innerHTML = `<section class="wrap section rs-matchup" data-fresh-scope>
     <div class="section-head"><div><span class="eyebrow">Matchup</span><h2>${gameId ? 'Game context' : 'Pick a matchup'}</h2></div>
       <p>Records, goal rates, goalies, rest and form side by side — every number labelled with its season. Context, never a pick.</p></div>
@@ -272,8 +272,13 @@ export function mount(root, params, ctx) {
       return;
     }
     const game = g.game;
+    const gameTeams = new Set([game.teams.away.abbrev, game.teams.home.abbrev]);
+    const matchedInjuries = st.injuries?.items
+      ? { ...st.injuries, items: st.injuries.items.filter(item =>
+          Array.isArray(item.teams) && item.teams.some(t => gameTeams.has(t))).slice(0, 4) }
+      : st.injuries;
     const gi = st.intel?.data
-      ? gameIntelPanel(st.intel.data, { pro: st.intel.tier === 'pro', props: st.props, propsError: st.propsError })
+      ? gameIntelPanel(st.intel.data, { pro: st.intel.tier === 'pro', props: st.props, propsError: st.propsError, injuryReports: matchedInjuries })
       : st.intel?.error ? `<p class="micro faint">Game intelligence unavailable — ${esc(describeError(st.intel.error).title)}.</p>` : '<div class="pbe-skeleton" style="height:220px;margin:12px 0"></div>';
     body.innerHTML = `${headerMarkup(game, st.g.meta, st.g.failed)}
       ${gi}
@@ -343,6 +348,18 @@ export function mount(root, params, ctx) {
         st.props = { count: rows.length, markets: new Set(rows.map(r => r.market)) };
       })
       .catch(error => { if (error.kind !== 'aborted') st.propsError = error; })
+      .finally(() => { if (!signal.aborted) renderBody(); });
+    // The existing NHL newsroom Injury Desk feed: linked, reported facts only.
+    // Match clubs explicitly; never infer OUT/DTD/IR from a headline.
+    news({ category: 'Injuries', limit: 100 }, { signal, timeout: 12000 })
+      .then(res => {
+        const rows = (res.data.items || []).filter(item =>
+          Array.isArray(item.teams) &&
+          typeof item.url === 'string' && safeUrl(item.url) &&
+          item.title && item.published_at);
+        st.injuries = { items: rows, failed: false };
+      })
+      .catch(error => { if (error.kind !== 'aborted') st.injuries = { items: [], failed: true }; })
       .finally(() => { if (!signal.aborted) renderBody(); });
     nhl('/nhl/standings', {}, { signal })
       .then(res => { st.standings = { data: res.data, meta: res.meta }; })

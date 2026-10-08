@@ -1,0 +1,46 @@
+/* NHL Matchup premium readability hotfix — scoped to game context only.
+   High-contrast facts, deliberate data hierarchy, compact adaptive cards. */
+.rs-matchup { --matchup-surface:#211e19; --matchup-edge:rgba(246,228,191,.25); --matchup-text:#f6f2e8; }
+.rs-matchup .section-head h2 {font-size:clamp(26px,3vw,38px);color:#fffaf1;letter-spacing:-.035em}
+.rs-matchup .section-head p {color:#e0d7c8;font-size:14px;max-width:64ch;line-height:1.6}
+.rs-matchup .pbe-panel {background:linear-gradient(155deg,#252119 0%,#171612 100%);border:1px solid var(--matchup-edge);border-radius:16px;box-shadow:0 8px 30px rgba(0,0,0,.25)}
+.rs-matchup .panel-head h3 {font-size:clamp(17px,1.5vw,22px);color:#fff8e8;letter-spacing:-.025em}
+.rs-matchup .micro,.rs-matchup .faint,.rs-matchup .dim {color:#c9c1b3}
+.rs-matchup .fresh {color:#d5cbbb;font-size:11px}
+.rs-matchup .rs-mh {border:1px solid rgba(241,202,86,.48);border-top:4px solid #e6bf56;background:radial-gradient(ellipse at 50% 0%,rgba(224,183,69,.13),transparent 60%),linear-gradient(120deg,#2a251c,#181817 65%,#28231c);border-radius:18px;box-shadow:0 20px 50px rgba(0,0,0,.32)}
+.rs-matchup .rs-mh__id b {font-size:clamp(25px,3vw,38px);color:#fff5dd}
+.rs-matchup .rs-mh__id span,.rs-matchup .rs-mh__when {color:#ebe0ca}
+.rs-matchup .rs-mh__links a {min-height:39px;display:inline-flex;align-items:center}
+.rs-matchup .gx {padding:20px;gap:16px;background:linear-gradient(145deg,#27241d,#171714);border-color:rgba(233,199,107,.35)}
+.rs-matchup .gx-grid {grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;align-items:start}
+.rs-matchup .gx-cell {gap:10px;min-height:0;padding:18px;border:1px solid rgba(229,213,176,.25);border-radius:13px;background:linear-gradient(145deg,rgba(55,49,37,.72),rgba(22,22,20,.93));box-shadow:inset 0 1px rgba(255,250,230,.05)}
+.rs-matchup .gx-cell__k {font-family:var(--pbe-font-ui);font-size:12px;line-height:1.3;font-weight:800;letter-spacing:.085em;color:#eecb78}
+.rs-matchup .gx-duo {gap:12px}
+.rs-matchup .gx-duo>div {gap:5px}
+.rs-matchup .gx-duo b {font-size:clamp(25px,2.4vw,34px);line-height:1.1;color:#fffdf5;font-weight:800}
+.rs-matchup .gx-duo .micro {font-size:12px;line-height:1.45;letter-spacing:0;color:#d8cebc}
+.rs-matchup .gx-cell p {font-size:13px;line-height:1.6;color:#ded5c6;margin:0}
+.rs-matchup .gx-cell a.gold,.rs-matchup .gx-card-links a {color:#f5d46f;font-size:13px;font-weight:750;text-decoration:none}
+.rs-matchup .gx-cell a.gold:hover,.rs-matchup .gx-card-links a:hover {color:#fff3b6;text-decoration:underline}
+.rs-matchup .gx-card-links {display:flex;flex-wrap:wrap;gap:8px 16px;margin-top:6px}
+.rs-matchup .gx-injury-list {display:grid;gap:8px}
+.rs-matchup .gx-injury-item {display:grid;gap:4px;padding:10px 12px;border:1px solid rgba(242,211,132,.24);border-radius:9px;background:rgba(255,244,211,.045)}
+.rs-matchup .gx-injury-item b {color:#fff2d3;font-size:13px;line-height:1.4}
+.rs-matchup .gx-injury-item span {color:#d3c6b1;font-size:11px;line-height:1.4}
+.rs-matchup .gx-injury-empty {color:#e0d3ba}
+.rs-matchup .gx-cell .gi-matchup {background:rgba(131,175,205,.09);border-color:rgba(159,201,221,.3)}
+.rs-matchup .gx-cell .iq-ring__v {font-size:18px}
+.rs-matchup .gx-cell .iq-chip {font-size:12px;min-height:26px}
+.rs-matchup .rs-cmp .cmp-row {gap:8px 14px;grid-template-columns:4.3em 1fr 4.3em;padding:5px 0}
+.rs-matchup .rs-cmp .label {color:#ede2cc;font-size:13px;font-weight:750}
+.rs-matchup .rs-cmp .cmp-val {font-size:15px;color:#fff8ec;font-weight:850}
+.rs-matchup .rs-cmp .cmp-bar {height:11px;border-radius:8px}
+.rs-matchup .rs-cmp-key {font-size:12px;color:#e5dbc9}
+.rs-matchup .rs-rest__row {padding:10px 0;border-bottom:1px solid rgba(250,233,200,.12);font-size:14px}
+.rs-matchup .rs-rest__row b {color:#fff3d9;font-size:17px}
+.rs-matchup .rs-rest__edge {color:#f1e6d4;font-size:14px}
+.rs-matchup .pbe-table th {color:#f0d49a;font-size:11px}
+.rs-matchup .pbe-table td {color:#eee7dc;font-size:13px}
+@media(min-width:1200px){.rs-matchup .gx-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media(max-width:759px){.rs-matchup .gx-grid{grid-template-columns:1fr}.rs-matchup .gx{padding:12px}.rs-matchup .gx-cell{padding:15px}.rs-matchup .gx-duo b{font-size:25px}}
+@media(max-width:420px){.rs-matchup .rs-cmp .cmp-row{grid-template-columns:3.6em 1fr 3.6em}.rs-matchup .rs-cmp .cmp-val{font-size:13px}.rs-matchup .gx-duo{gap:8px}}

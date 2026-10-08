@@ -19,7 +19,7 @@ function duo(intel, fn) {
 }
 
 // props: { count, markets: Set, sample: [{player, market, line, best_over, book}] } | null
-export function gameIntelPanel(intel, { pro = false, props = null, propsError = null } = {}) {
+export function gameIntelPanel(intel, { pro = false, props = null, propsError = null, injuryReports = null } = {}) {
   if (!intel?.sides) return '';
   const teams = { away: { abbrev: intel.game.teams.away.abbrev }, home: { abbrev: intel.game.teams.home.abbrev } };
   const fatigueLocked = intel.sides.away.fatigue?.locked;
@@ -48,7 +48,11 @@ export function gameIntelPanel(intel, { pro = false, props = null, propsError = 
     ? `${duo(intel, s => `<b>${pctText(s.special_teams?.pp_pct)}<span class="micro"> PP</span></b><span class="micro">${pctText(s.special_teams?.pk_pct)} PK</span>`)}<p class="micro faint">${esc(st.season)} NHL team stats</p>`
     : unavailableBox('Special teams unavailable', 'Team special-teams rates were not in the league snapshot.')));
 
-  cells.push(cell('Injuries & scratches', `<p class="micro">No licensed injury-status feed is integrated, so no OUT/DTD table is shown. NHL.com injury headlines live on the injury desk.</p><a class="gold micro" href="#/injuries">Injury desk ›</a> <a class="gold micro" href="#/lines">Last-game lines ›</a>`));
+  const reportRows = Array.isArray(injuryReports?.items) ? injuryReports.items.slice(0, 4) : [];
+  const injuryContent = reportRows.length
+    ? `<div class="gx-injury-list">${reportRows.map(r => `<a class="gx-injury-item" href="${esc(r.url)}" target="_blank" rel="noopener nofollow"><b>${esc(r.title)}</b><span>${esc(r.team || '')}${r.published_at ? ' · ' + esc(new Date(r.published_at).toLocaleDateString()) : ''} · Reported, not confirmed status ↗</span></a>`).join('')}</div>`
+    : `<p class="gx-injury-empty">${injuryReports?.failed ? 'Latest injury reports could not be refreshed.' : 'No team-specific injury reports in the current news feed window. This does not imply a healthy roster.'}</p>`;
+  cells.push(cell('Injuries & scratches', `${injuryContent}<div class="gx-card-links"><a class="gold" href="#/injuries">Injury desk ›</a><a class="gold" href="#/lines">Lineups & scratches ›</a></div>`));
 
   cells.push(cell('Prop market', propsError
     ? `<p class="micro faint">Market snapshot unavailable.</p>`
