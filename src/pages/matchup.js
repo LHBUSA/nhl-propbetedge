@@ -2,6 +2,7 @@ import { $, esc, on, safeUrl } from '../lib/dom.js';
 import { describeError, nhl, odds, news } from '../lib/api.js';
 import { intel } from '../lib/intel.js';
 import { gameIntelPanel } from '../components/game-intel.js';
+import { sideView, level } from '../lib/goalie-center.js';
 import { freshStamp } from '../lib/freshness.js';
 import { publisherUrl } from '../lib/brand.js';
 import { dateLabel, dayET, gameTypeLabel, n, num, share, svPct, timeET, todayET } from '../lib/format.js';
@@ -128,12 +129,15 @@ function comparePanel(game, s) {
     <p class="micro rs-after">Context, not a prediction. No win probability or head-to-head pick is published.</p>`;
 }
 
-function goaliePanel(g) {
+function goaliePanel(g, goalieIntel = null, goalieLive = null) {
   const teams = g.teams || {};
   const col = side => {
     const t = teams[side];
     if (!t) return '';
-    const s = t.starter || {};
+    const s = sideView(goalieIntel?.sides?.[side], goalieLive?.sides?.[side])?.starter || t.starter || {};
+    const starterStatus = level(s.status);
+    const starterName = s.name || null;
+    const starterId = s.goalie_id || null;
     const src = publisherUrl(safeUrl(s.source_url)); // publisher pages only; never an API endpoint
     const season = seasonLabel(t.stats_season);
     const goalies = (t.goalies || []).slice().sort((x, y) => (n(y.games_started) ?? 0) - (n(x.games_started) ?? 0));
@@ -145,8 +149,8 @@ function goaliePanel(g) {
     };
     return `<div class="rs-gcol">
       <div class="rs-gcol__head">${teamMark({ abbrev: t.team }, 26)}<b>${esc(t.team)}</b>
-        <span class="pbe-badge pbe-badge--${s.status === 'CONFIRMED' ? 'confirmed' : 'unknown'}">${esc(s.status || 'UNKNOWN')}</span></div>
-      <p class="rs-gcol__starter">${playerIdentity({ id: s.status === 'CONFIRMED' ? s.goalie_id : null, name: s.status === 'CONFIRMED' ? s.name : null, team: t.team, size: 'md' })} ${s.status === 'CONFIRMED' && s.name ? `<b>${s.goalie_id ? `<a href="#/player/${esc(s.goalie_id)}">${esc(s.name)}</a>` : esc(s.name)}</b> started` : '<b>Starter unknown</b>'}</p>
+        <span class="pbe-badge pbe-badge--${starterStatus === 'CONFIRMED' ? 'confirmed' : starterStatus === 'PROJECTED' ? 'reported' : 'unknown'}">${esc(starterStatus === 'PROJECTED' ? 'PROJECTED · REPORTED' : starterStatus)}</span></div>
+      <p class="rs-gcol__starter">${playerIdentity({ id: starterStatus !== 'UNKNOWN' ? starterId : null, name: starterStatus !== 'UNKNOWN' ? starterName : null, team: t.team, size: 'md' })} ${starterStatus !== 'UNKNOWN' && starterName ? `<b>${starterId ? `<a href="#/player/${esc(starterId)}">${esc(starterName)}</a>` : esc(starterName)}</b> ${starterStatus === 'CONFIRMED' ? 'confirmed starter' : 'projected starter'}` : '<b>Starter unknown</b>'}</p>
       <p class="micro rs-gcol__basis">${esc(s.basis || 'No basis stated by the source.')}${src ? ` · <a class="gold" href="${esc(src)}" target="_blank" rel="noopener nofollow">source</a>` : ''}</p>
       ${goalies.length ? `<div class="table-wrap"><table class="pbe-table rs-gtab">
         <thead><tr><th>${esc(season)}</th><th class="num">GS</th><th class="num" title="Wins-Losses-OT losses">W-L-OT</th><th class="num">SV%</th><th class="num">GAA</th><th class="num" title="Save % over the last five appearances in the source window">L5 SV%</th></tr></thead>
@@ -240,7 +244,7 @@ function scorersPanel(game, stats, sort) {
 
 export function mount(root, params, ctx) {
   const gameId = params.gameId || null;
-  const st = { g: {}, standings: {}, stats: {}, sched: {}, sort: 'points', slate: null, slateLabel: '', slateError: null, started: false, intel: null, props: null, propsError: null, injuries: null };
+  const st = { g: {}, standings: {}, stats: {}, sched: {}, sort: 'points', slate: null, slateLabel: '', slateError: null, started: false, intel: null, liveGoalies: null, props: null, propsError: null, injuries: null };
   root.innerHTML = `<section class="wrap section rs-matchup" data-fresh-scope>
     <div class="section-head"><div><span class="eyebrow">Matchup</span><h2>${gameId ? 'Game context' : 'Pick a matchup'}</h2></div>
       <p>Records, goal rates, goalies, rest and form side by side — every number labelled with its season. Context, never a pick.</p></div>
@@ -289,7 +293,7 @@ export function mount(root, params, ctx) {
           <section class="pbe-panel">${formPanel(game, st.sched)}</section>
         </div>
       </div>
-      <section class="pbe-panel rs-m-goalies">${goaliePanel(g)}</section>
+      <section class="pbe-panel rs-m-goalies">${goaliePanel(g, st.intel?.data, st.liveGoalies?.data)}</section>
       <section class="pbe-panel rs-m-sc">${scorersPanel(game, st.stats, st.sort)}</section>`;
   };
 
@@ -332,6 +336,23 @@ export function mount(root, params, ctx) {
       else st.g = { error };
       renderBody();
       return error.kind === 'not_deployed' || error.kind === 'legacy' || /upstream_404/.test(String(error?.payload?.details || '')) ? null : 15000;
+    }
+  }) : null;
+
+  // Match Goalie Center's starter-truth contract; the legacy NHL game goalie
+  // endpoint alone cannot represent reported projections and live starter changes.
+  const goalieLivePoller = gameId ? createPoller(async pollSignal => {
+    const res = await intel(`/goalies/live/${gameId}`, { signal: pollSignal, tier: 'free' });
+    st.liveGoalies = { data: res.data, meta: res.meta };
+    renderBody();
+    const state = stateOf(st.g.data?.game || res.data?.game || {}).key;
+    if (state === 'FINAL' || state === 'POSTPONED' || state === 'CANCELLED') return null;
+    return state === 'LIVE' || state === 'INTERMISSION' ? 15000 : 300000;
+  }, {
+    onError(error) {
+      if (error.kind !== 'aborted') st.liveGoalies = st.liveGoalies?.data ? st.liveGoalies : { error };
+      renderBody();
+      return 30000;
     }
   }) : null;
 
@@ -391,12 +412,14 @@ export function mount(root, params, ctx) {
   renderPicker();
   renderBody();
   poller?.start();
+  goalieLivePoller?.start();
 
   const disposers = [
     on(root, 'click', '[data-sc]', (_, b) => { st.sort = b.dataset.sc; renderBody(); })
   ];
   return () => {
     poller?.stop();
+    goalieLivePoller?.stop();
     controller.abort();
     disposers.forEach(d => d());
   };
