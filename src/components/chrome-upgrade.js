@@ -118,6 +118,8 @@ function premiumFooter() {
 
       ${renderPreferredSource({ surface: 'footer', sport: 'nhl' })}
 
+      <div class="footer-premium__partner" id="nhl-kxo" hidden></div>
+
       <div class="footer-premium__legal">
         <div>
           <b>Research tooling, not a guarantee.</b>

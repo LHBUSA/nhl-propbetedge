@@ -25,6 +25,7 @@ import './styles/all-access-page.css';
 
 import { bindShell, renderShell } from './components/shell.js';
 import { upgradeChrome } from './components/chrome-upgrade.js';
+import { mountKalshiPartnerFooter } from './components/kalshi-partner-footer.js';
 import { mountPreferredSource } from './components/preferred-source.js';
 import { onAccount, refreshAccount, signInAvailable, signOut } from './lib/account.js';
 import { accountMembership, capabilityGridHtml, verifiedCardHtml } from './lib/pro-membership-ui.js';
@@ -40,6 +41,7 @@ const app = document.querySelector('#app');
 const main = renderShell(app);
 upgradeChrome();
 mountPreferredSource();
+mountKalshiPartnerFooter(); // footer partner block only (kalshi-partner/2)
 bindShell({ slateGames: () => [] });
 import('./lib/pro.js').catch(error => console.error('[nhl-pro] failed to load', error));
 document.documentElement.classList.add('aap-page');

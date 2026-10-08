@@ -1,6 +1,17 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "rewrites": [
-    { "source": "/all-access", "destination": "/all-access.html" }
+    {
+      "source": "/all-access",
+      "destination": "/all-access.html"
+    },
+    {
+      "source": "/go/kalshi-perps/config",
+      "destination": "https://propsports-markets.sales-fd3.workers.dev/v1/partner/kalshi"
+    },
+    {
+      "source": "/go/kalshi-perps",
+      "destination": "https://propsports-markets.sales-fd3.workers.dev/go/kalshi-perps"
+    }
   ]
 }

@@ -98,7 +98,10 @@ test('/all-access is a real local page: own canonical, indexable, no redirect co
   const member = page.slice(page.indexOf("if (view === 'all_access' || view === 'owner')"), page.indexOf("if (view === 'sport_pro')"));
   assert.doesNotMatch(member, /ALL_ACCESS_CHECKOUT_URL|buy\.stripe|Get All Access|Upgrade to All Access/i, 'no purchase for Platinum or owner');
   const vercel = JSON.parse(read('vercel.json'));
-  assert.deepEqual(vercel.rewrites, [{ source: '/all-access', destination: '/all-access.html' }], 'a local file rewrite, not a redirect');
+  // /all-access is a local file rewrite, not a redirect; the only other rewrites are the fixed
+  // Kalshi partner routes (kalshi-partner/2, pinned in tests/kalshi-partner.test.mjs).
+  assert.deepEqual(vercel.rewrites.filter(r => !r.source.startsWith('/go/kalshi-perps')), [{ source: '/all-access', destination: '/all-access.html' }], 'a local file rewrite, not a redirect');
+  assert.deepEqual(vercel.rewrites.filter(r => r.source.startsWith('/go/')).map(r => r.source), ['/go/kalshi-perps/config', '/go/kalshi-perps']);
   assert.equal(vercel.redirects, undefined);
   assert.match(read('vite.config.js'), /allAccess: resolve\(__dirname, 'all-access\.html'\)/);
 });

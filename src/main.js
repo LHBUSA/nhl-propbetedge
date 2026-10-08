@@ -35,6 +35,7 @@ import { daysUntil, dateLabel, todayET } from './lib/format.js';
 import { createRouter } from './lib/router.js';
 import { bindShell, renderShell, setActiveNav, setSeasonChip } from './components/shell.js';
 import { upgradeChrome } from './components/chrome-upgrade.js';
+import { mountKalshiPartnerFooter } from './components/kalshi-partner-footer.js';
 import { mountPreferredSource } from './components/preferred-source.js';
 import { mountScoreTicker } from './components/score-ticker.js';
 import { bindAlertsUI } from './components/alerts-ui.js';
@@ -46,6 +47,7 @@ const app = document.querySelector('#app');
 const main = renderShell(app);
 upgradeChrome();
 mountPreferredSource();
+mountKalshiPartnerFooter(); // footer partner block only (kalshi-partner/2)
 
 // Keep the current compact production nav authoritative. The score rail is
 // additive chrome, so create its single mount point immediately after the
