@@ -23,6 +23,7 @@ import { describeError, news, odds, picksHealth, picksPreseason, picksSlate } fr
 import { freshStamp } from '../lib/freshness.js';
 import { addDays, countdownParts, dateLabel, dayET, daysUntil, gameTypeLabel, timeET, timeLocal, todayET, ageText } from '../lib/format.js';
 import { createPoller } from '../lib/poll.js';
+import { createNonblockingMarketRefresh } from '../lib/nonblocking-market-refresh.js';
 import { stateOf, teamMark } from '../components/game.js';
 import { modePanel, seasonMode } from '../components/mode.js';
 import { playerIdentity } from '../components/player.js';
@@ -762,6 +763,19 @@ export function mount(root, params, ctx) {
   const renderPicks = () => { picksEl.innerHTML = picksBlock(state); };
   const renderChanges = () => { $('#changes', root).innerHTML = changesMarkup(state.today, state.news); };
   const renderTail = () => { qlEl.innerHTML = quickLaunch(state); intelEl.innerHTML = intelStatus(state); };
+  // Optional market reads must NEVER gate live NHL scores.
+  // The shared Kalshi client already coalesces callers and caches its board.
+  let lastKalshiBoard = null;
+  const marketRefresh = createNonblockingMarketRefresh({
+    load: () => kalshi.loadBoard(),
+    onSettled(board) {
+      if (board !== lastKalshiBoard) {
+        lastKalshiBoard = board;
+        renderBoard(); // Repaint from latest NHL state, never the state at fetch start.
+      }
+    },
+    isActive: () => !document.hidden
+  });
   renderBoard();
   renderPicks();
 
@@ -778,11 +792,10 @@ export function mount(root, params, ctx) {
   // when they are the same date one request serves both. When today has no
   // games the NEXT slate is fetched through the same accessor so the section
   // below shows real cards instead of the three matchups in next_puck_drop.
-  // The Kalshi board loads in the same task as the slate (it never throws and
-  // resolves to the last good board on failure), so the card line is in the
-  // same paint as the cards. The client caches it for 15 s.
+  // NHL scores paint as soon as the board response arrives. Markets enrich
+  // separately after paint; a slow Kalshi request cannot stall the score clock.
   const poller = createPoller(async signal => {
-    const [todayRes] = await Promise.all([ctx.board(todayET(), { signal, maxAgeMs: 8000 }), kalshi.loadBoard()]);
+    const todayRes = await ctx.board(todayET(), { signal, maxAgeMs: 8000 });
     state.today = todayRes.data; state.todayMeta = todayRes.meta; state.todayFailed = false;
     if (state.date === todayET()) {
       state.board = todayRes.data; state.meta = todayRes.meta; state.failed = false; state.error = null;
@@ -803,6 +816,7 @@ export function mount(root, params, ctx) {
     renderHero();
     renderBoard();
     renderTail();
+    marketRefresh.refresh(); // fire-and-forget, one market request at a time
     const live = (state.today.counts?.LIVE || 0) + (state.board?.counts?.LIVE || 0);
     return live ? 10000 : 60000;
   }, {
@@ -913,6 +927,7 @@ export function mount(root, params, ctx) {
 
   return () => {
     poller.stop();
+    marketRefresh.stop();
     newsCtl.abort();
     oddsCtl.abort();
     picksCtl.abort();
