@@ -272,8 +272,13 @@ export function mount(root, params, ctx) {
       return;
     }
     const game = g.game;
+    const gameTeams = new Set([game.teams.away.abbrev, game.teams.home.abbrev]);
+    const matchedInjuries = st.injuries?.items
+      ? { ...st.injuries, items: st.injuries.items.filter(item =>
+          Array.isArray(item.teams) && item.teams.some(t => gameTeams.has(t))).slice(0, 4) }
+      : st.injuries;
     const gi = st.intel?.data
-      ? gameIntelPanel(st.intel.data, { pro: st.intel.tier === 'pro', props: st.props, propsError: st.propsError, injuryReports: st.injuries })
+      ? gameIntelPanel(st.intel.data, { pro: st.intel.tier === 'pro', props: st.props, propsError: st.propsError, injuryReports: matchedInjuries })
       : st.intel?.error ? `<p class="micro faint">Game intelligence unavailable — ${esc(describeError(st.intel.error).title)}.</p>` : '<div class="pbe-skeleton" style="height:220px;margin:12px 0"></div>';
     body.innerHTML = `${headerMarkup(game, st.g.meta, st.g.failed)}
       ${gi}
@@ -348,12 +353,11 @@ export function mount(root, params, ctx) {
     // Match clubs explicitly; never infer OUT/DTD/IR from a headline.
     news({ category: 'Injuries', limit: 100 }, { signal, timeout: 12000 })
       .then(res => {
-        const teams = new Set([gameId && st.g.data?.game?.teams?.away?.abbrev, gameId && st.g.data?.game?.teams?.home?.abbrev].filter(Boolean));
         const rows = (res.data.items || []).filter(item =>
-          Array.isArray(item.teams) && item.teams.some(t => teams.has(t)) &&
+          Array.isArray(item.teams) &&
           typeof item.url === 'string' && safeUrl(item.url) &&
           item.title && item.published_at);
-        st.injuries = { items: rows.slice(0, 4), failed: false };
+        st.injuries = { items: rows, failed: false };
       })
       .catch(error => { if (error.kind !== 'aborted') st.injuries = { items: [], failed: true }; })
       .finally(() => { if (!signal.aborted) renderBody(); });
